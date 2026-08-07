@@ -6,6 +6,8 @@ import React, { ReactNode, useState } from 'react';
 
 export default function SupportLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const navLinks = [
     { 
@@ -29,22 +31,37 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
     },
   ];
 
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   return (
-    <div className="flex h-screen bg-slate-900 text-slate-100 font-sans">
+    <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative">
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-teal-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl animate-bounce">
+          {toast}
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0">
+        {/* Brand Header with OFFICIAL LOGO */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/20 text-white font-extrabold text-lg">
-              CS
-            </div>
+          <Link href="/support/dashboard" className="flex items-center gap-3">
+            <img 
+              src="/logo-brand.png" 
+              alt="Euphoria Logo" 
+              className="h-12 w-auto object-contain bg-white/10 p-1 rounded-lg border border-white/10"
+            />
             <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Support Desk</h2>
-              <p className="text-[11px] text-teal-400 font-medium">Customer Service Portal</p>
+              <h2 className="text-sm font-bold text-white tracking-tight leading-tight">Euphoria Support</h2>
+              <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider">Help Desk Portal</p>
             </div>
-          </div>
+          </Link>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (pathname.startsWith('/support/tickets') && link.href.includes('tickets'));
@@ -52,9 +69,9 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium ${
+                className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${
                   isActive
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30 font-semibold'
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30'
                     : 'text-slate-400 hover:bg-slate-900 hover:text-white'
                 }`}
               >
@@ -78,7 +95,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
             <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Public Marketplace
+            Back to Marketplace
           </Link>
         </div>
       </aside>
@@ -91,11 +108,44 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
             <span className="text-xs font-bold text-slate-300">Agent Status: <strong className="text-emerald-400">Online & Ready</strong></span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center font-bold text-white text-xs">
-              SI
-            </div>
-            <span className="text-xs font-bold text-slate-200">Sabrina Islam (Agent #24)</span>
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="flex items-center gap-3 p-1.5 hover:bg-slate-900 rounded-xl transition border border-slate-800"
+            >
+              <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center font-bold text-white text-xs shadow-md">
+                SI
+              </div>
+              <div className="text-left hidden sm:block">
+                <p className="text-xs font-bold text-white">Sabrina Islam</p>
+                <p className="text-[10px] text-slate-400">Support Agent #24</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {profileOpen && (
+              <div className="absolute right-0 mt-2 w-52 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-xs animate-fade-in space-y-1">
+                <div className="p-3 border-b border-slate-800">
+                  <p className="font-bold text-white">Sabrina Islam</p>
+                  <p className="text-[10px] text-teal-400 font-semibold">Tier 2 Escalation Agent</p>
+                </div>
+                <button 
+                  onClick={() => { setProfileOpen(false); showToast('Support shift status set to On Break.'); }}
+                  className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-900 text-slate-300 hover:text-white transition"
+                >
+                  ☕ Take Break
+                </button>
+                <button 
+                  onClick={() => { setProfileOpen(false); showToast('Support agent signed out.'); }}
+                  className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition font-bold"
+                >
+                  🚪 End Shift & Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
