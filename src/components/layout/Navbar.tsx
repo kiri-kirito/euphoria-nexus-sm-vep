@@ -12,7 +12,7 @@ export default function Navbar() {
             <img 
               src="/logo-brand.png" 
               alt="Euphoria Nexus Logo" 
-              className="h-10 w-auto object-contain"
+              className="h-16 w-auto object-contain"
             />
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
               Euphoria Nexus

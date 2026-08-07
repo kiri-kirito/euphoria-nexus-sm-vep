@@ -7,7 +7,7 @@ export default function BecomeSellerPage() {
         {/* Header */}
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <img src="/logo-brand.png" alt="Euphoria Nexus" className="h-10 w-auto" />
+            <img src="/logo-brand.png" alt="Euphoria Nexus" className="h-16 w-auto" />
             <span className="text-xl font-bold text-slate-900">Euphoria Nexus</span>
           </Link>
           <h1 className="text-4xl font-extrabold text-slate-900 mb-3">Become a Seller</h1>
