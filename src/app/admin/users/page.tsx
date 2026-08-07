@@ -12,6 +12,32 @@ export default function AdminUsers() {
   ]);
 
   const [toast, setToast] = useState<string | null>(null);
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [newAgent, setNewAgent] = useState({ name: '', email: '', role: 'Delivery Agent' });
+
+  const handleCreateAgent = () => {
+    if (!newAgent.name || !newAgent.email) {
+      setToast('Please fill out all fields.');
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    
+    const newUser = {
+      id: `usr-${Date.now()}`,
+      name: newAgent.name,
+      email: newAgent.email,
+      role: newAgent.role,
+      status: 'Active',
+      joined: 'Just now',
+      orders: 0
+    };
+    
+    setUsers([newUser, ...users]);
+    setShowAgentModal(false);
+    setNewAgent({ name: '', email: '', role: 'Delivery Agent' });
+    setToast(`${newAgent.role} account created successfully!`);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const toggleUserStatus = (id: string) => {
     setUsers(prev => prev.map(u => {
@@ -44,6 +70,12 @@ export default function AdminUsers() {
             placeholder="Search users..."
             className="bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2 text-xs outline-none focus:border-blue-500"
           />
+          <button 
+            onClick={() => setShowAgentModal(true)}
+            className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-blue-600/30 whitespace-nowrap"
+          >
+            + Create Agent
+          </button>
         </div>
       </div>
 
@@ -99,6 +131,74 @@ export default function AdminUsers() {
           </table>
         </div>
       </div>
+
+      {/* Create Agent Modal */}
+      {showAgentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-white mb-1">Create Internal Agent</h2>
+            <p className="text-xs text-slate-400 mb-6">Create an account for a new Delivery Agent or Support Staff.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                <input 
+                  type="text"
+                  value={newAgent.name}
+                  onChange={(e) => setNewAgent({...newAgent, name: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-xs outline-none focus:border-blue-500"
+                  placeholder="e.g. Rahim Uddin"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+                <input 
+                  type="email"
+                  value={newAgent.email}
+                  onChange={(e) => setNewAgent({...newAgent, email: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-xs outline-none focus:border-blue-500"
+                  placeholder="agent@euphorianexus.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Assign Role</label>
+                <select 
+                  value={newAgent.role}
+                  onChange={(e) => setNewAgent({...newAgent, role: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-xs outline-none focus:border-blue-500"
+                >
+                  <option value="Delivery Agent">Delivery Agent</option>
+                  <option value="Support Staff">Support Staff</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                An auto-generated <strong className="text-slate-300">default password</strong> will be emailed to this address. The agent will be prompted to change their password upon their first login.
+              </p>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={() => setShowAgentModal(false)}
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2.5 rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCreateAgent}
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg shadow-blue-600/30"
+              >
+                Create Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
