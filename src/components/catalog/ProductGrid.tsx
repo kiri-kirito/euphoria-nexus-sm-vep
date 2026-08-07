@@ -1,15 +1,15 @@
-import Image from "next/image";
+// Using standard img tag for mock data to bypass Next.js security policies
 import Link from "next/link";
 
 const MOCK_PRODUCTS = [
-  { id: "1", name: "Sony WH-1000XM5 Headphones", price: 32000, store: "AudioWorld", moq: 5, category: "Electronics", image: "https://placehold.co/400x400/f8fafc/475569?text=Headphones" },
-  { id: "2", name: "Logitech MX Master 3S", price: 9500, store: "Tech Haven BD", moq: 10, category: "Electronics", image: "https://placehold.co/400x400/f8fafc/475569?text=Logitech+Mouse", local: true },
-  { id: "3", name: "Mechanical Keyboard Keycaps", price: 2500, store: "GearUp", moq: 20, category: "Electronics", image: "https://placehold.co/400x400/f8fafc/475569?text=Keycaps" },
-  { id: "4", name: "Ergonomic Office Chair", price: 14000, store: "WoodWorks", moq: 5, category: "Furniture", image: "https://placehold.co/400x400/f8fafc/475569?text=Office+Chair", local: true },
-  { id: "5", name: "Organic Green Tea (500g)", price: 800, store: "Organic Foods Ltd", moq: null, category: "Groceries", image: "https://placehold.co/400x400/f8fafc/475569?text=Green+Tea", local: true },
-  { id: "6", name: "Men's Winter Jacket", price: 4500, store: "StyleZone", moq: 15, category: "Fashion", image: "https://placehold.co/400x400/f8fafc/475569?text=Winter+Jacket" },
-  { id: "7", name: "Running Sneakers Pro", price: 6500, store: "Kicks", moq: null, category: "Fashion", image: "https://placehold.co/400x400/f8fafc/475569?text=Sneakers" },
-  { id: "8", name: "4K Web Camera", price: 8500, store: "GadgetPro", moq: 10, category: "Electronics", image: "https://placehold.co/400x400/f8fafc/475569?text=Web+Camera" }
+  { id: "1", name: "Sony WH-1000XM5 Headphones", price: 32000, store: "AudioWorld", moq: 5, category: "Electronics", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop&q=80" },
+  { id: "2", name: "Logitech MX Master 3S", price: 9500, store: "Tech Haven BD", moq: 10, category: "Electronics", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop&q=80", local: true },
+  { id: "3", name: "Mechanical Keyboard Keycaps", price: 2500, store: "GearUp", moq: 20, category: "Electronics", image: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=400&h=400&fit=crop&q=80" },
+  { id: "4", name: "Ergonomic Office Chair", price: 14000, store: "WoodWorks", moq: 5, category: "Furniture", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&h=400&fit=crop&q=80", local: true },
+  { id: "5", name: "Organic Green Tea (500g)", price: 800, store: "Organic Foods Ltd", moq: null, category: "Groceries", image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=400&fit=crop&q=80", local: true },
+  { id: "6", name: "Men's Winter Jacket", price: 4500, store: "StyleZone", moq: 15, category: "Fashion", image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop&q=80" },
+  { id: "7", name: "Running Sneakers Pro", price: 6500, store: "Kicks", moq: null, category: "Fashion", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&q=80" },
+  { id: "8", name: "4K Web Camera", price: 8500, store: "GadgetPro", moq: 10, category: "Electronics", image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400&h=400&fit=crop&q=80" }
 ];
 
 export default function ProductGrid() {
@@ -34,11 +34,10 @@ export default function ProductGrid() {
         {MOCK_PRODUCTS.map((product) => (
           <Link href={`/product/${product.id}`} key={product.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden group hover:border-primary/50 hover:shadow-xl transition-all block">
             <div className="relative aspect-square bg-slate-100">
-              <Image 
-                src={product.image}
+              <img 
+                src={product.image} 
                 alt={product.name}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-cover w-full h-full p-4 group-hover:scale-110 transition-transform duration-500"
               />
               
               <div className="absolute top-2 left-2 flex flex-col gap-1">

@@ -1,4 +1,4 @@
-import Image from "next/image";
+// Using standard img tag for mock data to bypass Next.js security policies
 
 // Dummy data for featured bundles
 const MOCK_BUNDLES = [
@@ -8,7 +8,7 @@ const MOCK_BUNDLES = [
     sellerNames: "Tech Haven & GearUp",
     originalPrice: 25000,
     bundlePrice: 21500,
-    image: "https://placehold.co/400x300/e2e8f0/475569?text=Gamer+Pack",
+    image: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=400&fit=crop&q=80",
     items: "Mechanical Keyboard + RGB Mouse + Headset"
   },
   {
@@ -17,7 +17,7 @@ const MOCK_BUNDLES = [
     sellerNames: "StyleZone & Kicks",
     originalPrice: 8500,
     bundlePrice: 6500,
-    image: "https://placehold.co/400x300/e2e8f0/475569?text=Winter+Combo",
+    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=400&fit=crop&q=80",
     items: "Leather Jacket + Winter Boots"
   },
   {
@@ -26,7 +26,7 @@ const MOCK_BUNDLES = [
     sellerNames: "WoodWorks & GadgetPro",
     originalPrice: 18000,
     bundlePrice: 15000,
-    image: "https://placehold.co/400x300/e2e8f0/475569?text=Office+Starter",
+    image: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=400&fit=crop&q=80",
     items: "Ergonomic Desk + Desk Lamp + Organizer"
   }
 ];
@@ -46,11 +46,10 @@ export default function FeaturedBundles() {
         {MOCK_BUNDLES.map((bundle) => (
           <div key={bundle.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group cursor-pointer">
             <div className="relative h-48 overflow-hidden bg-slate-100">
-              <Image 
+              <img 
                 src={bundle.image} 
                 alt={bundle.name}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
                 SAVE ৳{bundle.originalPrice - bundle.bundlePrice}
