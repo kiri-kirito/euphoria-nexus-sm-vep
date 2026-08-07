@@ -1,67 +1,118 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+
 export default function TaskDetails({ params }: { params: { id: string } }) {
+  const [status, setStatus] = useState<'Ready' | 'Picked Up' | 'On the Way' | 'Delivered'>('Ready');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const updateStatus = (newStatus: 'Picked Up' | 'On the Way' | 'Delivered') => {
+    setStatus(newStatus);
+    setToast(`Order #ORD-${params.id} updated to "${newStatus}"!`);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-60px)] bg-gray-50">
-      <div className="p-4 bg-white shadow-sm z-10 relative flex justify-between items-center">
+    <div className="flex flex-col min-h-screen bg-slate-50 relative pb-20">
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-2xl z-50 animate-bounce border border-slate-700">
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="p-4 bg-white shadow-sm border-b border-slate-200 flex justify-between items-center sticky top-0 z-20">
         <div>
-          <h1 className="text-xl font-extrabold text-gray-900">Order #ORD-{params.id}</h1>
-          <p className="text-sm font-medium text-orange-600">Pickup in 5 mins</p>
+          <div className="flex items-center gap-2">
+            <Link href="/delivery/dashboard" className="text-slate-400 hover:text-slate-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <h1 className="text-base font-extrabold text-slate-900">Order #ORD-{params.id}</h1>
+          </div>
+          <p className="text-xs font-semibold text-emerald-600 ml-7">COD Payment: ৳41,060 to collect</p>
         </div>
-        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-          <span className="text-lg">📞</span>
-        </div>
+        <a 
+          href="tel:01711223344"
+          className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-bold text-lg hover:bg-emerald-100 transition"
+        >
+          📞
+        </a>
       </div>
 
-      {/* Mock Map Area */}
-      <div className="flex-1 min-h-[250px] bg-slate-200 relative flex items-center justify-center overflow-hidden">
-        {/* Subtle grid pattern to mock map look */}
-        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(#9ca3af_1px,transparent_1px),linear-gradient(90deg,#9ca3af_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+      {/* Map View Placeholder */}
+      <div className="h-64 bg-slate-800 relative flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 opacity-15 bg-[linear-gradient(#94a3b8_1px,transparent_1px),linear-gradient(90deg,#94a3b8_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+        <div className="absolute top-1/2 left-1/4 right-1/4 h-1.5 bg-blue-500 rounded-full z-0 opacity-60 transform -translate-y-1/2 rotate-6"></div>
         
-        {/* Route Line Mock */}
-        <div className="absolute top-1/2 left-1/4 right-1/4 h-1 bg-blue-500 rounded-full z-0 opacity-50 transform -translate-y-1/2 rotate-12"></div>
-        
-        <div className="relative z-10 flex flex-col items-center -mt-10">
-          <div className="text-5xl drop-shadow-md animate-bounce">📍</div>
-          <div className="bg-gray-900 text-white px-3 py-1 rounded-full shadow-lg text-xs font-bold mt-1">
-            Delivery Location
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="text-4xl drop-shadow-xl animate-bounce">📍</div>
+          <div className="bg-slate-900 text-white px-3 py-1 rounded-full shadow-lg text-[11px] font-bold mt-1 border border-slate-700">
+            House 42, Road 11, Banani
           </div>
         </div>
       </div>
 
-      {/* Info & Actions */}
-      <div className="bg-white rounded-t-3xl -mt-6 p-5 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] relative z-20 flex-1 flex flex-col pb-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Delivery Details</h2>
-        
-        <div className="space-y-5 flex-1">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl shrink-0">
+      {/* Customer & Status Action Details */}
+      <div className="bg-white rounded-t-3xl -mt-6 p-6 shadow-xl relative z-20 flex-1 flex flex-col">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-900">Delivery Status</h2>
+          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+            status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+          }`}>
+            {status}
+          </span>
+        </div>
+
+        <div className="space-y-4 mb-6">
+          <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold shrink-0 text-sm">
               👤
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-base">Sarah Jenkins</p>
-              <p className="text-sm text-gray-500 font-medium">Customer • (555) 123-4567</p>
+              <p className="font-bold text-slate-900 text-sm">Tanvir Hossain</p>
+              <p className="text-xs text-slate-500 font-medium">Customer • Phone: 01711-223344</p>
             </div>
           </div>
           
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-xl shrink-0">
+          <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center font-bold shrink-0 text-sm">
               🏠
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-base">123 Main St, Apt 4B</p>
-              <p className="text-sm text-gray-500 font-medium">Leave at door. Do not ring bell.</p>
+              <p className="font-bold text-slate-900 text-sm">House 42, Road 11, Banani, Dhaka</p>
+              <p className="text-xs text-slate-500 font-medium">Instruction: Call customer before arriving at gate.</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 mt-6">
-          <button className="w-full py-4 bg-gray-100 text-gray-800 font-bold rounded-2xl active:bg-gray-200 transition-colors">
-            Picked Up
+        {/* Status Update Action Buttons */}
+        <div className="mt-auto space-y-2 pt-4 border-t border-slate-100">
+          <button 
+            onClick={() => updateStatus('Picked Up')}
+            className={`w-full py-3 text-xs font-bold rounded-xl transition ${
+              status === 'Picked Up' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            Mark Picked Up from Seller
           </button>
-          <button className="w-full py-4 bg-blue-100 text-blue-800 font-bold rounded-2xl active:bg-blue-200 transition-colors">
-            On the Way
+
+          <button 
+            onClick={() => updateStatus('On the Way')}
+            className={`w-full py-3 text-xs font-bold rounded-xl transition ${
+              status === 'On the Way' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
+          >
+            Mark On the Way
           </button>
-          <button className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl active:bg-green-700 transition-colors shadow-lg shadow-green-200/50 flex items-center justify-center gap-2">
-            <span>✓</span> Delivered
+
+          <button 
+            onClick={() => updateStatus('Delivered')}
+            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2"
+          >
+            <span>✓</span> Confirm Order Delivered
           </button>
         </div>
       </div>

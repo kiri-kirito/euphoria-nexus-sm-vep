@@ -1,70 +1,203 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 export default function ProfilePage() {
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'negotiations'>('info');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    fullName: 'Tanvir Hossain',
+    email: 'tanvir.hossain@gmail.com',
+    company: 'Hossain Traders BD',
+    phone: '+880 1711-223344',
+    address: 'House 42, Road 11, Banani, Dhaka-1213'
+  });
+
   const orders = [
-    { id: 'ORD-2026-8091', date: 'Aug 01, 2026', total: '$4,500.00', status: 'Delivered', items: 'Premium Copper Wire (1000 kg)' },
-    { id: 'ORD-2026-7842', date: 'Jul 15, 2026', total: '$12,500.00', status: 'In Transit', items: 'Industrial Grade Steel Beams (10 tons), Heavy Duty Cogs (20 units)' },
+    { id: 'ORD-84392', date: 'Aug 04, 2026', total: '৳41,060', status: 'Delivered', items: 'Sony WH-1000XM5 Headphones (1x), Mechanical Keycaps (2x)' },
+    { id: 'ORD-78421', date: 'Jul 28, 2026', total: '৳2,25,000', status: 'In Transit', items: 'Industrial High-Purity Copper Wire (500 kg)' },
   ];
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">My Profile</h1>
-      
-      <div className="flex flex-col gap-8">
-        {/* Personal Info Section */}
-        <section className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Personal Information</h2>
-            <button className="text-blue-600 text-sm font-medium hover:underline">Edit</button>
-          </div>
-          
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input type="text" defaultValue="John Doe" className="w-full border rounded-md p-2 bg-gray-50 text-gray-800" readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input type="email" defaultValue="john.doe@example.com" className="w-full border rounded-md p-2 bg-gray-50 text-gray-800" readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-              <input type="text" defaultValue="Acme Industries" className="w-full border rounded-md p-2 bg-gray-50 text-gray-800" readOnly />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-              <input type="tel" defaultValue="+1 (555) 123-4567" className="w-full border rounded-md p-2 bg-gray-50 text-gray-800" readOnly />
-            </div>
-          </form>
-        </section>
+  const negotiations = [
+    { id: 'NEG-102', product: 'Monocrystalline Solar Panels (550W)', targetPrice: '৳16,500/panel', qty: '50 panels', status: 'Counter Offer Received', seller: 'GreenTech Energy' },
+    { id: 'NEG-098', product: 'Structural Steel Beams', targetPrice: '৳88,000/ton', qty: '20 tons', status: 'Accepted', seller: 'SteelCo Bangladesh' },
+  ];
 
-        {/* Order History Section */}
-        <section className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-xl font-semibold mb-6">Order History</h2>
-          
-          <div className="flex flex-col gap-4">
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setToast('Profile information updated successfully!');
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  return (
+    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl z-50 animate-bounce border border-slate-700">
+          {toast}
+        </div>
+      )}
+
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header Banner */}
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+          <div className="w-20 h-20 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl flex items-center justify-center font-extrabold text-white text-2xl shadow-lg shadow-primary/20 shrink-0">
+            TH
+          </div>
+          <div className="text-center sm:text-left flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-900">{formData.fullName}</h1>
+              <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full w-fit mx-auto sm:mx-0">
+                Verified Buyer & Business Account
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">{formData.email} • {formData.company}</p>
+          </div>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+          {[
+            { id: 'info', label: 'Personal Information' },
+            { id: 'orders', label: 'Order History (2)' },
+            { id: 'negotiations', label: 'Bulk Deal Offers (2)' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 py-3 text-xs sm:text-sm font-bold rounded-xl transition ${
+                activeTab === tab.id 
+                  ? 'bg-slate-900 text-white shadow-md' 
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab 1: Personal Info */}
+        {activeTab === 'info' && (
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-6">Edit Profile Details</h2>
+            
+            <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Full Name</label>
+                <input 
+                  type="text" 
+                  value={formData.fullName} 
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-primary focus:bg-white" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Email Address</label>
+                <input 
+                  type="email" 
+                  value={formData.email} 
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-primary focus:bg-white" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Company / Business Name</label>
+                <input 
+                  type="text" 
+                  value={formData.company} 
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-primary focus:bg-white" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Phone Number</label>
+                <input 
+                  type="tel" 
+                  value={formData.phone} 
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-primary focus:bg-white" 
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 mb-2">Default Shipping Address</label>
+                <input 
+                  type="text" 
+                  value={formData.address} 
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-primary focus:bg-white" 
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-4">
+                <button type="submit" className="bg-primary hover:bg-primary-dark text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-md shadow-primary/20">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+
+        {/* Tab 2: Orders */}
+        {activeTab === 'orders' && (
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Past Orders</h2>
             {orders.map((order) => (
-              <div key={order.id} className="border rounded-lg p-4 flex flex-col md:flex-row justify-between gap-4 hover:bg-gray-50 transition">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-gray-900">{order.id}</span>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+              <div key={order.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-extrabold text-slate-900 text-sm">{order.id}</span>
+                    <span className={`px-2.5 py-0.5 text-[10px] rounded-full font-bold ${
+                      order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
                     }`}>
                       {order.status}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500">Placed on {order.date}</div>
-                  <div className="text-sm text-gray-700 mt-2 line-clamp-1">{order.items}</div>
+                  <p className="text-xs text-slate-500">Placed on {order.date}</p>
+                  <p className="text-xs text-slate-700 font-medium mt-2">{order.items}</p>
                 </div>
-                <div className="flex flex-col md:items-end justify-between">
-                  <div className="font-bold text-lg">{order.total}</div>
-                  <button className="text-blue-600 text-sm font-medium hover:underline mt-2 md:mt-0">View Details</button>
+
+                <div className="text-left md:text-right">
+                  <p className="text-xl font-extrabold text-slate-900">{order.total}</p>
+                  <button className="text-xs font-bold text-primary hover:underline mt-1">View Order Details →</button>
                 </div>
               </div>
             ))}
-          </div>
-        </section>
+          </section>
+        )}
+
+        {/* Tab 3: Bulk Deals */}
+        {activeTab === 'negotiations' && (
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Submitted Bulk Deal Offers</h2>
+            {negotiations.map((neg) => (
+              <div key={neg.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-extrabold text-purple-600 text-xs">{neg.id}</span>
+                    <span className={`px-2.5 py-0.5 text-[10px] rounded-full font-bold ${
+                      neg.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {neg.status}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-sm">{neg.product}</h3>
+                  <p className="text-xs text-slate-500 mt-1">Seller: <strong>{neg.seller}</strong> • Qty: <strong>{neg.qty}</strong></p>
+                </div>
+
+                <div className="text-left md:text-right">
+                  <p className="text-sm font-extrabold text-slate-900">Target: {neg.targetPrice}</p>
+                  <button className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl mt-2 hover:bg-slate-800 transition">
+                    View Seller Response
+                  </button>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
       </div>
     </div>
   );

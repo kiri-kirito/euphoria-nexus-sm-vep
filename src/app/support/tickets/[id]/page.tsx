@@ -1,103 +1,169 @@
-import React from 'react';
+'use client';
 
-export default function TicketDetails({ params }: { params: { id: string } }) {
-  const messages = [
-    { id: 1, sender: 'User', text: 'Hi, I received my order today but one of the items is missing.', time: '10:00 AM' },
-    { id: 2, sender: 'Support', text: 'Hello Alice, I am sorry to hear that. Can you please confirm which item is missing?', time: '10:05 AM' },
-    { id: 3, sender: 'User', text: 'The "Pro Wireless Mouse" is not in the box.', time: '10:12 AM' },
-  ];
+import React, { useState } from 'react';
+
+export default function TicketDetails() {
+  const [messages, setMessages] = useState([
+    { id: 1, sender: 'User', text: 'Assalamu Alaikum, I received my order #ORD-84392 today, but the Mechanical Keyboard Keycaps set is missing from the package!', time: '10:14 AM' },
+    { id: 2, sender: 'Support', text: 'Walaikum Assalam Nusrat. I am very sorry for the inconvenience. Let me inspect the seller dispatch video for order #ORD-84392.', time: '10:16 AM' },
+    { id: 3, sender: 'User', text: 'Thank you! The box was sealed, but only the headphones were inside.', time: '10:20 AM' },
+  ]);
+
+  const [inputMsg, setInputMsg] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMsg.trim()) return;
+
+    const newMsg = {
+      id: messages.length + 1,
+      sender: 'Support',
+      text: inputMsg,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages(prev => [...prev, newMsg]);
+    setInputMsg('');
+  };
+
+  const handleProcessRefund = () => {
+    setToast('Refund of ৳2,500 approved & queued for bKash disbursement!');
+    setTimeout(() => setToast(null), 3500);
+  };
 
   return (
-    <div className="flex h-full">
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white border-r border-slate-200">
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800">Ticket #{params.id}</h2>
-            <p className="text-sm text-slate-500">Missing item in order</p>
-          </div>
-          <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Open</span>
+    <div className="flex h-full bg-slate-900 text-slate-100 overflow-hidden relative">
+      {toast && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl z-50 animate-bounce">
+          {toast}
         </div>
-        
-        <div className="flex-1 p-6 overflow-y-auto space-y-6">
+      )}
+
+      {/* Main Chat Pane */}
+      <div className="flex-1 flex flex-col border-r border-slate-800">
+        {/* Chat Header */}
+        <div className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-teal-500/20 text-teal-400 border border-teal-500/30 rounded-xl flex items-center justify-center font-bold text-xs">
+              TCK
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white">Ticket #TCK-101 — Missing Item Claim</h2>
+              <p className="text-xs text-slate-400">Customer: <span className="text-slate-200 font-semibold">Nusrat Jahan</span> (Dhaka)</p>
+            </div>
+          </div>
+          <span className="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
+            Active Ticket
+          </span>
+        </div>
+
+        {/* Message Thread */}
+        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-900">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col ${msg.sender === 'Support' ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[75%] rounded-lg p-4 ${
+              <div className={`max-w-[75%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-md ${
                 msg.sender === 'Support' 
                   ? 'bg-teal-600 text-white rounded-tr-none' 
-                  : 'bg-slate-100 text-slate-800 rounded-tl-none'
+                  : 'bg-slate-950 text-slate-200 border border-slate-800 rounded-tl-none'
               }`}>
                 <p>{msg.text}</p>
               </div>
-              <span className="text-xs text-slate-400 mt-1">{msg.sender} • {msg.time}</span>
+              <span className="text-[10px] text-slate-500 mt-1 font-semibold">
+                {msg.sender === 'Support' ? 'Sabrina (Agent)' : 'Nusrat Jahan'} • {msg.time}
+              </span>
             </div>
           ))}
         </div>
-        
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
-          <form className="flex space-x-4">
+
+        {/* Input Bar */}
+        <div className="p-4 bg-slate-950 border-t border-slate-800">
+          <form onSubmit={handleSendMessage} className="flex gap-3">
             <input 
-              type="text" 
-              placeholder="Type your message..." 
-              className="flex-1 border border-slate-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              type="text"
+              value={inputMsg}
+              onChange={(e) => setInputMsg(e.target.value)}
+              placeholder="Type your response to the customer..." 
+              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-teal-500 placeholder:text-slate-500"
             />
             <button 
               type="submit"
-              className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-6 rounded-md transition-colors"
+              className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-teal-600/30"
             >
-              Send
+              Send Reply
             </button>
           </form>
         </div>
       </div>
 
       {/* Right Sidebar - Order Details */}
-      <div className="w-1/3 bg-slate-50 p-6 overflow-y-auto">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Order Details</h3>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-slate-500">Order #</span>
-            <span className="font-semibold text-slate-800">ORD-98234</span>
+      <div className="w-80 bg-slate-950 p-6 overflow-y-auto border-l border-slate-800 flex-shrink-0 flex flex-col justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z" />
+            </svg>
+            Associated Order
+          </h3>
+
+          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs space-y-2 mb-6">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Order ID:</span>
+              <span className="font-bold text-white">#ORD-84392</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Total Amount:</span>
+              <span className="font-bold text-emerald-400">৳34,500</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Payment:</span>
+              <span className="font-bold text-purple-400">bKash Paid</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Seller:</span>
+              <span className="font-semibold text-slate-200">AudioWorld BD</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-slate-500">Status</span>
-            <span className="text-sm font-medium text-blue-600">Delivered</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-slate-500">Date</span>
-            <span className="text-sm text-slate-800">Oct 24, 2023</span>
+
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Order Items</h4>
+          <div className="space-y-3">
+            <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
+              <img 
+                src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100&h=100&fit=crop&q=80" 
+                alt="Sony WH-1000XM5" 
+                className="w-10 h-10 object-cover rounded-lg"
+              />
+              <div>
+                <p className="text-xs font-bold text-white line-clamp-1">Sony WH-1000XM5</p>
+                <p className="text-[10px] text-slate-400">৳32,000 • Delivered ✓</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 p-3 rounded-xl border border-red-500/30 flex items-center gap-3 bg-red-500/5">
+              <img 
+                src="https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=100&h=100&fit=crop&q=80" 
+                alt="Keycaps" 
+                className="w-10 h-10 object-cover rounded-lg"
+              />
+              <div>
+                <p className="text-xs font-bold text-white line-clamp-1">Mechanical Keycaps</p>
+                <p className="text-[10px] text-red-400 font-semibold">৳2,500 • Missing Item ⚠️</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <h4 className="font-semibold text-slate-700 mb-3 text-sm uppercase tracking-wider">Items</h4>
-        <div className="space-y-3">
-          <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center space-x-3">
-            <div className="w-12 h-12 bg-slate-100 rounded flex-shrink-0 flex items-center justify-center text-slate-400 text-xs">
-              Img
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-800 line-clamp-1">Pro Mechanical Keyboard</p>
-              <p className="text-xs text-slate-500">Qty: 1</p>
-            </div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center space-x-3">
-            <div className="w-12 h-12 bg-slate-100 rounded flex-shrink-0 flex items-center justify-center text-slate-400 text-xs">
-              Img
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-800 line-clamp-1">Pro Wireless Mouse</p>
-              <p className="text-xs text-slate-500">Qty: 1 <span className="text-red-500 font-medium">(Reported Missing)</span></p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8">
-          <button className="w-full bg-white border border-slate-300 text-slate-700 font-medium py-2 px-4 rounded-md hover:bg-slate-50 transition-colors mb-3">
-            View Full Order
+        <div className="pt-6 border-t border-slate-800 space-y-2">
+          <button 
+            onClick={handleProcessRefund}
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/30"
+          >
+            Process Partial Refund (৳2,500)
           </button>
-          <button className="w-full bg-slate-800 text-white font-medium py-2 px-4 rounded-md hover:bg-slate-900 transition-colors">
-            Process Refund
+          <button 
+            className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold py-2.5 rounded-xl border border-slate-800 transition"
+          >
+            Escalate to Manager
           </button>
         </div>
       </div>
