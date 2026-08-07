@@ -36,13 +36,12 @@ export default function Hero() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      // briefly hide label during transition for a nice effect
       setLabelVisible(false);
       setTimeout(() => {
         setCurrent((prev) => (prev + 1) % SHOWCASE_IMAGES.length);
         setLabelVisible(true);
       }, 600);
-    }, 6000);
+    }, 4000);
     return () => clearInterval(timer);
   }, []);
 
@@ -113,7 +112,7 @@ export default function Hero() {
               key={i}
               src={img.src}
               alt={img.label}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1200 ease-in-out ${
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out ${
                 i === current ? "opacity-100" : "opacity-0"
               }`}
             />
