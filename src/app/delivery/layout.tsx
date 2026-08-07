@@ -69,7 +69,7 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
           <img 
             src="/logo-brand.png" 
             alt="Euphoria Logo" 
-            className="h-10 w-auto object-contain bg-white/10 p-1 rounded-lg"
+            className="h-14 w-auto object-contain drop-shadow-md"
           />
           <div>
             <h1 className="text-xs font-extrabold tracking-tight text-white">Karim Ahmed</h1>

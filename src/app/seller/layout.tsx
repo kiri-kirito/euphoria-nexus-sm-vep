@@ -93,7 +93,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
         {/* Sidebar Header — bigger logo */}
         <div className="px-5 py-5 border-b border-slate-700/50">
           <Link href="/" className="flex items-center gap-3 mb-4">
-            <img src="/logo-brand.png" alt="Logo" className="h-12 w-auto object-contain" />
+            <img src="/logo-brand.png" alt="Logo" className="h-14 w-auto object-contain drop-shadow-md" />
             <span className="text-white font-bold text-base leading-tight">Euphoria<br/>Nexus</span>
           </Link>
           <div className="bg-primary/20 border border-primary/30 rounded-xl px-3 py-2.5">

@@ -52,7 +52,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
             <img 
               src="/logo-brand.png" 
               alt="Euphoria Logo" 
-              className="h-12 w-auto object-contain bg-white/10 p-1 rounded-lg border border-white/10"
+              className="h-14 w-auto object-contain drop-shadow-md"
             />
             <div>
               <h2 className="text-sm font-bold text-white tracking-tight leading-tight">Euphoria Support</h2>
