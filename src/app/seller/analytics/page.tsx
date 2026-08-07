@@ -1,0 +1,149 @@
+export default function AnalyticsPage() {
+  const stats = [
+    { label: "Total Revenue", value: "৳2,84,500", trend: "+12.5%", isPositive: true },
+    { label: "Orders", value: "47", trend: "+5.2%", isPositive: true },
+    { label: "Avg Order Value", value: "৳6,053", trend: "-1.1%", isPositive: false },
+    { label: "Return Rate", value: "2.1%", trend: "-0.5%", isPositive: true }, // lower return rate is good
+  ];
+
+  const recentTransactions = [
+    { id: "#ORD-8832", product: "Wireless Headphones", buyer: "Rahim", amount: "৳4,500", date: "Today, 10:23 AM" },
+    { id: "#ORD-8831", product: "Mechanical Keyboard", buyer: "Tanvir", amount: "৳8,500", date: "Yesterday, 04:15 PM" },
+    { id: "#ORD-8830", product: "Gaming Mouse", buyer: "Sajid", amount: "৳3,200", date: "Yesterday, 02:30 PM" },
+    { id: "#ORD-8829", product: "27-inch Monitor", buyer: "Kamrul", amount: "৳22,000", date: "Aug 5, 11:45 AM" },
+    { id: "#ORD-8828", product: "Desk Mat", buyer: "Ashiq", amount: "৳1,200", date: "Aug 4, 09:10 AM" },
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-slate-900">Analytics Dashboard</h1>
+        <div className="flex items-center bg-slate-100 rounded-lg p-1">
+          <button className="px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">7D</button>
+          <button className="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-slate-900 shadow-sm transition-colors">30D</button>
+          <button className="px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">90D</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {stats.map((stat, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h3 className="text-sm font-medium text-slate-500">{stat.label}</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-900">{stat.value}</span>
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-md ${
+                stat.isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+              }`}>
+                {stat.trend}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Revenue Chart */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-slate-900 mb-6">Revenue This Month</h2>
+          <div className="h-64 flex items-end gap-4 sm:gap-8 justify-between relative">
+            {/* Grid lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none border-b border-slate-100 pb-8">
+              {[100, 75, 50, 25].map((val) => (
+                <div key={val} className="border-t border-slate-100 w-full flex-1 relative">
+                  <span className="absolute -left-2 -translate-x-full -top-3 text-xs text-slate-400">৳{val}K</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Bars */}
+            <div className="relative z-10 w-full flex justify-around items-end h-full pb-8">
+              <div className="flex flex-col items-center w-12 sm:w-16 group">
+                <div className="w-full h-[115px] bg-gradient-to-t from-primary/80 to-indigo-400 rounded-t-lg transition-all group-hover:opacity-80"></div>
+                <span className="text-xs font-medium text-slate-500 mt-3 absolute bottom-0">Week 1</span>
+              </div>
+              <div className="flex flex-col items-center w-12 sm:w-16 group">
+                <div className="w-full h-[184px] bg-gradient-to-t from-primary/80 to-indigo-400 rounded-t-lg transition-all group-hover:opacity-80"></div>
+                <span className="text-xs font-medium text-slate-500 mt-3 absolute bottom-0">Week 2</span>
+              </div>
+              <div className="flex flex-col items-center w-12 sm:w-16 group">
+                <div className="w-full h-[227px] bg-gradient-to-t from-primary/80 to-indigo-400 rounded-t-lg transition-all group-hover:opacity-80"></div>
+                <span className="text-xs font-medium text-slate-500 mt-3 absolute bottom-0">Week 3</span>
+              </div>
+              <div className="flex flex-col items-center w-12 sm:w-16 group">
+                <div className="w-full h-[199px] bg-gradient-to-t from-primary/80 to-indigo-400 rounded-t-lg transition-all group-hover:opacity-80 relative">
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">৳78K</div>
+                </div>
+                <span className="text-xs font-medium text-slate-500 mt-3 absolute bottom-0">Week 4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Categories */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-slate-900 mb-6">Top Categories</h2>
+          <div className="space-y-6">
+            <div>
+              <div className="flex justify-between text-sm font-medium mb-2">
+                <span className="text-slate-700">Electronics</span>
+                <span className="text-slate-900 font-bold">65%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2.5">
+                <div className="bg-primary h-2.5 rounded-full" style={{ width: '65%' }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm font-medium mb-2">
+                <span className="text-slate-700">Fashion</span>
+                <span className="text-slate-900 font-bold">20%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2.5">
+                <div className="bg-indigo-400 h-2.5 rounded-full" style={{ width: '20%' }}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm font-medium mb-2">
+                <span className="text-slate-700">Accessories</span>
+                <span className="text-slate-900 font-bold">15%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2.5">
+                <div className="bg-sky-400 h-2.5 rounded-full" style={{ width: '15%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900">Recent Transactions</h2>
+          <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">View All</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-slate-600">
+            <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-4">Order ID</th>
+                <th className="px-6 py-4">Product</th>
+                <th className="px-6 py-4">Buyer</th>
+                <th className="px-6 py-4">Amount</th>
+                <th className="px-6 py-4">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {recentTransactions.map((tx, i) => (
+                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-900">{tx.id}</td>
+                  <td className="px-6 py-4">{tx.product}</td>
+                  <td className="px-6 py-4">{tx.buyer}</td>
+                  <td className="px-6 py-4 font-bold text-slate-900">{tx.amount}</td>
+                  <td className="px-6 py-4 text-slate-500">{tx.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   {
@@ -60,6 +63,7 @@ const NAV_ITEMS = [
 ];
 
 export default function SellerLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
@@ -78,21 +82,28 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
 
         {/* Nav Links */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-all group"
-            >
-              <span className="group-hover:text-primary transition-colors">{item.icon}</span>
-              <span className="text-sm font-medium flex-1">{item.label}</span>
-              {item.badge && (
-                <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group border-l-2 ${
+                  isActive 
+                    ? "text-white bg-white/15 border-primary" 
+                    : "text-slate-400 border-transparent hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <span className={`${isActive ? "text-primary" : "group-hover:text-primary"} transition-colors`}>{item.icon}</span>
+                <span className="text-sm font-medium flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Sidebar Footer */}
