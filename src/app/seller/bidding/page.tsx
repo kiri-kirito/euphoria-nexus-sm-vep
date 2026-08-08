@@ -35,7 +35,7 @@ export default function BlindBiddingPage() {
   const [bidAmounts, setBidAmounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    const newSocket = io("http://localhost:3001/bidding", {
+    const newSocket = io("http://localhost:5000/bidding", {
       transports: ["websocket", "polling"],
     });
 

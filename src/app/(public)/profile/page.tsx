@@ -1,18 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuthStore } from '@/store/useAuthStore';
+import { createClient } from '@/utils/supabase/client';
+import Link from 'next/link';
 
 export default function ProfilePage() {
+  const { user, profile, setSession } = useAuthStore();
+  const supabase = createClient();
   const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'negotiations'>('info');
   const [toast, setToast] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: 'Tanvir Hossain',
-    email: 'tanvir.hossain@gmail.com',
-    company: 'Hossain Traders BD',
-    phone: '+880 1711-223344',
-    address: 'House 42, Road 11, Banani, Dhaka-1213'
+    fullName: '',
+    email: '',
+    company: '',
+    phone: '',
+    address: ''
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: profile.name || '',
+        email: profile.email || '',
+        company: profile.company || '',
+        phone: profile.phone || '',
+        address: profile.address || ''
+      });
+    } else if (user) {
+      setFormData(prev => ({ ...prev, email: user.email || '' }));
+    }
+  }, [profile, user]);
 
   const orders = [
     { id: 'ORD-84392', date: 'Aug 04, 2026', total: '৳41,060', status: 'Delivered', items: 'Sony WH-1000XM5 Headphones (1x), Mechanical Keycaps (2x)' },
@@ -24,11 +49,57 @@ export default function ProfilePage() {
     { id: 'NEG-098', product: 'Structural Steel Beams', targetPrice: '৳88,000/ton', qty: '20 tons', status: 'Accepted', seller: 'SteelCo Bangladesh' },
   ];
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setToast('Profile information updated successfully!');
+    if (!user) return;
+    setLoading(true);
+
+    const updates = {
+      name: formData.fullName,
+      company: formData.company,
+      phone: formData.phone,
+      address: formData.address,
+    };
+
+    const { error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', user.id);
+
+    setLoading(false);
+
+    if (error) {
+      setToast('Failed to update profile.');
+    } else {
+      setToast('Profile information updated successfully!');
+      // Update local zustand profile store so UI reflects instantly without full reload
+      if (profile) {
+        setSession(user, profile.role, { ...profile, ...updates });
+      }
+    }
+    
     setTimeout(() => setToast(null), 3000);
   };
+
+  if (!mounted) return null;
+
+  if (!user) {
+    return (
+      <div className="bg-slate-50 min-h-[80vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 text-center max-w-md w-full">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-slate-300 mb-6">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Please Log In</h1>
+          <p className="text-sm text-slate-500 mb-8">You need to be logged in to view and manage your profile.</p>
+          <Link href="/" className="inline-block bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-full transition-colors shadow-md shadow-primary/20">
+            Go to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8">
@@ -41,14 +112,14 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header Banner */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-6">
-          <div className="w-20 h-20 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl flex items-center justify-center font-extrabold text-white text-2xl shadow-lg shadow-primary/20 shrink-0">
-            TH
+          <div className="w-20 h-20 bg-gradient-to-tr from-primary to-purple-600 rounded-2xl flex items-center justify-center font-extrabold text-white text-2xl shadow-lg shadow-primary/20 shrink-0 uppercase">
+            {formData.fullName ? formData.fullName.substring(0, 2) : 'U'}
           </div>
           <div className="text-center sm:text-left flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <h1 className="text-2xl font-bold text-slate-900">{formData.fullName}</h1>
-              <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full w-fit mx-auto sm:mx-0">
-                Verified Buyer & Business Account
+              <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full w-fit mx-auto sm:mx-0 uppercase">
+                {profile?.role || 'Buyer'} Account
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">{formData.email} • {formData.company}</p>
@@ -133,8 +204,8 @@ export default function ProfilePage() {
               </div>
 
               <div className="md:col-span-2 pt-4">
-                <button type="submit" className="bg-primary hover:bg-primary-dark text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-md shadow-primary/20">
-                  Save Changes
+                <button disabled={loading} type="submit" className="bg-primary hover:bg-primary-dark text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-md shadow-primary/20 disabled:opacity-50">
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

@@ -2,12 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 
 export default function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState("buyer"); // buyer, seller, admin, delivery, support
+  const { isLoggedIn, role: userRole, profile } = useAuthStore();
+  const cartItems = useCartStore((state) => state.items);
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   
   // Real Auth State
@@ -17,17 +20,6 @@ export default function Navbar() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
-
-  useEffect(() => {
-    const match = document.cookie.match(new RegExp('(^| )mockUserRole=([^;]+)'));
-    if (match && match[2] && match[2].length > 0) {
-      setIsLoggedIn(true);
-      setUserRole(match[2]);
-    } else {
-      setIsLoggedIn(false);
-      setUserRole('buyer');
-    }
-  }, []);
 
   const handleRealLogin = async (emailValue: string, passwordValue: string) => {
     setLoading(true);
@@ -41,11 +33,9 @@ export default function Navbar() {
       return;
     }
     
-    // Get user role from public.users table
-    const { data: userData } = await supabase.from('users').select('role').eq('id', data.user.id).single();
-    const role = userData?.role || 'buyer';
-    document.cookie = `mockUserRole=${role}; path=/; max-age=86400`;
-    window.location.reload();
+    // AuthProvider will automatically pick up the session change and update useAuthStore
+    setShowLoginModal(false);
+    setLoading(false);
   };
 
   const handleSupabaseAuth = async (e: React.FormEvent) => {
@@ -64,17 +54,11 @@ export default function Navbar() {
     const creds = mockPasswords[role];
     if (creds) {
       await handleRealLogin(creds.email, creds.password);
-    } else {
-      document.cookie = `mockUserRole=${role}; path=/; max-age=86400`;
-      window.location.reload();
     }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    document.cookie = 'mockUserRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    setIsLoggedIn(false);
-    setUserRole("buyer");
     window.location.href = '/';
   };
 
@@ -115,15 +99,21 @@ export default function Navbar() {
 
             {/* Nav Icons & Actions */}
             <div className="flex items-center gap-4 sm:gap-6">
-              <Link href="/cart" className="text-slate-600 hover:text-primary relative py-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="9" cy="21" r="1"></circle>
-                  <circle cx="20" cy="21" r="1"></circle>
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                <span className="absolute top-0 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">2</span>
-              </Link>
-              
+              {isLoggedIn && (
+                <Link href="/cart" className="text-slate-600 hover:text-primary relative py-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                  </svg>
+                  {cartCount > 0 && (
+                    <span className="absolute top-0 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {!isLoggedIn ? (
                 <button 
                   onClick={() => setShowLoginModal(true)}
@@ -132,7 +122,14 @@ export default function Navbar() {
                   Login
                 </button>
               ) : (
-                <div className="relative group">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleLogout}
+                    className="hidden sm:block px-4 py-1.5 bg-slate-100 text-slate-700 font-medium rounded-full hover:bg-slate-200 transition-colors text-sm border border-slate-200"
+                  >
+                    Logout
+                  </button>
+                  <div className="relative group">
                   <Link href="/profile" className="text-slate-600 hover:text-primary flex items-center gap-1 py-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
@@ -185,7 +182,8 @@ export default function Navbar() {
                         Logout
                       </button>
                     </div>
-                  </div>
+                </div>
+                </div>
                 </div>
               )}
             </div>

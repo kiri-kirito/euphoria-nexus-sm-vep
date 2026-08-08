@@ -32,29 +32,51 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // RBAC Logic: Fallback to mockUserRole cookie if DB isn't connected
-  const roleCookie = request.cookies.get('mockUserRole')?.value || 'buyer'
+  let userRole = 'buyer'
+
+  if (user) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+      
+    if (userData && userData.role) {
+      userRole = userData.role
+    }
+  } else {
+    // If no user is logged in, redirect them away from protected routes
+    const isProtectedRoute = 
+      request.nextUrl.pathname.startsWith('/admin') ||
+      (request.nextUrl.pathname.startsWith('/seller') && request.nextUrl.pathname !== '/seller/apply') ||
+      request.nextUrl.pathname.startsWith('/delivery') ||
+      request.nextUrl.pathname.startsWith('/support')
+
+    if (isProtectedRoute) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
   
   // Protect /admin routes
-  if (request.nextUrl.pathname.startsWith('/admin') && roleCookie !== 'admin') {
+  if (request.nextUrl.pathname.startsWith('/admin') && userRole !== 'admin') {
     return NextResponse.redirect(new URL('/', request.url))
   }
   
   // Protect /seller routes
-  if (request.nextUrl.pathname.startsWith('/seller') && roleCookie !== 'seller' && roleCookie !== 'admin') {
-    // Allow access to /seller/apply for buyers
+  if (request.nextUrl.pathname.startsWith('/seller') && userRole !== 'seller' && userRole !== 'admin') {
+    // Allow access to /seller/apply for anyone (buyers/guests)
     if (request.nextUrl.pathname !== '/seller/apply') {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
   // Protect /delivery routes
-  if (request.nextUrl.pathname.startsWith('/delivery') && roleCookie !== 'delivery') {
+  if (request.nextUrl.pathname.startsWith('/delivery') && userRole !== 'delivery') {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
   // Protect /support routes
-  if (request.nextUrl.pathname.startsWith('/support') && roleCookie !== 'support') {
+  if (request.nextUrl.pathname.startsWith('/support') && userRole !== 'support') {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

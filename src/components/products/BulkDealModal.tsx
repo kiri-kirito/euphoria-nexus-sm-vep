@@ -10,7 +10,10 @@ interface BulkDealModalProps {
   productId?: string;
 }
 
+import { useAuthStore } from '@/store/useAuthStore';
+
 export default function BulkDealModal({ isOpen, onClose, productName = 'Product', productId }: BulkDealModalProps) {
+  const { user } = useAuthStore();
   const [quantity, setQuantity] = useState('');
   const [targetPrice, setTargetPrice] = useState('');
   const [message, setMessage] = useState('');
@@ -21,8 +24,13 @@ export default function BulkDealModal({ isOpen, onClose, productName = 'Product'
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Connect to Socket.io backend (Express server on port 3001)
-    const socket = io('http://localhost:3001/negotiations');
+    if (!user) {
+      alert("You must be logged in to negotiate");
+      return;
+    }
+
+    // Connect to Socket.io backend (Express server on port 5000)
+    const socket = io('http://localhost:5000/negotiations');
     
     // Emit the new_negotiation event
     socket.emit('new_negotiation', {
@@ -31,7 +39,7 @@ export default function BulkDealModal({ isOpen, onClose, productName = 'Product'
       quantity,
       targetPrice,
       message,
-      buyerId: 'buyer-mock-id', // Ideally from session
+      buyerId: user.id, // Real user ID
       sellerId: 'seller-mock-id', // Ideally from product.seller
     });
 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -49,17 +50,22 @@ export default function RegisterPage() {
 
     if (data.user) {
       // Insert into public.users table
-      const { error: insertError } = await supabase.from('users').insert({
+      const userData = {
         id: data.user.id,
         email: data.user.email,
         name: name,
         role: role,
         created_at: new Date().toISOString()
-      });
+      };
+      
+      const { error: insertError } = await supabase.from('users').insert(userData);
 
       if (insertError) {
         setError(insertError.message);
       } else {
+        // Manually update the global auth state to prevent race conditions with AuthProvider
+        useAuthStore.getState().setSession(data.user, role, userData);
+        
         setSuccess(true);
         setTimeout(() => {
           router.push('/');

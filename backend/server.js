@@ -62,6 +62,26 @@ const negotiationsNamespace = io.of('/negotiations');
 negotiationsNamespace.on('connection', (socket) => {
   console.log(`[Negotiations] Connected: ${socket.id}`);
 
+  // New Negotiation Request from Buyer
+  socket.on('new_negotiation', (data) => {
+    console.log(`[Negotiations] new_negotiation:`, data);
+    // Broadcast to the seller or to all in a generic room for now
+    // A production app would send to the specific seller's room
+    negotiationsNamespace.emit('receive_bulk_request', {
+      id: Date.now(),
+      buyer: data.buyerId || 'Guest Buyer',
+      location: 'Unknown Location',
+      product: data.productName,
+      image: 'https://images.unsplash.com/photo-1527814050087-379381547969?q=80&w=200&auto=format&fit=crop',
+      originalPrice: 0,
+      offeredPrice: Number(data.targetPrice) || 0,
+      discount: 'Custom',
+      qty: Number(data.quantity) || 1,
+      message: data.message,
+      status: 'Pending'
+    });
+  });
+
   // Buyer proposes a price
   socket.on('propose_price', (data) => {
     console.log(`[Negotiations] propose_price:`, data);

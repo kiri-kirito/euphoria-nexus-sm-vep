@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { createAdminClient } from '@/utils/supabase/server-admin'; // Only if needed on server, but we are in use client
 
+import { useAuthStore } from '@/store/useAuthStore';
+
 export default function NewProductPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -48,20 +51,21 @@ export default function NewProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      alert("You must be logged in to add a product.");
+      return;
+    }
+
     setLoading(true);
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     
-    let sellerId = user?.id;
-    if (!sellerId) {
-      // Use client to query instead of admin since we have RLS? 
-      // Actually we are mock user, we'll fetch from users if RLS allows or use a predefined ID.
-      const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
-      sellerId = sellers?.[0]?.id;
-    }
+    // We are passing JSON string to JSONB column in Supabase
+    // But supabase-js handles objects natively for JSONB columns, so we don't need JSON.stringify!
+    // Actually wait, earlier the blueprint said it's JSON string. The DB migration says JSONB.
+    // If it's JSONB, passing a raw array `[url]` is better. Let's try raw array.
     
     const { data, error } = await supabase.from('products').insert({
-      seller_id: sellerId,
+      seller_id: user.id,
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price) || 0,
@@ -69,13 +73,14 @@ export default function NewProductPage() {
       category: formData.category,
       moq: parseInt(formData.moq) || 1,
       status: formData.status,
-      images: JSON.stringify([formData.selectedImage || `https://source.unsplash.com/400x400/?${encodeURIComponent(formData.name)}`]),
+      images: [formData.selectedImage || `https://source.unsplash.com/400x400/?${encodeURIComponent(formData.name)}`],
     });
     
     setLoading(false);
     if (!error) {
       router.push('/seller/products?success=1');
     } else {
+      console.error(error);
       alert("Error: " + error.message);
     }
   };

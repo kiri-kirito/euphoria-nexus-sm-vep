@@ -38,7 +38,7 @@ export default function NegotiationsPage() {
 
   useEffect(() => {
     // Connect to specific namespace
-    const newSocket = io("http://localhost:3001/negotiations", {
+    const newSocket = io("http://localhost:5000/negotiations", {
       transports: ["websocket", "polling"],
     });
 
