@@ -159,7 +159,7 @@ export default function Hero() {
       <div className="relative z-10 flex flex-col lg:flex-row h-full">
 
         {/* Left — Text Content Section */}
-        <div className="flex-1 flex flex-col justify-center px-6 lg:px-16 py-10">
+        <div className="flex-1 flex flex-col justify-center px-6 lg:px-16 py-10 relative">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full mb-8 w-fit shadow-lg shadow-black/30">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
             500+ Local Sellers Online
@@ -191,32 +191,18 @@ export default function Hero() {
               </div>
             ))}
           </div>
-
-          {/* Dots Indicator */}
-          <div className="flex items-center gap-3 mt-6">
-            {SHOWCASE_IMAGES.map((img, i) => (
-              <button
-                key={i}
-                onClick={() => { setContentVisible(false); setTimeout(() => { setCurrent(i); setContentVisible(true); }, 400); }}
-                className={`transition-all duration-500 rounded-full h-2 ${
-                  i === current
-                    ? "w-8 bg-cyan-400 shadow-[0_0_12px_#22d3ee]"
-                    : "w-2 bg-white/30 hover:bg-white/70"
-                }`}
-                aria-label={`Show ${img.label}`}
-              />
-            ))}
-          </div>
         </div>
 
-        {/* Right — Full-bleed Showcase Image */}
+        {/* Right — Full-bleed Showcase Image (Masked blending on left edge) */}
         <div
           className="hidden lg:block relative w-[420px] xl:w-[500px] flex-shrink-0 cursor-pointer group h-full"
           onClick={() => router.push(`/explore?category=${SHOWCASE_IMAGES[current].category}`)}
+          style={{
+            // True blend mask: left edge starts 100% transparent and fades to solid black (visible) at 25%
+            maskImage: "linear-gradient(to right, transparent 0%, black 25%, black 100%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 25%, black 100%)",
+          }}
         >
-          {/* Smooth blend from the dark background into the left edge of the image */}
-          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#020617] via-[#020617]/80 to-transparent z-10 pointer-events-none" />
-
           {/* Product Images */}
           {SHOWCASE_IMAGES.map((img, i) => (
             <img
@@ -231,10 +217,10 @@ export default function Hero() {
 
           {/* Hover overlay and bottom gradient for text readability */}
           <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-300 z-10" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none" />
 
           {/* Category Label */}
-          <div className="absolute bottom-10 left-8 right-8 flex items-end justify-between z-20">
+          <div className="absolute bottom-16 left-8 right-8 flex items-end justify-between z-20">
             <span
               className={`text-white font-bold text-2xl drop-shadow-lg transition-all duration-700 ${
                 contentVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
@@ -248,6 +234,22 @@ export default function Hero() {
           </div>
         </div>
 
+      </div>
+
+      {/* ── Dots Indicator (Centered at Bottom) ── */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+        {SHOWCASE_IMAGES.map((img, i) => (
+          <button
+            key={i}
+            onClick={() => { setContentVisible(false); setTimeout(() => { setCurrent(i); setContentVisible(true); }, 400); }}
+            className={`transition-all duration-500 rounded-full h-2.5 ${
+              i === current
+                ? "w-8 bg-cyan-400 shadow-[0_0_12px_#22d3ee]"
+                : "w-2.5 bg-white/40 hover:bg-white/80"
+            }`}
+            aria-label={`Show ${img.label}`}
+          />
+        ))}
       </div>
     </section>
   );
