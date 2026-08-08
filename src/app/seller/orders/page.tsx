@@ -1,10 +1,8 @@
-const MOCK_ORDERS = [
-  { id: "#ORD-1042", product: "Logitech MX Master 3S", buyer: "Rahim Store", buyerLocation: "Dhaka", qty: 10, total: 95000, status: "Processing", date: "Aug 7, 2026", negotiated: true },
-  { id: "#ORD-1041", product: "Sony WH-1000XM5", buyer: "Dhaka Gadgets", buyerLocation: "Chittagong", qty: 5, total: 160000, status: "Shipped", date: "Aug 6, 2026", negotiated: false },
-  { id: "#ORD-1040", product: "Mechanical Keycaps", buyer: "GamerZone", buyerLocation: "Sylhet", qty: 30, total: 75000, status: "Delivered", date: "Aug 5, 2026", negotiated: true },
-  { id: "#ORD-1039", product: "4K Web Camera", buyer: "Office Mart", buyerLocation: "Dhaka", qty: 8, total: 68000, status: "Delivered", date: "Aug 4, 2026", negotiated: false },
-  { id: "#ORD-1038", product: "RGB Gaming Mouse Pad XL", buyer: "PCWave", buyerLocation: "Rajshahi", qty: 20, total: 36000, status: "Cancelled", date: "Aug 3, 2026", negotiated: false },
-];
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const STATUS_STYLES: Record<string, string> = {
   Processing: "bg-amber-100 text-amber-700 border-amber-200",
@@ -21,6 +19,67 @@ const STATUS_ACTIONS: Record<string, string> = {
 };
 
 export default function SellerOrdersPage() {
+  const { userId, loading: userLoading } = useCurrentUser();
+  const supabase = createClient();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({ all: 0, processing: 0, shipped: 0, delivered: 0 });
+
+  useEffect(() => {
+    if (userLoading) return;
+    
+    async function fetchOrders() {
+      try {
+        let sellerId = userId;
+        if (!sellerId) {
+          const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
+          sellerId = sellers?.[0]?.id;
+        }
+        if (!sellerId) return;
+
+        const { data, error } = await supabase.from('order_items')
+          .select('*, orders!inner(id, status, created_at, shipping_address, users!inner(name, email)), products(name)')
+          .eq('seller_id', sellerId)
+          .order('id', { ascending: false });
+
+        if (error) throw error;
+        
+        if (data) {
+          const formatted = data.map(r => ({
+            id: `#ORD-${r.order_id}`,
+            product: r.products?.name || 'Unknown Product',
+            buyer: r.orders?.users?.name || 'Guest',
+            buyerLocation: r.orders?.shipping_address ? JSON.parse(r.orders.shipping_address).city : 'Unknown',
+            qty: r.quantity,
+            total: r.quantity * r.unit_price,
+            status: r.orders?.status || 'Processing',
+            date: new Date(r.orders.created_at).toLocaleDateString(),
+            negotiated: false // Mock for now, would join with negotiations to check
+          }));
+          
+          setOrders(formatted);
+          
+          setSummary({
+            all: formatted.length,
+            processing: formatted.filter(o => o.status === 'Processing').length,
+            shipped: formatted.filter(o => o.status === 'Shipped').length,
+            delivered: formatted.filter(o => o.status === 'Delivered').length,
+          });
+        }
+      } catch (err) {
+        console.error("Orders fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchOrders();
+  }, [userId, userLoading]);
+
+  if (loading || userLoading) {
+    return <div className="p-8 text-center text-slate-500">Database connecting... Loading orders data.</div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -32,10 +91,10 @@ export default function SellerOrdersPage() {
       {/* Summary row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "All Orders", count: 5, color: "bg-slate-100 text-slate-700" },
-          { label: "Processing", count: 1, color: "bg-amber-100 text-amber-700" },
-          { label: "Shipped", count: 1, color: "bg-blue-100 text-blue-700" },
-          { label: "Delivered", count: 2, color: "bg-emerald-100 text-emerald-700" },
+          { label: "All Orders", count: summary.all, color: "bg-slate-100 text-slate-700" },
+          { label: "Processing", count: summary.processing, color: "bg-amber-100 text-amber-700" },
+          { label: "Shipped", count: summary.shipped, color: "bg-blue-100 text-blue-700" },
+          { label: "Delivered", count: summary.delivered, color: "bg-emerald-100 text-emerald-700" },
         ].map(s => (
           <div key={s.label} className={`rounded-xl px-4 py-3 ${s.color} flex items-center justify-between`}>
             <span className="text-sm font-semibold">{s.label}</span>
@@ -46,14 +105,14 @@ export default function SellerOrdersPage() {
 
       {/* Orders List */}
       <div className="space-y-3">
-        {MOCK_ORDERS.map((order) => (
-          <div key={order.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow">
+        {orders.map((order, idx) => (
+          <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               {/* Order info */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="font-bold text-slate-900">{order.id}</span>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${STATUS_STYLES[order.status]}`}>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${STATUS_STYLES[order.status] || STATUS_STYLES.Processing}`}>
                     {order.status}
                   </span>
                   {order.negotiated && (
@@ -91,6 +150,11 @@ export default function SellerOrdersPage() {
             </div>
           </div>
         ))}
+        {orders.length === 0 && (
+          <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+            No orders found.
+          </div>
+        )}
       </div>
     </div>
   );
