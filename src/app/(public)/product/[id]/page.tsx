@@ -19,11 +19,15 @@ const getFirstImage = (images: any): string => {
 async function getProduct(id: string) {
   // Use client-side supabase (anon key) — public products are readable
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('products')
-    .select('*, users!seller_id(name, email, phone), stores!seller_id(store_name, rating, description)')
+    .select('*, users!seller_id(name, email, phone)')
     .eq('id', id)
     .single();
+    
+  if (error) {
+    console.error('Error fetching product:', error.message);
+  }
   return data;
 }
 
@@ -47,7 +51,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   const image = getFirstImage(product.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80';
   const sellerName = product.users?.name || 'Unknown Seller';
-  const storeName = product.stores?.store_name || sellerName;
+  const storeName = sellerName; // Fallback to user name since store is in a different table without direct FK
 
   return (
     <div className="bg-slate-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8">

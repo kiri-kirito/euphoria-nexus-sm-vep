@@ -7,19 +7,19 @@
 ✓ Running next.config.ts took 25ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 1731ms
+✓ Compiled successfully in 1517ms
   Running TypeScript ...
   Finished TypeScript in 2.0s ...
   Collecting page data using 15 workers ...
-  Generating static pages using 15 workers (0/33) ...
-  Generating static pages using 15 workers (8/33) 
-  Generating static pages using 15 workers (16/33) 
-  Generating static pages using 15 workers (24/33) 
-✓ Generating static pages using 15 workers (33/33) in 875ms
+  Generating static pages using 15 workers (0/32) ...
+  Generating static pages using 15 workers (8/32) 
+  Generating static pages using 15 workers (16/32) 
+  Generating static pages using 15 workers (24/32) 
+✓ Generating static pages using 15 workers (32/32) in 723ms
   Finalizing page optimization ...
 
 Route (app)
-┌ ○ /
+┌ ƒ /
 ├ ○ /_not-found
 ├ ƒ /admin/cms
 ├ ƒ /admin/dashboard
