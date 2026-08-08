@@ -4,19 +4,18 @@
 
 ▲ Next.js 16.3.0 (Turbopack)
 - Environments: .env.local
-✓ Running next.config.ts took 43ms
+✓ Running next.config.ts took 25ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 1866ms
+✓ Compiled successfully in 1731ms
   Running TypeScript ...
-  Finished TypeScript in 1883ms ...
+  Finished TypeScript in 2.0s ...
   Collecting page data using 15 workers ...
   Generating static pages using 15 workers (0/33) ...
   Generating static pages using 15 workers (8/33) 
-DB not connected or empty. Falling back to MOCK_PRODUCTS.
   Generating static pages using 15 workers (16/33) 
   Generating static pages using 15 workers (24/33) 
-✓ Generating static pages using 15 workers (33/33) in 716ms
+✓ Generating static pages using 15 workers (33/33) in 875ms
   Finalizing page optimization ...
 
 Route (app)

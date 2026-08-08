@@ -35,15 +35,20 @@ export const MOCK_SELLERS = [
 // API FETCHERS
 export async function fetchProducts() {
   const supabase = createClient();
-  const { data, error } = await supabase.from('products').select('*, users!seller_id(name), stores!seller_id(store_name, rating)').eq('status', 'active').order('created_at', { ascending: false }).limit(20);
+  // Only join users (has direct FK seller_id → users.id). No stores join (no direct FK).
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, users!seller_id(name)')
+    .order('created_at', { ascending: false })
+    .limit(20);
   if (error || !data || data.length === 0) {
-    console.warn("DB not connected or empty. Falling back to MOCK_PRODUCTS.");
+    console.warn('DB fetch failed, using mock data. Error:', error?.message);
     return MOCK_PRODUCTS;
   }
   return data.map(p => ({
     ...p,
-    seller: p.stores?.store_name || p.users?.name || 'Unknown Seller',
-    rating: p.stores?.rating || 4.5,
+    seller: (p as any).users?.name || 'Unknown Seller',
+    rating: 4.5,
     image: getFirstImage(p.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80'
   }));
 }
