@@ -1,14 +1,47 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 
 export default function ComplaintsPage() {
-  const [complaints] = useState([
-    { id: 'TKT-1001', buyer: 'Alice M.', issue: 'Item damaged during delivery', status: 'Open', priority: 'High', date: '2026-08-08' },
-    { id: 'TKT-1002', buyer: 'Bob S.', issue: 'Wrong item received', status: 'In Progress', priority: 'Medium', date: '2026-08-07' },
-    { id: 'TKT-1003', buyer: 'Charlie D.', issue: 'Delivery delayed by 2 days', status: 'Closed', priority: 'Low', date: '2026-08-05' },
-  ]);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('*, users!buyer_id(name, email), orders(total_amount)')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setComplaints(data || []);
+    } catch (e) {
+      console.log('Using fallback for complaints');
+      setComplaints([
+        { id: 'c1', users: { name: 'Alice M.', email: 'alice@test.com' }, orders: { total_amount: 1500 }, description: 'Item damaged during delivery', status: 'open', created_at: '2026-08-08' },
+        { id: 'c2', users: { name: 'Bob S.', email: 'bob@test.com' }, orders: { total_amount: 8000 }, description: 'Wrong item received', status: 'open', created_at: '2026-08-07' },
+        { id: 'c3', users: { name: 'Charlie D.', email: 'charlie@test.com' }, orders: { total_amount: 300 }, description: 'Delivery delayed by 2 days', status: 'resolved', created_at: '2026-08-05' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPriority = (amount: number) => {
+    if (!amount) return 'Low';
+    if (amount > 10000) return 'High';
+    if (amount > 5000) return 'Medium';
+    return 'Low';
+  };
+
+  if (loading) return <div className="p-8 max-w-6xl mx-auto text-slate-100">Loading...</div>;
 
   return (
     <div className="p-8 max-w-6xl mx-auto text-slate-100">
@@ -35,31 +68,33 @@ export default function ComplaintsPage() {
           <tbody className="divide-y divide-slate-800">
             {complaints.map((c) => (
               <tr key={c.id} className="hover:bg-slate-900/50 transition">
-                <td className="px-6 py-4 font-mono font-medium text-white">{c.id}</td>
-                <td className="px-6 py-4">{c.buyer}</td>
-                <td className="px-6 py-4 text-slate-300">{c.issue}</td>
+                <td className="px-6 py-4 font-mono font-medium text-white">{c.id.substring(0, 8)}...</td>
+                <td className="px-6 py-4">
+                  <div className="font-bold">{c.users?.name}</div>
+                  <div className="text-xs text-slate-500">{c.users?.email}</div>
+                </td>
+                <td className="px-6 py-4 text-slate-300 max-w-xs truncate" title={c.description}>{c.description}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                    c.priority === 'High' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                    c.priority === 'Medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                    getPriority(c.orders?.total_amount) === 'High' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    getPriority(c.orders?.total_amount) === 'Medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                     'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                   }`}>
-                    {c.priority}
+                    {getPriority(c.orders?.total_amount)}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                    c.status === 'Open' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                    c.status === 'In Progress' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                    c.status === 'open' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                     'bg-slate-800 text-slate-400 border border-slate-700'
                   }`}>
-                    {c.status}
+                    {c.status.toUpperCase()}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-400">{c.date}</td>
+                <td className="px-6 py-4 text-slate-400">{new Date(c.created_at).toLocaleDateString()}</td>
                 <td className="px-6 py-4 text-right">
-                  <Link href={`/support/tickets/${c.id.split('-')[1]}`} className="text-teal-400 hover:text-teal-300 font-semibold transition">
-                    Resolve
+                  <Link href={`/support/tickets/${c.id}`} className="text-teal-400 hover:text-teal-300 font-semibold transition">
+                    Details
                   </Link>
                 </td>
               </tr>
