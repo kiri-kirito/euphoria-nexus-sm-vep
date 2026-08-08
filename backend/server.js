@@ -7,11 +7,24 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
-// Configure CORS for Next.js frontend
+// Production CORS — allow frontend URL from env, plus localhost for dev
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  origin: (origin, callback) => {
+    // allow requests with no origin (e.g. mobile apps, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -19,53 +32,110 @@ app.use(express.json());
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
-// Basic Health Check Endpoint
+// Health Check Endpoint
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Euphoria Nexus Backend is running' });
+  res.status(200).json({
+    status: 'ok',
+    message: 'Euphoria Nexus Backend is running',
+    env: process.env.NODE_ENV || 'development',
+  });
 });
 
-// Socket.io Connection Handler
+// ---- Socket.io Handlers ----
+
+// Root namespace
 io.on('connection', (socket) => {
   console.log(`[Socket] User connected: ${socket.id}`);
-
   socket.on('disconnect', () => {
     console.log(`[Socket] User disconnected: ${socket.id}`);
   });
 });
 
+// /negotiations namespace — Bulk deal negotiations between Buyers and Sellers
 const negotiationsNamespace = io.of('/negotiations');
 negotiationsNamespace.on('connection', (socket) => {
-  console.log(`[Socket] User connected to /negotiations: ${socket.id}`);
-  
+  console.log(`[Negotiations] Connected: ${socket.id}`);
+
+  // Buyer proposes a price
   socket.on('propose_price', (data) => {
-    console.log(`[Negotiations] propose_price received:`, data);
+    console.log(`[Negotiations] propose_price:`, data);
+    // Broadcast to all in the room (seller gets this)
+    socket.to(data.roomId).emit('price_proposed', data);
+  });
+
+  // Seller counters
+  socket.on('counter_offer', (data) => {
+    console.log(`[Negotiations] counter_offer:`, data);
+    socket.to(data.roomId).emit('offer_countered', data);
+  });
+
+  // Both parties accept
+  socket.on('accept_deal', (data) => {
+    console.log(`[Negotiations] accept_deal:`, data);
+    negotiationsNamespace.to(data.roomId).emit('deal_accepted', {
+      ...data,
+      checkoutLink: `/checkout?deal=${data.dealId}`,
+    });
+  });
+
+  // Join negotiation room
+  socket.on('join_room', (roomId) => {
+    socket.join(roomId);
+    console.log(`[Negotiations] ${socket.id} joined room: ${roomId}`);
   });
 
   socket.on('disconnect', () => {
-    console.log(`[Socket] User disconnected from /negotiations: ${socket.id}`);
+    console.log(`[Negotiations] Disconnected: ${socket.id}`);
   });
 });
 
+// /bidding namespace — Inter-Seller Blind Bidding (Stock Exchange)
 const biddingNamespace = io.of('/bidding');
 biddingNamespace.on('connection', (socket) => {
-  console.log(`[Socket] User connected to /bidding: ${socket.id}`);
+  console.log(`[Bidding] Connected: ${socket.id}`);
 
+  // Seller posts a stock request
+  socket.on('post_request', (data) => {
+    console.log(`[Bidding] post_request:`, data);
+    // Broadcast to all sellers in the bidding room
+    socket.broadcast.emit('new_stock_request', data);
+  });
+
+  // Another seller submits an anonymous blind bid
   socket.on('submit_bid', (data) => {
-    console.log(`[Bidding] submit_bid received:`, data);
+    console.log(`[Bidding] submit_bid:`, data);
+    // Notify the requesting seller (in their room)
+    socket.to(data.requesterId).emit('bid_received', {
+      bidId: `bid_${Date.now()}`,
+      amount: data.amount,
+      quantity: data.quantity,
+      // anonymized — no seller info sent
+    });
+  });
+
+  // Requesting seller accepts a bid — triggers escrow
+  socket.on('accept_bid', (data) => {
+    console.log(`[Bidding] accept_bid:`, data);
+    biddingNamespace.emit('bid_accepted', {
+      ...data,
+      escrowState: 'PENDING_TRANSFER',
+      message: 'Escrow initiated. Awaiting physical stock confirmation.',
+    });
   });
 
   socket.on('disconnect', () => {
-    console.log(`[Socket] User disconnected from /bidding: ${socket.id}`);
+    console.log(`[Bidding] Disconnected: ${socket.id}`);
   });
 });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`[Server] Running on port ${PORT}`);
+  console.log(`[Server] Euphoria Nexus Backend running on port ${PORT}`);
+  console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
 });

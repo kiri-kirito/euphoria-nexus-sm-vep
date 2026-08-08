@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: euphoria-nexus-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        fromDatabase:
+          name: SUPABASE_URL
+          property: connectionString
+        # Set this manually in Render dashboard:
+        # SUPABASE_URL = https://zkezevgkanjfsvxhipuc.supabase.co
+        # SUPABASE_SERVICE_ROLE_KEY = <your-service-role-key>
+        # FRONTEND_URL = <your-vercel-url>
