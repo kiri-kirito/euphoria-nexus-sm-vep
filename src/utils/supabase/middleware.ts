@@ -28,12 +28,35 @@ export async function updateSession(request: NextRequest) {
   )
 
   // This will refresh session if expired - required for Server Components
-  // https://supabase.com/docs/guides/auth/server-side/nextjs
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // We can add RBAC logic here later once auth is set up!
+  // RBAC Logic: Fallback to mockUserRole cookie if DB isn't connected
+  const roleCookie = request.cookies.get('mockUserRole')?.value || 'buyer'
+  
+  // Protect /admin routes
+  if (request.nextUrl.pathname.startsWith('/admin') && roleCookie !== 'admin') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+  
+  // Protect /seller routes
+  if (request.nextUrl.pathname.startsWith('/seller') && roleCookie !== 'seller' && roleCookie !== 'admin') {
+    // Allow access to /seller/apply for buyers
+    if (request.nextUrl.pathname !== '/seller/apply') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  // Protect /delivery routes
+  if (request.nextUrl.pathname.startsWith('/delivery') && roleCookie !== 'delivery') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // Protect /support routes
+  if (request.nextUrl.pathname.startsWith('/support') && roleCookie !== 'support') {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   return supabaseResponse
 }
