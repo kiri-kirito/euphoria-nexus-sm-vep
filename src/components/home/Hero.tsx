@@ -48,9 +48,9 @@ const TEXT_SLIDES = [
   {
     title: (
       <>
-        <div className="flex items-center gap-4 mb-4">
-          <img src="/logo-brand.png" alt="Euphoria Nexus Logo" className="h-16 w-auto object-contain drop-shadow-lg" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">Welcome to Nexus.</span>
+        <div className="flex flex-col mb-6">
+          <img src="/logo-brand.png" alt="Euphoria Nexus Logo" className="h-28 w-auto object-contain drop-shadow-2xl mb-4" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 text-3xl">Welcome to Nexus.</span>
         </div>
         The Next-Generation{" "}
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
@@ -88,8 +88,8 @@ export default function Hero() {
       setTimeout(() => {
         setCurrent((prev) => (prev + 1) % SHOWCASE_IMAGES.length);
         setContentVisible(true);
-      }, 600); // 600ms fade duration
-    }, 4000); // 4s slide duration
+      }, 1000); // 1000ms fade duration (slowed down)
+    }, 6000); // 6s slide duration
     return () => clearInterval(timer);
   }, []);
 
@@ -97,26 +97,28 @@ export default function Hero() {
   const currentTextSlide = current % TEXT_SLIDES.length;
 
   return (
-    <section className="relative bg-slate-900 overflow-hidden rounded-2xl my-6 mx-4 sm:mx-6 lg:mx-8 shadow-2xl min-h-[420px] lg:min-h-[520px]">
+    <section className="relative bg-[#050510] overflow-hidden rounded-2xl my-6 mx-4 sm:mx-6 lg:mx-8 shadow-2xl min-h-[420px] lg:min-h-[520px]">
       
       {/* Animated Space/Galaxy Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[#0a0a1a]">
-        {/* Glow */}
-        <div className="absolute -top-1/2 -left-1/4 w-full h-full bg-gradient-to-b from-primary/20 to-transparent rounded-full blur-[100px] opacity-40 animate-pulse"></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         
-        {/* CSS Stars */}
-        <div className="absolute inset-0 opacity-50">
-          {/* We'll generate a few div layers with different animation speeds for parallax */}
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[spin_120s_linear_infinite] opacity-30 mix-blend-screen"></div>
-          <div className="absolute w-full h-[200%] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent bg-[length:20px_20px] animate-[slideUp_20s_linear_infinite]"></div>
-          <div className="absolute w-full h-[200%] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent bg-[length:40px_40px] animate-[slideUp_15s_linear_infinite] opacity-50"></div>
-        </div>
+        {/* Real Space Background Image with slow pan */}
+        <div 
+          className="absolute inset-[-20%] w-[140%] h-[140%] bg-[url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=1600&q=80')] bg-cover bg-center opacity-40 mix-blend-screen"
+          style={{
+            animation: 'slowPan 60s ease-in-out infinite alternate'
+          }}
+        ></div>
 
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/30 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[100px]" style={{ animation: 'pulse 8s infinite' }}></div>
+        
         {/* Custom Keyframes embedded for the background animation */}
         <style dangerouslySetInnerHTML={{__html: `
-          @keyframes slideUp {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); }
+          @keyframes slowPan {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.1) translate(-2%, -2%); }
           }
         `}} />
       </div>
@@ -132,7 +134,7 @@ export default function Hero() {
             </div>
 
             {/* Text Slide Container */}
-            <div className={`transition-all duration-700 ease-in-out transform ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className={`transition-all duration-1000 ease-in-out transform ${contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6 min-h-[140px] lg:min-h-[180px]">
                 {TEXT_SLIDES[currentTextSlide].title}
               </h1>
@@ -170,17 +172,17 @@ export default function Hero() {
         {/* Right — Full-height Image Slideshow */}
         <div className="hidden lg:block relative w-[420px] xl:w-[480px] flex-shrink-0 overflow-hidden">
           {/* Gradient overlay on left edge to blend with dark background */}
-          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0a0a1a] to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#050510] to-transparent z-10 pointer-events-none"></div>
           {/* Gradient overlay on top and bottom */}
-          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#0a0a1a] to-transparent z-10 pointer-events-none"></div>
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a0a1a] to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#050510] to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#050510] to-transparent z-10 pointer-events-none"></div>
 
           {SHOWCASE_IMAGES.map((img, i) => (
             <img
               key={i}
               src={img.src}
               alt={img.label}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out ${
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ease-in-out ${
                 i === current ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -189,7 +191,7 @@ export default function Hero() {
           {/* Category label overlay */}
           <div className="absolute bottom-6 right-6 z-20">
             <span
-              className={`inline-block bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 transition-all duration-500 ${
+              className={`inline-block bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/20 transition-all duration-1000 ${
                 contentVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
               }`}
             >
