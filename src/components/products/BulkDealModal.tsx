@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
+import { io } from 'socket.io-client';
 
 interface BulkDealModalProps {
   isOpen: boolean;
   onClose: () => void;
   productName?: string;
+  productId?: string;
 }
 
-export default function BulkDealModal({ isOpen, onClose, productName = 'Product' }: BulkDealModalProps) {
+export default function BulkDealModal({ isOpen, onClose, productName = 'Product', productId }: BulkDealModalProps) {
   const [quantity, setQuantity] = useState('');
   const [targetPrice, setTargetPrice] = useState('');
   const [message, setMessage] = useState('');
@@ -18,9 +20,25 @@ export default function BulkDealModal({ isOpen, onClose, productName = 'Product'
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Connect to Socket.io backend (Express server on port 3001)
+    const socket = io('http://localhost:3001/negotiations');
+    
+    // Emit the new_negotiation event
+    socket.emit('new_negotiation', {
+      productId,
+      productName,
+      quantity,
+      targetPrice,
+      message,
+      buyerId: 'buyer-mock-id', // Ideally from session
+      sellerId: 'seller-mock-id', // Ideally from product.seller
+    });
+
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
+      socket.disconnect();
       onClose();
     }, 1800);
   };

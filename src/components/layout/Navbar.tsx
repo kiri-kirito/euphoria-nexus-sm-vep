@@ -19,10 +19,10 @@ export default function Navbar() {
   const supabase = createClient();
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('mockUserRole');
-    if (savedRole) {
+    const match = document.cookie.match(new RegExp('(^| )mockUserRole=([^;]+)'));
+    if (match) {
       setIsLoggedIn(true);
-      setUserRole(savedRole);
+      setUserRole(match[2]);
     }
   }, []);
 
@@ -44,11 +44,9 @@ export default function Navbar() {
       setError(authError.message);
       setLoading(false);
     } else {
-      // Successfully authenticated with Supabase. 
-      // Ideally, fetch the user role from public.users here.
-      // For now, default to buyer to get them in.
       setIsLoggedIn(true);
       setUserRole('buyer');
+      document.cookie = `mockUserRole=buyer; path=/; max-age=86400`;
       setShowLoginModal(false);
       setLoading(false);
       window.location.reload();
@@ -59,11 +57,12 @@ export default function Navbar() {
     setUserRole(role);
     setIsLoggedIn(true);
     setShowLoginModal(false);
-    localStorage.setItem('mockUserRole', role);
+    document.cookie = `mockUserRole=${role}; path=/; max-age=86400`;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('mockUserRole');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    document.cookie = 'mockUserRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     setIsLoggedIn(false);
     setUserRole("buyer");
     window.location.href = '/';

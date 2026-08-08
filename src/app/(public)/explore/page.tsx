@@ -154,11 +154,18 @@ function ExploreContent() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>(matchedCategory);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isNegotiateOpen, setIsNegotiateOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [products, setProducts] = useState<any[]>(PRODUCTS); // Default to mock initially
 
-
+  useEffect(() => {
+    import('@/utils/api').then(({ fetchProducts }) => {
+      fetchProducts().then(data => {
+        setProducts(data);
+      });
+    });
+  }, []);
 
   // Re-sync if URL changes
   useEffect(() => {
@@ -168,10 +175,11 @@ function ExploreContent() {
     }
   }, [initialCategory]);
 
-  const filteredProducts = PRODUCTS.filter(p => {
-    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.store.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredProducts = products.filter(p => {
+    const pCategory = p.category || 'All';
+    const matchesCategory = selectedCategory === 'All' || pCategory === selectedCategory;
+    const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.store || p.seller || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -326,18 +334,18 @@ function ExploreContent() {
                   </div>
 
                   <div className="p-5 flex flex-col flex-1">
-                    <p className="text-xs font-semibold text-primary mb-1">{product.store}</p>
+                    <p className="text-xs font-semibold text-primary mb-1">{product.store || product.seller}</p>
                     <h3 className="font-bold text-slate-900 text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors">
                       {product.name}
                     </h3>
                     
                     <div className="flex items-baseline gap-1 mb-3">
-                      <span className="text-2xl font-extrabold text-slate-900">৳{product.price.toLocaleString()}</span>
-                      <span className="text-xs text-slate-500">/{product.unit}</span>
+                      <span className="text-2xl font-extrabold text-slate-900">৳{(product.price || 0).toLocaleString()}</span>
+                      <span className="text-xs text-slate-500">/{product.unit || 'unit'}</span>
                     </div>
 
                     <p className="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">
-                      {product.description}
+                      {product.description || 'No description available.'}
                     </p>
 
                     <div className="mt-auto pt-4 border-t border-slate-100 flex gap-2">
@@ -390,9 +398,9 @@ function ExploreContent() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                    {selectedProduct.category}
+                    {selectedProduct.category || 'Category'}
                   </span>
-                  <p className="text-xs text-slate-500 font-semibold mt-2">{selectedProduct.store}</p>
+                  <p className="text-xs text-slate-500 font-semibold mt-2">{selectedProduct.store || selectedProduct.seller}</p>
                 </div>
                 <button 
                   onClick={() => setSelectedProduct(null)}
@@ -407,27 +415,29 @@ function ExploreContent() {
               <h2 className="text-xl font-bold text-slate-900 mb-2">{selectedProduct.name}</h2>
 
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-3xl font-extrabold text-slate-900">৳{selectedProduct.price.toLocaleString()}</span>
-                <span className="text-sm text-slate-500">/{selectedProduct.unit}</span>
+                <span className="text-3xl font-extrabold text-slate-900">৳{(selectedProduct.price || 0).toLocaleString()}</span>
+                <span className="text-sm text-slate-500">/{selectedProduct.unit || 'unit'}</span>
                 <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded ml-2">In Stock</span>
               </div>
 
               <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                {selectedProduct.description}
+                {selectedProduct.description || 'No description available.'}
               </p>
 
               {/* Bulk Pricing Tiers */}
-              <div className="mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Bulk Pricing Tiers</h4>
-                <div className="space-y-2">
-                  {selectedProduct.bulkTiers.map((tier, idx) => (
-                    <div key={idx} className="flex justify-between text-xs font-medium">
-                      <span className="text-slate-600">{tier.qty}</span>
-                      <span className="font-bold text-slate-900">৳{tier.price.toLocaleString()} /{selectedProduct.unit}</span>
-                    </div>
-                  ))}
+              {selectedProduct.bulkTiers && (
+                <div className="mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Bulk Pricing Tiers</h4>
+                  <div className="space-y-2">
+                    {selectedProduct.bulkTiers.map((tier: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-xs font-medium">
+                        <span className="text-slate-600">{tier.qty}</span>
+                        <span className="font-bold text-slate-900">৳{tier.price.toLocaleString()} /{selectedProduct.unit || 'unit'}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
               <div className="mt-auto flex flex-col gap-3 pt-4 border-t border-slate-100">
@@ -467,6 +477,7 @@ function ExploreContent() {
         isOpen={isNegotiateOpen}
         onClose={() => setIsNegotiateOpen(false)}
         productName={selectedProduct?.name || ''}
+        productId={selectedProduct?.id}
       />
     </div>
   );

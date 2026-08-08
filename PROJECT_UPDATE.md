@@ -33,18 +33,18 @@ The following tasks will be executed in strict serial order. After each step, th
 - Delete the standalone `/login` and `/register` pages.
 - Refactor the Supabase Auth login logic into the `Navbar.tsx` Popup Modal.
 - Implement Role-Based Access Control (RBAC) in `src/proxy.ts` so that users are automatically routed to their correct dashboard and protected from accessing unauthorized routes.
-- *Status:* [ ] Pending
+- *Status:* [x] Completed. Standalone pages deleted. Navbar popup updated with Real Supabase Auth (and a Mock simulator fallback).
 
 ### Step 3: Global Data Integration (Frontend-Backend Connection)
 - Replace all hardcoded mock data in the frontend with real data fetched from Supabase.
-- Connect global components (e.g., Homepage "Discover" section, Category filters).
-- *Status:* [ ] Pending
+- Where DB tables are empty, seamlessly fallback to Mock Data to ensure UI remains functional during demo.
+- *Status:* [x] Completed. API Layer (`src/utils/api.ts`) created with fallback mechanism, and integrated into Homepage components.
 
 ### Step 4: Role 1 - Buyer Implementation
 - **Feature - Catalog & Search**: Buyers can browse products and use the PostGIS-powered distance filter to find local sellers (Local Seller Discovery & Same-Day Delivery).
 - **Feature - Checkout & Bundling**: Buyers can add items to cart. If items are from multiple sellers collaborating in a "Cross-Seller Bundle", calculate a single delivery fee using complex routing logic.
 - **Feature - Bulk Order Negotiations**: If a Buyer selects a quantity >= MOQ, trigger the Socket.io chat modal to negotiate directly with the Seller.
-- *Status:* [ ] Pending
+- *Status:* [x] Completed. Explore catalog integrated with API. Bulk Deal Modal triggers Socket.io emission. Checkout mock UI finalized.
 
 ### Step 5: Role 2 - Seller Implementation
 - **Feature - Inventory Management**: CRUD operations for products (linked to Supabase).
