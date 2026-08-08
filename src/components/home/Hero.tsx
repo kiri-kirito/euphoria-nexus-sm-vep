@@ -43,7 +43,7 @@ const TEXT_SLIDES = [
       <>
         Discover Local Sellers.{" "}
         <br className="hidden lg:block" />
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
           Negotiate Bulk Deals.
         </span>
       </>
@@ -56,12 +56,12 @@ const TEXT_SLIDES = [
     title: (
       <>
         Welcome to{" "}
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">
           Nexus.
         </span>
         <br className="hidden lg:block" />
         The Next-Generation{" "}
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">
           B2B Marketplace.
         </span>
       </>
@@ -75,7 +75,7 @@ const TEXT_SLIDES = [
       <>
         Not Just A Buyer?{" "}
         <br className="hidden lg:block" />
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
           Sell Your Products Here.
         </span>
       </>
@@ -105,57 +105,68 @@ export default function Hero() {
   const currentTextSlide = current % TEXT_SLIDES.length;
 
   return (
-    <section className="relative overflow-hidden rounded-2xl my-6 mx-4 sm:mx-6 lg:mx-8 shadow-2xl h-[520px] lg:h-[600px]">
+    <section className="relative overflow-hidden rounded-2xl my-6 mx-4 sm:mx-6 lg:mx-8 shadow-2xl h-[520px] lg:h-[600px] bg-[#020617]">
 
-      {/* ── Animated Space / Earth Background ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Base space image — very slow zoom+pan */}
+      {/* ── Animated Space & Earth Horizon Background ── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        
+        {/* Layer 1: Deep Cosmos Starfield with slow continuous panning */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute -inset-[30%] w-[160%] h-[160%] bg-cover bg-center opacity-70"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1800&q=80')",
-            animation: "spacePan 60s ease-in-out infinite alternate",
+            backgroundImage: "url('https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1800&q=80')",
+            animation: "cosmosOrbit 45s linear infinite alternate",
           }}
         />
-        {/* Earth horizon overlay at bottom — slow pan */}
+
+        {/* Layer 2: Earth Horizon Curve with glowing atmosphere light burst (Matches reference image) */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-[65%] bg-cover bg-bottom opacity-60"
+          className="absolute -bottom-10 -left-10 w-[120%] h-[110%] bg-contain bg-left-bottom bg-no-repeat opacity-90 mix-blend-screen"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=1600&q=80')",
-            animation: "earthPan 80s ease-in-out infinite alternate",
-            maskImage: "linear-gradient(to top, rgba(0,0,0,1) 30%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 30%, transparent 100%)",
+            backgroundImage: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1800&q=80')",
+            animation: "earthAtmosphereFloat 25s ease-in-out infinite alternate",
           }}
         />
-        {/* Atmosphere glow at horizon */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-blue-900/40 via-blue-600/10 to-transparent" />
-        {/* Dark top vignette so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/50" />
+
+        {/* Layer 3: Dynamic Pulsing Atmospheric Blue Light Flare */}
+        <div 
+          className="absolute bottom-0 left-0 w-[600px] h-[400px] bg-gradient-to-tr from-cyan-500/40 via-blue-600/20 to-transparent rounded-full blur-[100px]"
+          style={{ animation: 'atmospherePulse 6s ease-in-out infinite alternate' }}
+        />
+
+        {/* Top/Right vignetting to ensure text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/40" />
 
         <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes spacePan {
-            0%   { transform: scale(1.05) translate(0px, 0px); }
-            100% { transform: scale(1.12) translate(-2%, 1%); }
+          @keyframes cosmosOrbit {
+            0% { transform: scale(1) translate(0px, 0px) rotate(0deg); }
+            50% { transform: scale(1.08) translate(-3%, -2%) rotate(1deg); }
+            100% { transform: scale(1.15) translate(-5%, -4%) rotate(-1deg); }
           }
-          @keyframes earthPan {
-            0%   { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.06) translate(1%, -1%); }
+          @keyframes earthAtmosphereFloat {
+            0% { transform: scale(1) translate(0px, 0px); }
+            100% { transform: scale(1.05) translate(15px, -10px); }
+          }
+          @keyframes atmospherePulse {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 0.9; transform: scale(1.1); }
           }
         ` }} />
       </div>
 
-      {/* ── Content Row ── */}
+      {/* ── Main Content Grid ── */}
       <div className="relative z-10 flex flex-col lg:flex-row h-full">
 
-        {/* Left — Text */}
+        {/* Left — Text Content Section */}
         <div className="flex-1 flex flex-col justify-center px-6 lg:px-16 py-10">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full mb-8 w-fit shadow-lg shadow-black/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full mb-8 w-fit shadow-lg shadow-black/30">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
             500+ Local Sellers Online
           </div>
 
-          {/* Fixed-height slide zone — prevents height jump */}
-          <div className="relative h-[260px] lg:h-[300px]">
+          {/* Fixed Height Container for Text Slides to stop layout jumping */}
+          <div className="relative h-[260px] lg:h-[290px] w-full">
             {TEXT_SLIDES.map((slide, idx) => (
               <div
                 key={idx}
@@ -165,15 +176,15 @@ export default function Hero() {
                     : "opacity-0 translate-y-4 pointer-events-none"
                 }`}
               >
-                <h1 className="text-4xl md:text-5xl lg:text-[52px] font-extrabold text-white tracking-tight leading-[1.1] mb-5">
+                <h1 className="text-4xl md:text-5xl lg:text-[54px] font-extrabold text-white tracking-tight leading-[1.1] mb-5 drop-shadow-md">
                   {slide.title}
                 </h1>
-                <p className="text-base md:text-lg text-slate-300 mb-8 max-w-lg leading-relaxed font-light">
+                <p className="text-base md:text-lg text-slate-300 mb-8 max-w-lg leading-relaxed font-light drop-shadow">
                   {slide.description}
                 </p>
                 <Link
                   href={slide.actionLink}
-                  className="inline-block px-10 py-4 rounded-full bg-primary/90 backdrop-blur-md border border-white/20 hover:bg-primary text-white font-bold text-lg shadow-[0_0_24px_rgba(79,70,229,0.5)] transition-all hover:scale-105 active:scale-95"
+                  className="inline-block px-10 py-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all hover:scale-105 active:scale-95 border border-white/20"
                 >
                   {slide.actionText}
                 </Link>
@@ -181,7 +192,7 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* Dots — centered below text zone */}
+          {/* Dots Indicator - Cleanly positioned below text on the left */}
           <div className="flex items-center gap-3 mt-6">
             {SHOWCASE_IMAGES.map((img, i) => (
               <button
@@ -189,8 +200,8 @@ export default function Hero() {
                 onClick={() => { setContentVisible(false); setTimeout(() => { setCurrent(i); setContentVisible(true); }, 400); }}
                 className={`transition-all duration-500 rounded-full h-2 ${
                   i === current
-                    ? "w-8 bg-primary shadow-[0_0_10px_rgba(79,70,229,0.8)]"
-                    : "w-2 bg-white/25 hover:bg-white/60"
+                    ? "w-8 bg-cyan-400 shadow-[0_0_12px_#22d3ee]"
+                    : "w-2 bg-white/30 hover:bg-white/70"
                 }`}
                 aria-label={`Show ${img.label}`}
               />
@@ -198,45 +209,49 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Right — Full-bleed image, clickable → category */}
+        {/* Right — Product Showcase Seamlessly Blended into Space */}
         <div
-          className="hidden lg:block relative w-[380px] xl:w-[460px] flex-shrink-0 overflow-hidden cursor-pointer group"
+          className="hidden lg:flex relative w-[420px] xl:w-[500px] flex-shrink-0 items-center justify-center p-8 cursor-pointer group"
           onClick={() => router.push(`/explore?category=${SHOWCASE_IMAGES[current].category}`)}
         >
-          {/* Left-edge blend into space bg */}
-          <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-black/60 to-transparent z-10 pointer-events-none" />
-          {/* Top and bottom blends */}
-          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/60 to-transparent z-10 pointer-events-none" />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/70 to-transparent z-10 pointer-events-none" />
+          {/* Radial Light Aura behind product */}
+          <div className="absolute w-[360px] h-[360px] bg-cyan-500/20 rounded-full blur-[80px] group-hover:bg-cyan-500/35 transition-all duration-700" />
 
-          {/* Product images — crossfade */}
-          {SHOWCASE_IMAGES.map((img, i) => (
-            <img
-              key={i}
-              src={img.src}
-              alt={img.label}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1500ms] ease-in-out ${
-                i === current ? "opacity-100 scale-100" : "opacity-0 scale-105"
-              }`}
-            />
-          ))}
+          {/* Product Image Container with Masked Feathered Radial Edges (NO RECTANGULAR BORDERS!) */}
+          <div 
+            className="relative w-full h-[400px] rounded-3xl overflow-hidden"
+            style={{
+              maskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 85%)",
+              WebkitMaskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 85%)",
+            }}
+          >
+            {SHOWCASE_IMAGES.map((img, i) => (
+              <img
+                key={i}
+                src={img.src}
+                alt={img.label}
+                className={`absolute inset-0 w-full h-full object-cover mix-blend-lighten transition-all duration-[1500ms] ease-in-out ${
+                  i === current 
+                    ? "opacity-90 scale-100 blur-0" 
+                    : "opacity-0 scale-110 blur-md"
+                }`}
+              />
+            ))}
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-300 z-20" />
+            {/* Dark vignette blending layer */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/60 mix-blend-multiply" />
+          </div>
 
-          {/* Category label + "Explore" hint */}
-          <div className="absolute bottom-6 left-0 right-6 flex items-end justify-between z-30 px-6">
-            <span
-              className={`text-white font-bold text-xl drop-shadow-lg transition-all duration-700 ${
-                contentVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-              }`}
-            >
+          {/* Floating Category Label Badge */}
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-slate-950/70 backdrop-blur-xl border border-white/15 px-6 py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] group-hover:border-cyan-400/50 transition-all duration-300">
+            <span className="text-white text-base font-bold tracking-wide">
               {SHOWCASE_IMAGES[current].label}
             </span>
-            <span className="bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+            <span className="text-cyan-400 text-xs font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
               Explore Category →
             </span>
           </div>
+
         </div>
 
       </div>
