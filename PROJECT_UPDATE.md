@@ -1,77 +1,78 @@
-# Euphoria Nexus - Project Update & Handover
+# Euphoria Nexus - Master Project Update & Execution Plan
 
-**Date of Update:** August 2026
-**Current Phase:** Frontend UI/UX Completion 
+This document tracks everything that has been completed and outlines the exact step-by-step serial execution plan up until deployment. It includes full details for all 5 roles and their features to ensure nothing is missed.
 
-This document tracks everything that has been implemented in the project so far and outlines the exact next steps for the backend, integration, and deployment phases. **Read this first before resuming work.**
-
----
-
-## 🟢 What Has Been Completed (Frontend 100% Ready)
-
-All 5 core user roles now have fully functional, premium UI dashboards built with Next.js (App Router), Tailwind CSS, and mock data.
-
-1. **Global & Public (Buyer) Features:**
-   - Next.js 15 + Tailwind CSS initialized. Route groups (`(public)`) set up.
-   - `Navbar` with dropdowns and "Become a Seller" CTA.
-   - `Homepage` with dynamic hero slideshow, crossfade animations, featured bundles, and deals.
-   - `Explore/Catalog` page with filters and product grids.
-   - `Product Details` page with bulk wholesale negotiation UI and MOQ logic.
-   - `Cart` & `Checkout` (One-page checkout flow with bKash/Card/COD mock UI) + Success page.
-
-2. **Admin Portal (`/admin`):**
-   - Premium dark-theme layout with functional notification and profile dropdowns.
-   - `Dashboard`: System Analytics (GMV, Revenue).
-   - `User Management`: Ban/Unban users + **Create Internal Agent (Delivery/Support)** modal.
-   - `Seller Approvals`: UI for reviewing NID & Trade Licenses.
-   - `Payouts`, `CMS` (Banners), `Settings`, and `Logs` pages fully implemented.
-
-3. **Seller Portal (`/seller`):**
-   - Dark-theme layout with active state navigation.
-   - `Seller Application`: Standalone public form.
-   - `Dashboard` & `Analytics`: Sales charts (CSS flex-based) and stats.
-   - `Products`: List view and "Add New Product" form (with dynamic pricing rows).
-   - `Negotiations`: Inbox for accepting/countering bulk buyer offers.
-   - `Settings`: Store profile configuration.
-
-4. **Delivery Agent Portal (`/delivery`):**
-   - Dark-theme layout with **Active Duty Toggle** (Online/Offline).
-   - `Dashboard`: Map placeholder, assigned deliveries, and status toggles.
-   - `Earnings` & `Profile` pages.
-
-5. **Support Agent Portal (`/support`):**
-   - Dark-theme layout with Shift Status toggle.
-   - `Dashboard`: Active complaints, assigned tickets, and negotiation moderation queue.
-
-*Note: All logos (`logo-brand.png`) have been formatted across all layouts without backgrounds and scaled perfectly.*
+## ✅ What We Have Done (Current State)
+1. **Frontend Infrastructure (UI/UX)**: 
+   - Next.js & Tailwind setup.
+   - All 5 role dashboards (Admin, Seller, Buyer, Delivery, Support) have been designed with Mock UI.
+   - Beautiful Hero animations, Navbar with a Mock Login Modal, and responsive layouts.
+2. **Backend Infrastructure**: 
+   - Express.js server initialized (`server.js`).
+   - Socket.io configured with `/negotiations` and `/bidding` namespaces.
+3. **Database Architecture**: 
+   - `001_initial_schema.sql` created (includes PostGIS, RLS, and all tables).
+   - `seed.js` created using Faker.js for 50 sellers and 100 products.
+4. **Authentication Setup**:
+   - Supabase SSR integrated into Next.js.
+   - `src/proxy.ts` created for session management (Next.js 16 compatible).
+   - *Issue*: A standalone `/login` page was built, which deviates from the Popup Modal design.
 
 ---
 
-## 🔴 What Is Remaining (Next Session Tasks)
+## 🚀 Serial Execution Plan (What is Left to Do A-Z)
 
-Now that the UI/UX is complete with mock data, the next phase is connecting it to a real database and making it functional.
+The following tasks will be executed in strict serial order. After each step, this file will be updated, and the code will be pushed to GitHub.
 
-### 1. Backend & Database Setup
-- Set up **Supabase** (PostgreSQL) project.
-- Create tables based on `REQUIREMENTS_AND_PROCESS.md` (users, products, orders, negotiations).
-- Run the **Seeding Script** (as per `DUMMY_DATA_PLAN.md`) to populate the DB with 50 sellers, 100 products, and internal agents.
+### Step 1: Database Initialization
+- Execute `001_initial_schema.sql` in the live Supabase project to create all tables, policies, and PostGIS extensions.
+- Run `backend/seed.js` to populate the database with mock users and products.
+- *Status:* [ ] Pending
 
-### 2. Authentication & Authorization
-- Implement **Supabase Auth** for login/registration.
-- Add Next.js Middleware to protect routes (e.g., non-admins cannot access `/admin`, non-sellers cannot access `/seller`).
-- Implement the auto-generated password flow for internally created Agents (from the Admin User Management page).
+### Step 2: Auth Refactoring & RBAC
+- Delete the standalone `/login` and `/register` pages.
+- Refactor the Supabase Auth login logic into the `Navbar.tsx` Popup Modal.
+- Implement Role-Based Access Control (RBAC) in `src/proxy.ts` so that users are automatically routed to their correct dashboard and protected from accessing unauthorized routes.
+- *Status:* [ ] Pending
 
-### 3. API Integration & State Management
-- Set up **TanStack Query** (React Query) and **Zustand** for state management.
-- Replace all the hardcoded `useState` mock data arrays in the frontend pages with real API fetches (e.g., fetch real products, real admin stats).
+### Step 3: Global Data Integration (Frontend-Backend Connection)
+- Replace all hardcoded mock data in the frontend with real data fetched from Supabase.
+- Connect global components (e.g., Homepage "Discover" section, Category filters).
+- *Status:* [ ] Pending
 
-### 4. Real-time Features
-- Integrate **Socket.io** or **Supabase Realtime** for:
-  - The Bulk Negotiation chat feature between buyers and sellers.
-  - Live Delivery Agent tracking on maps.
-  - Inter-Seller Stock Exchange (Blind Bidding).
+### Step 4: Role 1 - Buyer Implementation
+- **Feature - Catalog & Search**: Buyers can browse products and use the PostGIS-powered distance filter to find local sellers (Local Seller Discovery & Same-Day Delivery).
+- **Feature - Checkout & Bundling**: Buyers can add items to cart. If items are from multiple sellers collaborating in a "Cross-Seller Bundle", calculate a single delivery fee using complex routing logic.
+- **Feature - Bulk Order Negotiations**: If a Buyer selects a quantity >= MOQ, trigger the Socket.io chat modal to negotiate directly with the Seller.
+- *Status:* [ ] Pending
 
-### 5. Deployment
-- Deploy the Next.js Frontend to **Vercel**.
-- Connect environment variables (Supabase URL, API keys).
-- Final end-to-end testing of the checkout and negotiation flows.
+### Step 5: Role 2 - Seller Implementation
+- **Feature - Inventory Management**: CRUD operations for products (linked to Supabase).
+- **Feature - Bulk Negotiations**: Socket.io listener to receive and counter-offer bulk requests from Buyers. Generate custom checkout links upon agreement.
+- **Feature - Inter-Seller Stock Exchange (Blind Bidding)**: Sellers can post stock requests. Other sellers can submit anonymous "Blind Bids" via Socket.io. Once accepted, trigger Escrow state.
+- **Feature - Cross-Seller Bundling**: Sellers can propose or join bundles with other sellers to share delivery costs.
+- *Status:* [ ] Pending
+
+### Step 6: Role 3 - Delivery Agent Implementation
+- **Feature - Agent Status**: Toggle Online/Offline availability.
+- **Feature - Route Management**: Receive geographically optimized pick-up/drop-off routes, especially for Same-Day Delivery pings and Cross-Seller Bundle consolidations.
+- **Feature - Order Tracking**: Update order status (Picked Up -> In Transit -> Delivered) which reflects in real-time for the Buyer.
+- *Status:* [ ] Pending
+
+### Step 7: Role 4 - Support Agent Implementation
+- **Feature - Complaints**: View and resolve buyer complaints.
+- **Feature - Escrow Management**: Oversee the held payments for Inter-Seller Stock Exchanges until physical transfer is confirmed.
+- **Feature - Moderation**: Intervene in deadlocked Bulk Order Negotiations if flagged.
+- *Status:* [ ] Pending
+
+### Step 8: Role 5 - Platform Admin Implementation
+- **Feature - User Management**: Approve pending Seller registrations. Manually create internal accounts (Delivery Agents, Support Agents).
+- **Feature - Platform Analytics**: View global GMV, revenue, and commission logs.
+- **Feature - Settings**: Configure global platform fees.
+- *Status:* [ ] Pending
+
+### Step 9: Final E2E Testing & Deployment
+- E2E Testing: Ensure all roles interact flawlessly (e.g., Buyer orders -> Seller confirms -> Delivery Agent delivers).
+- Deploy Backend to Render.
+- Deploy Frontend to Vercel.
+- *Status:* [ ] Pending
