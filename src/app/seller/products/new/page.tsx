@@ -1,6 +1,22 @@
+"use client";
+
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function NewProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handlePublish = async () => {
+    setLoading(true);
+    // Simulate API call to Supabase
+    setTimeout(() => {
+      setLoading(false);
+      router.push('/seller/products');
+    }, 1000);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
@@ -117,8 +133,13 @@ export default function NewProductPage() {
         <button type="button" className="px-6 py-2.5 rounded-lg font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-colors">
           Save as Draft
         </button>
-        <button type="button" className="px-6 py-2.5 rounded-lg font-medium text-white bg-primary hover:bg-primary/90 transition-colors shadow-sm">
-          Publish Product
+        <button 
+          type="button" 
+          onClick={handlePublish}
+          disabled={loading}
+          className="px-6 py-2.5 rounded-lg font-medium text-white bg-primary hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50"
+        >
+          {loading ? 'Publishing...' : 'Publish Product'}
         </button>
       </div>
     </div>

@@ -1,12 +1,8 @@
-import Link from "next/link";
+"use client";
 
-const MOCK_PRODUCTS = [
-  { id: "1", name: "Logitech MX Master 3S", sku: "LOG-MX3S", category: "Electronics", price: 9500, stock: 45, moq: 10, status: "Active", img: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80" },
-  { id: "2", name: "Sony WH-1000XM5 Headphones", sku: "SNY-WH5", category: "Electronics", price: 32000, stock: 12, moq: 5, status: "Active", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=80&h=80&fit=crop&q=80" },
-  { id: "3", name: "Mechanical Keyboard Keycaps", sku: "KEY-CAP1", category: "Electronics", price: 2500, stock: 200, moq: 20, status: "Active", img: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=80&h=80&fit=crop&q=80" },
-  { id: "4", name: "4K Web Camera", sku: "CAM-4K01", category: "Electronics", price: 8500, stock: 0, moq: 10, status: "Out of Stock", img: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=80&h=80&fit=crop&q=80" },
-  { id: "5", name: "RGB Gaming Mouse Pad XL", sku: "PAD-RGB1", category: "Electronics", price: 1800, stock: 80, moq: 15, status: "Active", img: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=80&h=80&fit=crop&q=80" },
-];
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { fetchProducts, MOCK_PRODUCTS } from "@/utils/api";
 
 const STATUS_STYLES: Record<string, string> = {
   Active: "bg-emerald-100 text-emerald-700",
@@ -15,13 +11,40 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function SellerProductsPage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const data = await fetchProducts();
+        // Just map them a bit to fit the UI if needed
+        const formatted = data.map((p: any) => ({
+          ...p,
+          sku: p.sku || `SKU-${p.id.substring(0, 4)}`,
+          stock: p.stock ?? p.quantity ?? 10,
+          moq: p.moq ?? 5,
+          status: p.status || "Active",
+          img: p.image || p.img || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80",
+        }));
+        setProducts(formatted.length > 0 ? formatted : MOCK_PRODUCTS);
+      } catch (err) {
+        console.error(err);
+        setProducts(MOCK_PRODUCTS);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProducts();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">My Products</h1>
-          <p className="text-slate-500 text-sm mt-1">{MOCK_PRODUCTS.length} products in your store</p>
+          <p className="text-slate-500 text-sm mt-1">{products.length} products in your store</p>
         </div>
         <Link
           href="/seller/products/new"
@@ -62,68 +85,73 @@ export default function SellerProductsPage() {
 
       {/* Products Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-6 py-4">Product</th>
-              <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">SKU</th>
-              <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">Price</th>
-              <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">Stock</th>
-              <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">MOQ</th>
-              <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">Status</th>
-              <th className="text-right text-xs font-bold text-slate-500 uppercase tracking-wider px-6 py-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {MOCK_PRODUCTS.map((product) => (
-              <tr key={product.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <img src={product.img} alt={product.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-slate-100" />
-                    <div>
-                      <p className="font-semibold text-slate-900 text-sm">{product.name}</p>
-                      <p className="text-xs text-slate-500">{product.category}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">{product.sku}</span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="font-bold text-slate-900 text-sm">৳{product.price.toLocaleString()}</span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className={`text-sm font-semibold ${product.stock === 0 ? "text-red-600" : product.stock < 20 ? "text-amber-600" : "text-slate-900"}`}>
-                    {product.stock === 0 ? "Out" : product.stock}
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className="text-sm text-slate-600">{product.moq} units</span>
-                </td>
-                <td className="px-4 py-4">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_STYLES[product.status]}`}>
-                    {product.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-end gap-2">
-                    <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                    <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
+        {loading ? (
+          <div className="p-8 text-center text-slate-500">Loading products...</div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-6 py-4">Product</th>
+                <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">SKU</th>
+                <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">Price</th>
+                <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">Stock</th>
+                <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">MOQ</th>
+                <th className="text-left text-xs font-bold text-slate-500 uppercase tracking-wider px-4 py-4">Status</th>
+                <th className="text-right text-xs font-bold text-slate-500 uppercase tracking-wider px-6 py-4">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {products.map((product) => (
+                <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <img src={product.img} alt={product.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-slate-100" />
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm">{product.name}</p>
+                        <p className="text-xs text-slate-500">{product.category || 'Category'}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">{product.sku}</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="font-bold text-slate-900 text-sm">৳{(product.price || 0).toLocaleString()}</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`text-sm font-semibold ${product.stock === 0 ? "text-red-600" : product.stock < 20 ? "text-amber-600" : "text-slate-900"}`}>
+                      {product.stock === 0 ? "Out" : product.stock}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="text-sm text-slate-600">{product.moq} units</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_STYLES[product.status] || STATUS_STYLES["Draft"]}`}>
+                      {product.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
 }
+

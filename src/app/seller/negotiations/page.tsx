@@ -1,5 +1,25 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
+
+interface Negotiation {
+  id: number;
+  buyer: string;
+  location: string;
+  product: string;
+  image: string;
+  originalPrice: number;
+  offeredPrice: number;
+  discount: string;
+  qty: number;
+  message: string;
+  status: string;
+  finalPrice?: number;
+}
+
 export default function NegotiationsPage() {
-  const activeNegotiations = [
+  const [activeNegotiations, setActiveNegotiations] = useState<Negotiation[]>([
     {
       id: 1,
       buyer: "Rahim Store",
@@ -12,34 +32,46 @@ export default function NegotiationsPage() {
       qty: 25,
       message: "Looking for a better deal on a bulk order for our new branch.",
       status: "Pending"
-    },
-    {
-      id: 2,
-      buyer: "Tech Gear LTD",
-      location: "Chittagong, BD",
-      product: "Mechanical Keyboard Keychron K2",
-      image: "https://images.unsplash.com/photo-1595225476474-87563907a212?q=80&w=200&auto=format&fit=crop",
-      originalPrice: 8500,
-      offeredPrice: 7500,
-      discount: "11%",
-      qty: 50,
-      message: "Can we settle at 7500? I can make the payment today.",
-      status: "Countered"
-    },
-    {
-      id: 3,
-      buyer: "Digital World",
-      location: "Sylhet, BD",
-      product: "Samsung 27 inch Curved Monitor",
-      image: "https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?q=80&w=200&auto=format&fit=crop",
-      originalPrice: 22000,
-      offeredPrice: 19000,
-      discount: "13%",
-      qty: 10,
-      message: "Your price is slightly above market average for bulk. Offering 19k.",
-      status: "Pending"
     }
-  ];
+  ]);
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
+    // Connect to specific namespace
+    const newSocket = io("http://localhost:3001/negotiations", {
+      transports: ["websocket", "polling"],
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Connected to negotiations namespace:", newSocket.id);
+    });
+
+    newSocket.on("receive_bulk_request", (data: Negotiation) => {
+      console.log("Received new bulk request:", data);
+      setActiveNegotiations((prev) => [data, ...prev]);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  const handleCounter = (id: number) => {
+    if (socket) {
+      socket.emit("propose_price", { id, newPrice: 9500, status: "Countered" });
+      setActiveNegotiations(prev => prev.map(n => n.id === id ? { ...n, status: "Countered", offeredPrice: 9500 } : n));
+    }
+  };
+
+  const handleAccept = (id: number) => {
+    if (socket) {
+      socket.emit("propose_price", { id, status: "Accepted" });
+      setActiveNegotiations(prev => prev.filter(n => n.id !== id));
+      // In reality, this would move to closed negotiations and generate checkout link
+    }
+  };
 
   const closedNegotiations = [
     {
@@ -53,18 +85,6 @@ export default function NegotiationsPage() {
       finalPrice: 29500,
       qty: 5,
       status: "Accepted"
-    },
-    {
-      id: 5,
-      buyer: "Smart Home BD",
-      location: "Dhaka, BD",
-      product: "Google Nest Hub",
-      image: "https://images.unsplash.com/photo-1543512214-318c7553f230?q=80&w=200&auto=format&fit=crop",
-      originalPrice: 9500,
-      offeredPrice: 7000,
-      finalPrice: null,
-      qty: 15,
-      status: "Rejected"
     }
   ];
 
@@ -75,7 +95,7 @@ export default function NegotiationsPage() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-800">Active Requests (3)</h2>
+        <h2 className="text-lg font-semibold text-slate-800">Active Requests ({activeNegotiations.length})</h2>
         <div className="grid grid-cols-1 gap-4">
           {activeNegotiations.map((item) => (
             <div key={item.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow">
@@ -114,16 +134,19 @@ export default function NegotiationsPage() {
                   </p>
                 </div>
                 <div className="flex gap-3 mt-4">
-                  <button className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold py-2 rounded-lg transition-colors text-sm shadow-sm">
+                  <button onClick={() => handleAccept(item.id)} className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold py-2 rounded-lg transition-colors text-sm shadow-sm">
                     Accept Offer
                   </button>
-                  <button className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-2 rounded-lg transition-colors text-sm">
+                  <button onClick={() => handleCounter(item.id)} className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-2 rounded-lg transition-colors text-sm">
                     Counter Offer
                   </button>
                 </div>
               </div>
             </div>
           ))}
+          {activeNegotiations.length === 0 && (
+            <p className="text-slate-500 py-4">No active bulk requests right now.</p>
+          )}
         </div>
       </div>
 

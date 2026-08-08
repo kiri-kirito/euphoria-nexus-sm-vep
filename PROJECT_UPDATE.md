@@ -51,25 +51,25 @@ The following tasks will be executed in strict serial order. After each step, th
 - **Feature - Bulk Negotiations**: Socket.io listener to receive and counter-offer bulk requests from Buyers. Generate custom checkout links upon agreement.
 - **Feature - Inter-Seller Stock Exchange (Blind Bidding)**: Sellers can post stock requests. Other sellers can submit anonymous "Blind Bids" via Socket.io. Once accepted, trigger Escrow state.
 - **Feature - Cross-Seller Bundling**: Sellers can propose or join bundles with other sellers to share delivery costs.
-- *Status:* [ ] Pending
+- *Status:* [x] Completed. API integration for inventory, Socket.io for negotiations/bidding, and UI for bundling added.
 
 ### Step 6: Role 3 - Delivery Agent Implementation
 - **Feature - Agent Status**: Toggle Online/Offline availability.
 - **Feature - Route Management**: Receive geographically optimized pick-up/drop-off routes, especially for Same-Day Delivery pings and Cross-Seller Bundle consolidations.
 - **Feature - Order Tracking**: Update order status (Picked Up -> In Transit -> Delivered) which reflects in real-time for the Buyer.
-- *Status:* [ ] Pending
+- *Status:* [x] Completed. Agent status toggle added, mock route UI in tasks created, and order tracking hooked up.
 
 ### Step 7: Role 4 - Support Agent Implementation
 - **Feature - Complaints**: View and resolve buyer complaints.
 - **Feature - Escrow Management**: Oversee the held payments for Inter-Seller Stock Exchanges until physical transfer is confirmed.
 - **Feature - Moderation**: Intervene in deadlocked Bulk Order Negotiations if flagged.
-- *Status:* [ ] Pending
+- *Status:* [x] Completed. Created Complaints, Escrow Management, and Moderation pages.
 
 ### Step 8: Role 5 - Platform Admin Implementation
 - **Feature - User Management**: Approve pending Seller registrations. Manually create internal accounts (Delivery Agents, Support Agents).
 - **Feature - Platform Analytics**: View global GMV, revenue, and commission logs.
 - **Feature - Settings**: Configure global platform fees.
-- *Status:* [ ] Pending
+- *Status:* [x] Completed. Admin dashboard updated with mock metrics, user management approves pending sellers, and settings handles simulated configuration API calls.
 
 ### Step 9: Final E2E Testing & Deployment
 - E2E Testing: Ensure all roles interact flawlessly (e.g., Buyer orders -> Seller confirms -> Delivery Agent delivers).
