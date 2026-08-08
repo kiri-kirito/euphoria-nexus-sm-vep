@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 // Using standard img tag for mock data to bypass Next.js security policies
 
 // Dummy data for featured bundles
@@ -44,7 +46,7 @@ export default function FeaturedBundles() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {MOCK_BUNDLES.map((bundle) => (
-          <div key={bundle.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group cursor-pointer">
+          <Link href={`/product/${bundle.id}`} key={bundle.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group cursor-pointer block">
             <div className="relative h-48 overflow-hidden bg-slate-100">
               <img 
                 src={bundle.image} 
@@ -73,7 +75,7 @@ export default function FeaturedBundles() {
                 </button>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

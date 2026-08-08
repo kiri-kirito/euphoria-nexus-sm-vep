@@ -2,22 +2,33 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("buyer"); // buyer, seller, admin, delivery, support
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  useEffect(() => {
+    const savedRole = localStorage.getItem('mockUserRole');
+    if (savedRole) {
+      setIsLoggedIn(true);
+      setUserRole(savedRole);
+    }
+  }, []);
+
   const handleLogin = (role: string) => {
     setUserRole(role);
     setIsLoggedIn(true);
     setShowLoginModal(false);
+    localStorage.setItem('mockUserRole', role);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('mockUserRole');
     setIsLoggedIn(false);
     setUserRole("buyer");
+    window.location.href = '/';
   };
 
   return (

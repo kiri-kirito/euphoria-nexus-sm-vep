@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import BulkDealModal from '@/components/products/BulkDealModal';
 
 interface Product {
@@ -143,14 +144,29 @@ const PRODUCTS: Product[] = [
   }
 ];
 
-export default function ExplorePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+function ExploreContent() {
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get('category');
+  
+  // Try to match the incoming category param with our valid categories, default to 'All'
+  const categories = ['All', 'Industrial & Metals', 'Electronics & Gadgets', 'Home & Furniture', 'Fashion', 'Footwear', 'Accessories'];
+  const matchedCategory = categories.find(c => c.toLowerCase() === initialCategory?.toLowerCase()) || 'All';
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(matchedCategory);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isNegotiateOpen, setIsNegotiateOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const categories = ['All', 'Industrial & Metals', 'Electronics & Gadgets', 'Home & Furniture'];
+
+
+  // Re-sync if URL changes
+  useEffect(() => {
+    if (initialCategory) {
+      const match = categories.find(c => c.toLowerCase() === initialCategory.toLowerCase());
+      if (match) setSelectedCategory(match);
+    }
+  }, [initialCategory]);
 
   const filteredProducts = PRODUCTS.filter(p => {
     const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
@@ -446,12 +462,20 @@ export default function ExplorePage() {
         </div>
       )}
 
-      {/* Bulk Deal Negotiation Popup */}
+      {/* Bulk Deal Negotiation / Modals */}
       <BulkDealModal
         isOpen={isNegotiateOpen}
         onClose={() => setIsNegotiateOpen(false)}
-        productName={selectedProduct?.name}
+        productName={selectedProduct?.name || ''}
       />
     </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center">Loading...</div>}>
+      <ExploreContent />
+    </Suspense>
   );
 }

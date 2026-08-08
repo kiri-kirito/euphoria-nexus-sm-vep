@@ -8,32 +8,32 @@ const SHOWCASE_IMAGES = [
   {
     src: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=800&h=900&fit=crop&q=85",
     label: "Gaming Setup",
-    category: "electronics"
+    category: "Electronics & Gadgets"
   },
   {
     src: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&h=900&fit=crop&q=85",
     label: "Fashion",
-    category: "fashion"
+    category: "Fashion"
   },
   {
     src: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=900&fit=crop&q=85",
     label: "Footwear",
-    category: "footwear"
+    category: "Footwear"
   },
   {
     src: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=900&fit=crop&q=85",
     label: "Audio",
-    category: "audio"
+    category: "Electronics & Gadgets"
   },
   {
     src: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&h=900&fit=crop&q=85",
     label: "Tech & Office",
-    category: "tech"
+    category: "Electronics & Gadgets"
   },
   {
     src: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=900&fit=crop&q=85",
     label: "Accessories",
-    category: "accessories"
+    category: "Accessories"
   },
 ];
 
@@ -162,7 +162,7 @@ export default function Hero() {
         <div className="flex-1 flex flex-col justify-center px-6 lg:px-16 py-10 relative">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full mb-8 w-fit shadow-lg shadow-black/30">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
-            500+ Local Sellers Online
+            500+ Sellers Online
           </div>
 
           {/* Fixed Height Container for Text Slides */}

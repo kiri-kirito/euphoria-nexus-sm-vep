@@ -8,6 +8,14 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [isActiveDuty, setIsActiveDuty] = useState(true);
+
+  const toggleDuty = () => {
+    const nextState = !isActiveDuty;
+    setIsActiveDuty(nextState);
+    setToast(nextState ? 'Status: ONLINE & Ready' : 'Status: OFFLINE (On Break)');
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const navLinks = [
     { 
@@ -103,9 +111,20 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-slate-900">
         <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-20">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
-            <span className="text-xs font-bold text-slate-300">Agent Status: <strong className="text-emerald-400">Online & Ready</strong></span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${isActiveDuty ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}`}></span>
+              <span className="text-xs font-bold text-slate-300">Agent Status: <strong className={isActiveDuty ? 'text-emerald-400' : 'text-slate-500'}>{isActiveDuty ? 'Online' : 'Offline'}</strong></span>
+            </div>
+            {/* Active Toggle Switch */}
+            <button 
+              onClick={toggleDuty}
+              className={`w-10 h-5 rounded-full p-1 transition-colors duration-300 flex items-center ${
+                isActiveDuty ? 'bg-emerald-500 justify-end' : 'bg-slate-700 justify-start'
+              }`}
+            >
+              <div className="w-3 h-3 bg-white rounded-full shadow-md"></div>
+            </button>
           </div>
 
           {/* Profile Dropdown */}
@@ -132,14 +151,15 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
                   <p className="font-bold text-white">Sabrina Islam</p>
                   <p className="text-[10px] text-teal-400 font-semibold">Tier 2 Escalation Agent</p>
                 </div>
-                <button 
-                  onClick={() => { setProfileOpen(false); showToast('Support shift status set to On Break.'); }}
-                  className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-900 text-slate-300 hover:text-white transition"
+                <Link 
+                  href="/"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-900 text-slate-300 hover:text-white transition"
                 >
-                  ☕ Take Break
-                </button>
+                  🏪 View Marketplace
+                </Link>
                 <button 
-                  onClick={() => { setProfileOpen(false); showToast('Support agent signed out.'); }}
+                  onClick={() => { localStorage.removeItem('mockUserRole'); window.location.href = '/'; }}
                   className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition font-bold"
                 >
                   🚪 End Shift & Sign Out

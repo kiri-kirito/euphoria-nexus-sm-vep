@@ -234,8 +234,15 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                   >
                     📋 Audit Trail Logs
                   </Link>
+                  <Link 
+                    href="/"
+                    onClick={() => setProfileOpen(false)}
+                    className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-slate-900 text-slate-300 hover:text-white transition"
+                  >
+                    🏪 View Marketplace
+                  </Link>
                   <button 
-                    onClick={() => { setProfileOpen(false); showToast('Admin session signed out successfully.'); }}
+                    onClick={() => { setProfileOpen(false); localStorage.removeItem('mockUserRole'); window.location.href = '/'; }}
                     className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition font-bold"
                   >
                     🚪 Sign Out

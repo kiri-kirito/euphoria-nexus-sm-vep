@@ -49,7 +49,7 @@ export default function DailyDeals() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {MOCK_PRODUCTS.map((product) => (
-          <div key={product.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden group hover:border-primary/50 transition-colors">
+          <Link href={`/product/${product.id}`} key={product.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden group hover:border-primary/50 transition-colors block cursor-pointer">
             <div className="relative aspect-square bg-slate-100">
               <img 
                 src={product.image} 
@@ -76,7 +76,7 @@ export default function DailyDeals() {
                 </button>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>
