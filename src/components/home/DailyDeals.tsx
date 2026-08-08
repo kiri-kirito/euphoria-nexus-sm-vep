@@ -1,56 +1,25 @@
 // Using standard img tag for mock data to bypass Next.js security policies
-import Link from "next/link";
+import { fetchProducts } from "@/utils/api";
 
-const MOCK_PRODUCTS = [
-  {
-    id: "p1",
-    name: "Sony WH-1000XM5 Headphones",
-    price: 32000,
-    store: "AudioWorld",
-    moq: 5,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop&q=80"
-  },
-  {
-    id: "p2",
-    name: "Logitech MX Master 3S",
-    price: 9500,
-    store: "Tech Haven BD",
-    moq: 10,
-    image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop&q=80"
-  },
-  {
-    id: "p3",
-    name: "Mechanical Keyboard Keycaps",
-    price: 2500,
-    store: "GearUp",
-    moq: 20,
-    image: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=400&h=400&fit=crop&q=80"
-  },
-  {
-    id: "p4",
-    name: "Ergonomic Office Chair",
-    price: 14000,
-    store: "WoodWorks",
-    moq: 5,
-    image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&h=400&fit=crop&q=80"
-  }
-];
+export default async function DailyDeals() {
+  const products = await fetchProducts();
 
-export default function DailyDeals() {
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <section className="py-16 border-t border-slate-100">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Daily Deals</h2>
-          <p className="text-slate-500 mt-2">Top products at unbeatable prices.</p>
+          <h2 className="text-3xl font-bold text-slate-800">Daily Flash Deals</h2>
+          <p className="text-slate-500 mt-2">Grab these bargains before they're gone!</p>
         </div>
-        <Link href="/products" className="hidden sm:block text-primary font-semibold hover:text-primary-dark">View Catalog</Link>
+        <button className="text-primary font-semibold hover:text-primary-dark flex items-center gap-1 transition-colors">
+          View All Deals <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {MOCK_PRODUCTS.map((product) => (
-          <Link href={`/product/${product.id}`} key={product.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden group hover:border-primary/50 transition-colors block cursor-pointer">
-            <div className="relative aspect-square bg-slate-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {products.slice(0, 4).map((product: any) => (
+          <div key={product.id} className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className="relative h-48 overflow-hidden bg-slate-100">
               <img 
                 src={product.image} 
                 alt={product.name}
@@ -63,7 +32,7 @@ export default function DailyDeals() {
             </div>
             
             <div className="p-4">
-              <p className="text-xs text-slate-500 mb-1">{product.store}</p>
+              <p className="text-xs text-slate-500 mb-1">{product.seller || product.store}</p>
               <h3 className="font-semibold text-slate-900 text-sm mb-2 line-clamp-1">{product.name}</h3>
               <div className="flex items-center justify-between">
                 <span className="font-bold text-lg text-slate-900">৳{product.price}</span>
@@ -76,7 +45,7 @@ export default function DailyDeals() {
                 </button>
               </div>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </section>

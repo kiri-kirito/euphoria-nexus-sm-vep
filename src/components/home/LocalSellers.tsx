@@ -1,31 +1,8 @@
-const MOCK_SELLERS = [
-  {
-    id: "s1",
-    name: "Tech Haven BD",
-    category: "Electronics",
-    distance: "2.1 km",
-    rating: 4.8,
-    isSameDay: true
-  },
-  {
-    id: "s2",
-    name: "Organic Foods Ltd",
-    category: "Groceries",
-    distance: "3.5 km",
-    rating: 4.5,
-    isSameDay: true
-  },
-  {
-    id: "s3",
-    name: "StyleZone",
-    category: "Fashion",
-    distance: "4.2 km",
-    rating: 4.9,
-    isSameDay: false
-  }
-];
+import { fetchLocalSellers } from "@/utils/api";
 
-export default function LocalSellers() {
+export default async function LocalSellers() {
+  const sellers = await fetchLocalSellers(23.8103, 90.4125); // Default Dhaka coordinates for now
+
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-12">
       <div className="bg-gradient-to-r from-slate-100 to-slate-50 rounded-3xl p-6 sm:p-10 border border-slate-200">
@@ -46,20 +23,20 @@ export default function LocalSellers() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_SELLERS.map((seller) => (
+          {sellers.map((seller: any) => (
             <div key={seller.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl shrink-0">
-                {seller.name.charAt(0)}
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl shrink-0 overflow-hidden">
+                {seller.image ? <img src={seller.image} alt={seller.name} className="w-full h-full object-cover" /> : seller.name?.charAt(0) || 'S'}
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-slate-900">{seller.name}</h3>
-                <p className="text-xs text-slate-500 mb-2">{seller.category}</p>
+                <p className="text-xs text-slate-500 mb-2">{seller.category || 'Local Store'}</p>
                 <div className="flex items-center gap-3 text-xs font-medium">
                   <span className="flex items-center gap-1 text-slate-600">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
                       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
                     </svg>
-                    {seller.distance}
+                    {seller.distance || '1.5 miles'}
                   </span>
                   <span className="flex items-center gap-1 text-amber-500">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-amber-400">
