@@ -20,9 +20,12 @@ export default function Navbar() {
 
   useEffect(() => {
     const match = document.cookie.match(new RegExp('(^| )mockUserRole=([^;]+)'));
-    if (match) {
+    if (match && match[2] && match[2].length > 0) {
       setIsLoggedIn(true);
       setUserRole(match[2]);
+    } else {
+      setIsLoggedIn(false);
+      setUserRole('buyer');
     }
   }, []);
 

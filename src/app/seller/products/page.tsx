@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchProducts, MOCK_PRODUCTS } from "@/utils/api";
+import { createClient } from "@/utils/supabase/client";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const STATUS_STYLES: Record<string, string> = {
   Active: "bg-emerald-100 text-emerald-700",
@@ -13,30 +14,52 @@ const STATUS_STYLES: Record<string, string> = {
 export default function SellerProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { userId } = useCurrentUser();
+  const supabase = createClient();
+
+  const loadProducts = async () => {
+    try {
+      let query = supabase.from('products').select('*');
+      if (userId) {
+        query = query.eq('seller_id', userId);
+      } else {
+        // mock mode: get first seller
+        const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
+        if (sellers && sellers.length > 0) {
+            query = query.eq('seller_id', sellers[0].id);
+        } else {
+            query = query.limit(20);
+        }
+      }
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) throw error;
+      
+      const formatted = (data || []).map((p: any) => ({
+        ...p,
+        sku: `SKU-${p.id.substring(0, 4)}`,
+        stock: p.quantity ?? 10,
+        moq: p.moq ?? 1,
+        status: p.status || "Active",
+        img: (p.images && typeof p.images === 'string' ? JSON.parse(p.images) : p.images)?.[0] || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80",
+      }));
+      setProducts(formatted);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadProducts() {
-      try {
-        const data = await fetchProducts();
-        // Just map them a bit to fit the UI if needed
-        const formatted = data.map((p: any) => ({
-          ...p,
-          sku: p.sku || `SKU-${p.id.substring(0, 4)}`,
-          stock: p.stock ?? p.quantity ?? 10,
-          moq: p.moq ?? 5,
-          status: p.status || "Active",
-          img: p.image || p.img || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80",
-        }));
-        setProducts(formatted.length > 0 ? formatted : MOCK_PRODUCTS);
-      } catch (err) {
-        console.error(err);
-        setProducts(MOCK_PRODUCTS);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadProducts();
-  }, []);
+  }, [userId]);
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this product?")) {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (!error) loadProducts();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -133,12 +156,12 @@ export default function SellerProductsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                      <Link href={`/seller/products/${product.id}/edit`} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
-                      </button>
-                      <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                      </Link>
+                      <button onClick={() => handleDelete(product.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                         </svg>
@@ -147,6 +170,9 @@ export default function SellerProductsPage() {
                   </td>
                 </tr>
               ))}
+              {products.length === 0 && (
+                <tr><td colSpan={7} className="px-6 py-4 text-center text-slate-500">No products found. Add your first product!</td></tr>
+              )}
             </tbody>
           </table>
         )}
@@ -154,4 +180,3 @@ export default function SellerProductsPage() {
     </div>
   );
 }
-

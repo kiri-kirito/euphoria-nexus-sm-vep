@@ -15,15 +15,15 @@ export default async function FeaturedBundles() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {bundles.map((bundle: any) => (
-          <Link href={`/product/${bundle.id}`} key={bundle.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group cursor-pointer block">
+          <Link href={`/explore`} key={bundle.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all group cursor-pointer block">
             <div className="relative h-48 overflow-hidden bg-slate-100">
               <img 
-                src={bundle.image} 
+                src={bundle.image || 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=600&fit=crop&q=80'} 
                 alt={bundle.title || bundle.name}
                 className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
-                SAVE ৳{(bundle.originalPrice || bundle.price) - (bundle.bundlePrice || bundle.price)}
+                SAVE ৳{(bundle.originalPrice || bundle.price || 0) - (bundle.bundlePrice || bundle.price || 0)}
               </div>
             </div>
             <div className="p-5">

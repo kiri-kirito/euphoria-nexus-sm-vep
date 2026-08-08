@@ -1,5 +1,6 @@
 // Using standard img tag for mock data to bypass Next.js security policies
 import { fetchProducts } from "@/utils/api";
+import Link from "next/link";
 
 export default async function DailyDeals() {
   const products = await fetchProducts();
@@ -18,16 +19,16 @@ export default async function DailyDeals() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.slice(0, 4).map((product: any) => (
-          <div key={product.id} className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+          <Link href="/explore" key={product.id} className="block group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300">
             <div className="relative h-48 overflow-hidden bg-slate-100">
               <img 
-                src={product.image} 
+                src={product.image || 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=600&fit=crop&q=80'} 
                 alt={product.name}
                 className="object-cover w-full h-full p-4 group-hover:scale-110 transition-transform duration-500"
               />
               {/* Badge for Bulk Negotiation */}
               <div className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded">
-                MOQ: {product.moq} for Bulk Price
+                MOQ: {product.moq || 10} for Bulk Price
               </div>
             </div>
             
@@ -45,7 +46,7 @@ export default async function DailyDeals() {
                 </button>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>
