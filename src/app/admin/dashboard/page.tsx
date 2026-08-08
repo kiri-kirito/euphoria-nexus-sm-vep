@@ -1,20 +1,39 @@
-'use client';
-
 import React from 'react';
+import { createAdminClient } from '@/utils/supabase/server-admin';
+import Link from 'next/link';
 
-export default function AdminDashboard() {
+export const dynamic = 'force-dynamic';
+
+export default async function AdminDashboard() {
+  const supabase = createAdminClient();
+  // Real GMV: sum of all order amounts
+  const { data: gmvData } = await supabase.from('orders').select('total_amount, status');
+  const gmv = gmvData?.reduce((s, o) => s + Number(o.total_amount), 0) || 0;
+
+  // User counts
+  const { count: totalUsers } = await supabase.from('users').select('*', {count:'exact', head:true});
+  const { count: sellerCount } = await supabase.from('users').select('*', {count:'exact', head:true}).eq('role','seller');
+  const { count: buyerCount } = await supabase.from('users').select('*', {count:'exact', head:true}).eq('role','buyer');
+  const { count: orderCount } = await supabase.from('orders').select('*', {count:'exact', head:true});
+  const { count: productCount } = await supabase.from('products').select('*', {count:'exact', head:true});
+
+  // Recent activity (last 10 orders)
+  const { data: recentOrders } = await supabase.from('orders')
+    .select('*, users(name, email)')
+    .order('created_at', {ascending: false}).limit(10);
+    
+  const deliveredCount = gmvData?.filter(o => o.status === 'delivered').length || 0;
+  const pendingCount = gmvData?.filter(o => o.status === 'pending').length || 0;
+  const totalOrd = gmvData?.length || 1;
+  const deliveredPct = Math.round((deliveredCount / totalOrd) * 100);
+  const pendingPct = Math.round((pendingCount / totalOrd) * 100);
+
   const stats = [
-    { title: 'Total GMV (Sales)', value: '৳ 42,85,000', change: '+18.4%', isUp: true, icon: '💰' },
-    { title: 'Platform Commission (5%)', value: '৳ 2,14,250', change: '+22.1%', isUp: true, icon: '📈' },
-    { title: 'Active Sellers', value: '148 Verified', change: '+12 this week', isUp: true, icon: '🏪' },
-    { title: 'Total Buyers', value: '3,840 Users', change: '+142 today', isUp: true, icon: '👥' },
-  ];
-
-  const recentTransactions = [
-    { id: '#TRX-9821', seller: 'Tech Haven BD', buyer: 'Tanvir Hossain', amount: '৳ 32,000', fee: '৳ 1,600', status: 'Completed', date: '10 mins ago' },
-    { id: '#TRX-9820', seller: 'MetalCraft BD Ltd.', buyer: 'Rahim Group', amount: '৳ 4,50,000', fee: '৳ 22,500', status: 'Completed', date: '45 mins ago' },
-    { id: '#TRX-9819', seller: 'AudioWorld BD', buyer: 'Nusrat Jahan', amount: '৳ 9,500', fee: '৳ 475', status: 'Processing', date: '2 hours ago' },
-    { id: '#TRX-9818', seller: 'GamerZone BD', buyer: 'Shakib Al Hasan', amount: '৳ 14,000', fee: '৳ 700', status: 'Completed', date: '4 hours ago' },
+    { title: 'Total GMV (Sales)', value: `৳ ${gmv.toLocaleString()}`, change: 'Real-time', isUp: true, icon: '💰' },
+    { title: 'Active Sellers', value: `${sellerCount || 0} Verified`, change: 'Total', isUp: true, icon: '🏪' },
+    { title: 'Total Users', value: `${totalUsers || 0} Users`, change: `${buyerCount} buyers`, isUp: true, icon: '👥' },
+    { title: 'Total Orders', value: `${orderCount || 0} Orders`, change: 'All time', isUp: true, icon: '📦' },
+    { title: 'Active Products', value: `${productCount || 0} Items`, change: 'Listed', isUp: true, icon: '🛍️' },
   ];
 
   return (
@@ -26,28 +45,22 @@ export default function AdminDashboard() {
           <p className="text-xs text-slate-400 mt-1">Real-time marketplace telemetry and commission metrics.</p>
         </div>
         <div className="flex gap-2">
-          <button className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl border border-slate-700 transition">
-            Export Report (.CSV)
-          </button>
-          <button className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-lg shadow-blue-600/30">
+          <Link href="/admin/settings" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-lg shadow-blue-600/30">
             System Settings
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* Top Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {stats.map((s, idx) => (
           <div key={idx} className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl relative overflow-hidden group">
             <div className="flex justify-between items-start mb-4">
               <span className="text-xs font-semibold text-slate-400">{s.title}</span>
               <span className="text-2xl p-2 bg-slate-900 rounded-xl border border-slate-800">{s.icon}</span>
             </div>
-            <div className="text-2xl font-extrabold text-white mb-2">{s.value}</div>
+            <div className="text-xl font-extrabold text-white mb-2">{s.value}</div>
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
               <span>{s.change}</span>
             </div>
           </div>
@@ -64,7 +77,7 @@ export default function AdminDashboard() {
               <p className="text-xs text-slate-400">Platform earnings from 5% transaction fees</p>
             </div>
             <span className="bg-blue-500/10 text-blue-400 text-xs font-bold px-3 py-1 rounded-full border border-blue-500/20">
-              ৳ 2,14,250 Total
+              ৳ {(gmv * 0.05).toLocaleString()} Estimated
             </span>
           </div>
 
@@ -93,26 +106,28 @@ export default function AdminDashboard() {
         {/* Category Share */}
         <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-white text-base mb-1">Top Selling Categories</h3>
-            <p className="text-xs text-slate-400 mb-6">Marketplace GMV distribution</p>
+            <h3 className="font-bold text-white text-base mb-1">Platform Health</h3>
+            <p className="text-xs text-slate-400 mb-6">Order Status Distribution</p>
 
             <div className="space-y-4">
-              {[
-                { name: 'Industrial & Metals', pct: '48%', color: 'bg-blue-500' },
-                { name: 'Electronics & Gadgets', pct: '32%', color: 'bg-purple-500' },
-                { name: 'Home & Furniture', pct: '14%', color: 'bg-emerald-500' },
-                { name: 'Others', pct: '6%', color: 'bg-slate-600' },
-              ].map((c, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-xs font-semibold mb-1">
-                    <span className="text-slate-300">{c.name}</span>
-                    <span className="text-white">{c.pct}</span>
-                  </div>
-                  <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
-                    <div className={`${c.color} h-full rounded-full`} style={{ width: c.pct }}></div>
-                  </div>
+              <div>
+                <div className="flex justify-between text-xs font-semibold mb-1">
+                  <span className="text-slate-300">Delivered Orders</span>
+                  <span className="text-white">{deliveredPct}%</span>
                 </div>
-              ))}
+                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                  <div className={`bg-emerald-500 h-full rounded-full`} style={{ width: `${deliveredPct}%` }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs font-semibold mb-1">
+                  <span className="text-slate-300">Pending Orders</span>
+                  <span className="text-white">{pendingPct}%</span>
+                </div>
+                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                  <div className={`bg-amber-500 h-full rounded-full`} style={{ width: `${pendingPct}%` }}></div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -125,8 +140,8 @@ export default function AdminDashboard() {
       {/* Recent Transactions Table */}
       <div className="bg-slate-950 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-          <h3 className="font-bold text-white text-base">Recent Platform Transactions</h3>
-          <span className="text-xs text-slate-400">Realtime live feed</span>
+          <h3 className="font-bold text-white text-base">Recent Platform Orders</h3>
+          <span className="text-xs text-slate-400">Realtime live feed (Last 10)</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -134,8 +149,8 @@ export default function AdminDashboard() {
             <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
               <tr>
                 <th className="p-4">Transaction ID</th>
-                <th className="p-4">Seller Store</th>
                 <th className="p-4">Buyer Name</th>
+                <th className="p-4">Buyer Email</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Platform Fee (5%)</th>
                 <th className="p-4">Status</th>
@@ -143,23 +158,25 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300 font-medium">
-              {recentTransactions.map((trx, idx) => (
+              {recentOrders?.map((trx, idx) => {
+                const isCompleted = trx.status === 'delivered';
+                return (
                 <tr key={idx} className="hover:bg-slate-900/50 transition">
-                  <td className="p-4 font-bold text-blue-400">{trx.id}</td>
-                  <td className="p-4 text-white font-semibold">{trx.seller}</td>
-                  <td className="p-4">{trx.buyer}</td>
-                  <td className="p-4 font-extrabold text-white">{trx.amount}</td>
-                  <td className="p-4 text-emerald-400 font-bold">{trx.fee}</td>
+                  <td className="p-4 font-bold text-blue-400">#{trx.id.substring(0, 8)}</td>
+                  <td className="p-4 text-white font-semibold">{trx.users?.name || 'Unknown'}</td>
+                  <td className="p-4">{trx.users?.email || 'N/A'}</td>
+                  <td className="p-4 font-extrabold text-white">৳ {Number(trx.total_amount).toLocaleString()}</td>
+                  <td className="p-4 text-emerald-400 font-bold">৳ {(Number(trx.total_amount) * 0.05).toLocaleString()}</td>
                   <td className="p-4">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                      trx.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                     }`}>
                       {trx.status}
                     </span>
                   </td>
-                  <td className="p-4 text-slate-500">{trx.date}</td>
+                  <td className="p-4 text-slate-500">{new Date(trx.created_at).toLocaleDateString()}</td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

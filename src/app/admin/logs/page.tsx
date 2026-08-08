@@ -1,20 +1,41 @@
-'use client';
-
 import React from 'react';
+import { createAdminClient } from '@/utils/supabase/server-admin';
 
-export default function AdminLogs() {
-  const logs = [
-    { id: 'LOG-9921', action: 'Approved Seller Account', actor: 'Super Admin', target: 'Tech Haven BD', time: '12 mins ago', ip: '103.48.16.2' },
-    { id: 'LOG-9920', action: 'Released bKash Payout (৳45,000)', actor: 'Super Admin', target: 'AudioWorld BD', time: '1 hour ago', ip: '103.48.16.2' },
-    { id: 'LOG-9919', action: 'Banned Suspicious User', actor: 'System Auto-Guard', target: 'spammer@temp.com', time: '3 hours ago', ip: '185.220.101.4' },
-    { id: 'LOG-9918', action: 'Updated Commission Rate (5%)', actor: 'Super Admin', target: 'System Config', time: 'Yesterday', ip: '103.48.16.2' },
-  ];
+export const dynamic = 'force-dynamic';
+
+export default async function AdminLogs() {
+  const supabase = createAdminClient();
+  
+  const { data: orders } = await supabase.from('orders').select('*, users!buyer_id(name)').order('created_at', {ascending:false}).limit(50);
+  const { data: complaints } = await supabase.from('complaints').select('*, users!buyer_id(name)').order('created_at', {ascending:false}).limit(50);
+  
+  const formattedOrders = (orders || []).map(o => ({
+    id: o.id,
+    type: 'Order',
+    action: `Order placed (${o.status})`,
+    actor: o.users?.name || 'Unknown',
+    target: `Amount: ৳${o.total_amount}`,
+    time: new Date(o.created_at)
+  }));
+  
+  const formattedComplaints = (complaints || []).map(c => ({
+    id: c.id,
+    type: 'Complaint',
+    action: `Complaint filed (${c.status})`,
+    actor: c.users?.name || 'Unknown',
+    target: `Issue: ${c.description?.substring(0, 30)}...`,
+    time: new Date(c.created_at)
+  }));
+  
+  const combinedLogs = [...formattedOrders, ...formattedComplaints]
+    .sort((a, b) => b.time.getTime() - a.time.getTime())
+    .slice(0, 100);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">System Audit & Security Logs</h1>
-        <p className="text-xs text-slate-400 mt-1">Immutable record of admin operations, payout releases, and security events.</p>
+        <h1 className="text-2xl font-bold text-white tracking-tight">System Audit & Activity Logs</h1>
+        <p className="text-xs text-slate-400 mt-1">Immutable record of platform activity including orders and complaints.</p>
       </div>
 
       <div className="bg-slate-950 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
@@ -22,25 +43,32 @@ export default function AdminLogs() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
               <tr>
-                <th className="p-4">Log ID</th>
+                <th className="p-4">Type</th>
                 <th className="p-4">Action Event</th>
                 <th className="p-4">Triggered By</th>
-                <th className="p-4">Target Resource</th>
-                <th className="p-4">IP Address</th>
+                <th className="p-4">Details</th>
                 <th className="p-4">Timestamp</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300 font-medium">
-              {logs.map((l) => (
+              {combinedLogs.map((l) => (
                 <tr key={l.id} className="hover:bg-slate-900/50 transition">
-                  <td className="p-4 font-mono font-bold text-blue-400">{l.id}</td>
+                  <td className="p-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                      l.type === 'Order' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
+                      {l.type}
+                    </span>
+                  </td>
                   <td className="p-4 font-bold text-white">{l.action}</td>
                   <td className="p-4 text-purple-300 font-semibold">{l.actor}</td>
                   <td className="p-4 text-slate-300">{l.target}</td>
-                  <td className="p-4 font-mono text-slate-500">{l.ip}</td>
-                  <td className="p-4 text-slate-500">{l.time}</td>
+                  <td className="p-4 text-slate-500">{l.time.toLocaleString()}</td>
                 </tr>
               ))}
+              {combinedLogs.length === 0 && (
+                <tr><td colSpan={5} className="p-4 text-center text-slate-500">No logs found.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
