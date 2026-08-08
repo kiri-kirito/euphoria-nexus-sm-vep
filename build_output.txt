@@ -7,3 +7,63 @@
 ✓ Running next.config.ts took 43ms
 
   Creating an optimized production build ...
+✓ Compiled successfully in 1866ms
+  Running TypeScript ...
+  Finished TypeScript in 1883ms ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/33) ...
+  Generating static pages using 15 workers (8/33) 
+DB not connected or empty. Falling back to MOCK_PRODUCTS.
+  Generating static pages using 15 workers (16/33) 
+  Generating static pages using 15 workers (24/33) 
+✓ Generating static pages using 15 workers (33/33) in 716ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /admin/cms
+├ ƒ /admin/dashboard
+├ ƒ /admin/logs
+├ ƒ /admin/payouts
+├ ƒ /admin/sellers
+├ ○ /admin/settings
+├ ƒ /admin/users
+├ ƒ /api/admin/create-agent
+├ ○ /cart
+├ ○ /checkout
+├ ○ /checkout/success
+├ ○ /delivery/dashboard
+├ ○ /delivery/earnings
+├ ○ /delivery/orders
+├ ○ /delivery/profile
+├ ○ /delivery/tasks
+├ ƒ /delivery/tasks/[id]
+├ ○ /explore
+├ ○ /orders
+├ ƒ /product/[id]
+├ ○ /profile
+├ ○ /register
+├ ○ /seller/analytics
+├ ○ /seller/apply
+├ ○ /seller/bidding
+├ ○ /seller/bundling
+├ ○ /seller/dashboard
+├ ○ /seller/negotiations
+├ ○ /seller/orders
+├ ○ /seller/products
+├ ○ /seller/products/new
+├ ○ /seller/settings
+├ ○ /support/dashboard
+├ ○ /support/escrow
+├ ○ /support/moderation
+├ ○ /support/tickets
+├ ƒ /support/tickets/[id]
+└ ○ /wishlist
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
