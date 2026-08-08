@@ -39,6 +39,32 @@ io.on('connection', (socket) => {
   });
 });
 
+const negotiationsNamespace = io.of('/negotiations');
+negotiationsNamespace.on('connection', (socket) => {
+  console.log(`[Socket] User connected to /negotiations: ${socket.id}`);
+  
+  socket.on('propose_price', (data) => {
+    console.log(`[Negotiations] propose_price received:`, data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[Socket] User disconnected from /negotiations: ${socket.id}`);
+  });
+});
+
+const biddingNamespace = io.of('/bidding');
+biddingNamespace.on('connection', (socket) => {
+  console.log(`[Socket] User connected to /bidding: ${socket.id}`);
+
+  socket.on('submit_bid', (data) => {
+    console.log(`[Bidding] submit_bid received:`, data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[Socket] User disconnected from /bidding: ${socket.id}`);
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`[Server] Running on port ${PORT}`);
