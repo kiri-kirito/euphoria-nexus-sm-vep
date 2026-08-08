@@ -107,31 +107,31 @@ export default function Hero() {
   return (
     <section className="relative overflow-hidden rounded-2xl my-6 mx-4 sm:mx-6 lg:mx-8 shadow-2xl h-[520px] lg:h-[600px] bg-[#020617]">
 
-      {/* ── Animated Space & Earth Horizon Background ── */}
+      {/* ── Animated Space & Earth Horizon Background (Faster) ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         
-        {/* Layer 1: Deep Cosmos Starfield with slow continuous panning */}
+        {/* Layer 1: Deep Cosmos Starfield */}
         <div
           className="absolute -inset-[30%] w-[160%] h-[160%] bg-cover bg-center opacity-70"
           style={{
             backgroundImage: "url('https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1800&q=80')",
-            animation: "cosmosOrbit 45s linear infinite alternate",
+            animation: "cosmosOrbit 15s linear infinite alternate",
           }}
         />
 
-        {/* Layer 2: Earth Horizon Curve with glowing atmosphere light burst (Matches reference image) */}
+        {/* Layer 2: Earth Horizon Curve with glowing atmosphere light burst */}
         <div
           className="absolute -bottom-10 -left-10 w-[120%] h-[110%] bg-contain bg-left-bottom bg-no-repeat opacity-90 mix-blend-screen"
           style={{
             backgroundImage: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1800&q=80')",
-            animation: "earthAtmosphereFloat 25s ease-in-out infinite alternate",
+            animation: "earthAtmosphereFloat 8s ease-in-out infinite alternate",
           }}
         />
 
         {/* Layer 3: Dynamic Pulsing Atmospheric Blue Light Flare */}
         <div 
           className="absolute bottom-0 left-0 w-[600px] h-[400px] bg-gradient-to-tr from-cyan-500/40 via-blue-600/20 to-transparent rounded-full blur-[100px]"
-          style={{ animation: 'atmospherePulse 6s ease-in-out infinite alternate' }}
+          style={{ animation: 'atmospherePulse 3s ease-in-out infinite alternate' }}
         />
 
         {/* Top/Right vignetting to ensure text readability */}
@@ -165,7 +165,7 @@ export default function Hero() {
             500+ Local Sellers Online
           </div>
 
-          {/* Fixed Height Container for Text Slides to stop layout jumping */}
+          {/* Fixed Height Container for Text Slides */}
           <div className="relative h-[260px] lg:h-[290px] w-full">
             {TEXT_SLIDES.map((slide, idx) => (
               <div
@@ -192,7 +192,7 @@ export default function Hero() {
             ))}
           </div>
 
-          {/* Dots Indicator - Cleanly positioned below text on the left */}
+          {/* Dots Indicator */}
           <div className="flex items-center gap-3 mt-6">
             {SHOWCASE_IMAGES.map((img, i) => (
               <button
@@ -209,49 +209,43 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Right — Product Showcase Seamlessly Blended into Space */}
+        {/* Right — Full-bleed Showcase Image */}
         <div
-          className="hidden lg:flex relative w-[420px] xl:w-[500px] flex-shrink-0 items-center justify-center p-8 cursor-pointer group"
+          className="hidden lg:block relative w-[420px] xl:w-[500px] flex-shrink-0 cursor-pointer group h-full"
           onClick={() => router.push(`/explore?category=${SHOWCASE_IMAGES[current].category}`)}
         >
-          {/* Radial Light Aura behind product */}
-          <div className="absolute w-[360px] h-[360px] bg-cyan-500/20 rounded-full blur-[80px] group-hover:bg-cyan-500/35 transition-all duration-700" />
+          {/* Smooth blend from the dark background into the left edge of the image */}
+          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#020617] via-[#020617]/80 to-transparent z-10 pointer-events-none" />
 
-          {/* Product Image Container with Masked Feathered Radial Edges (NO RECTANGULAR BORDERS!) */}
-          <div 
-            className="relative w-full h-[400px] rounded-3xl overflow-hidden"
-            style={{
-              maskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 85%)",
-              WebkitMaskImage: "radial-gradient(ellipse at center, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 85%)",
-            }}
-          >
-            {SHOWCASE_IMAGES.map((img, i) => (
-              <img
-                key={i}
-                src={img.src}
-                alt={img.label}
-                className={`absolute inset-0 w-full h-full object-cover mix-blend-lighten transition-all duration-[1500ms] ease-in-out ${
-                  i === current 
-                    ? "opacity-90 scale-100 blur-0" 
-                    : "opacity-0 scale-110 blur-md"
-                }`}
-              />
-            ))}
+          {/* Product Images */}
+          {SHOWCASE_IMAGES.map((img, i) => (
+            <img
+              key={i}
+              src={img.src}
+              alt={img.label}
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-[1500ms] ease-in-out ${
+                i === current ? "opacity-100 scale-100" : "opacity-0 scale-105"
+              }`}
+            />
+          ))}
 
-            {/* Dark vignette blending layer */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/60 mix-blend-multiply" />
-          </div>
+          {/* Hover overlay and bottom gradient for text readability */}
+          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-colors duration-300 z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
 
-          {/* Floating Category Label Badge */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-slate-950/70 backdrop-blur-xl border border-white/15 px-6 py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] group-hover:border-cyan-400/50 transition-all duration-300">
-            <span className="text-white text-base font-bold tracking-wide">
+          {/* Category Label */}
+          <div className="absolute bottom-10 left-8 right-8 flex items-end justify-between z-20">
+            <span
+              className={`text-white font-bold text-2xl drop-shadow-lg transition-all duration-700 ${
+                contentVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
+              }`}
+            >
               {SHOWCASE_IMAGES[current].label}
             </span>
-            <span className="text-cyan-400 text-xs font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Explore Category →
+            <span className="bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+              Explore →
             </span>
           </div>
-
         </div>
 
       </div>
