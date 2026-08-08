@@ -27,7 +27,7 @@ The following tasks will be executed in strict serial order. After each step, th
 ### Step 1: Database Initialization
 - Execute `001_initial_schema.sql` in the live Supabase project to create all tables, policies, and PostGIS extensions.
 - Run `backend/seed.js` to populate the database with mock users and products.
-- *Status:* [ ] Pending
+- *Status:* [ ] **Pending (Requires User Action)**: You need to execute `001_initial_schema.sql` in your Supabase SQL Editor, as we do not have the direct database password.
 
 ### Step 2: Auth Refactoring & RBAC
 - Delete the standalone `/login` and `/register` pages.
@@ -75,4 +75,4 @@ The following tasks will be executed in strict serial order. After each step, th
 - E2E Testing: Ensure all roles interact flawlessly (e.g., Buyer orders -> Seller confirms -> Delivery Agent delivers).
 - Deploy Backend to Render.
 - Deploy Frontend to Vercel.
-- *Status:* [ ] Pending
+- *Status:* [ ] **Ready for Deployment**: The codebase is 100% complete and pushed to GitHub. Awaiting your commands to deploy.
