@@ -1,6 +1,19 @@
 import { createClient } from '@/utils/supabase/client'
 
 // MOCK FALLBACK DATA
+const getFirstImage = (images: any): string => {
+  try {
+    if (Array.isArray(images)) return images[0] || '';
+    if (typeof images === 'string') {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed[0] : '';
+    }
+    return '';
+  } catch {
+    return '';
+  }
+};
+
 export const MOCK_PRODUCTS = [
   { id: '1', name: 'Wireless Noise-Cancelling Headphones', price: 299.99, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80', seller: 'AudioTech', rating: 4.8 },
   { id: '2', name: 'Mechanical Keyboard', price: 149.99, image: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&h=600&fit=crop&q=80', seller: 'KeyMaster', rating: 4.9 },
@@ -22,16 +35,16 @@ export const MOCK_SELLERS = [
 // API FETCHERS
 export async function fetchProducts() {
   const supabase = createClient();
-  const { data, error } = await supabase.from('products').select('*, stores(store_name, rating)').eq('status', 'active').order('created_at', { ascending: false }).limit(20);
+  const { data, error } = await supabase.from('products').select('*, users!seller_id(name), stores!seller_id(store_name, rating)').eq('status', 'active').order('created_at', { ascending: false }).limit(20);
   if (error || !data || data.length === 0) {
     console.warn("DB not connected or empty. Falling back to MOCK_PRODUCTS.");
     return MOCK_PRODUCTS;
   }
   return data.map(p => ({
     ...p,
-    seller: p.stores?.store_name || 'Unknown Seller',
+    seller: p.stores?.store_name || p.users?.name || 'Unknown Seller',
     rating: p.stores?.rating || 4.5,
-    image: (p.images && p.images.length > 0) ? p.images[0] : 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80'
+    image: getFirstImage(p.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80'
   }));
 }
 

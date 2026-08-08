@@ -29,38 +29,45 @@ export default function Navbar() {
     }
   }, []);
 
-  const handleSupabaseAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRealLogin = async (emailValue: string, passwordValue: string) => {
     setLoading(true);
     setError(null);
-
-    let authError;
-    if (authMode === 'register') {
-      const { error } = await supabase.auth.signUp({ email, password });
-      authError = error;
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      authError = error;
-    }
-
-    if (authError) {
-      setError(authError.message);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
+    
+    if (error) {
+      setError(error.message);
       setLoading(false);
-    } else {
-      setIsLoggedIn(true);
-      setUserRole('buyer');
-      document.cookie = `mockUserRole=buyer; path=/; max-age=86400`;
-      setShowLoginModal(false);
-      setLoading(false);
-      window.location.reload();
+      return;
     }
+    
+    // Get user role from public.users table
+    const { data: userData } = await supabase.from('users').select('role').eq('id', data.user.id).single();
+    const role = userData?.role || 'buyer';
+    document.cookie = `mockUserRole=${role}; path=/; max-age=86400`;
+    window.location.reload();
   };
 
-  const handleMockLogin = (role: string) => {
-    setUserRole(role);
-    setIsLoggedIn(true);
-    setShowLoginModal(false);
-    document.cookie = `mockUserRole=${role}; path=/; max-age=86400`;
+  const handleSupabaseAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleRealLogin(email, password);
+  };
+
+  const quickLogin = async (role: string) => {
+    const mockPasswords: Record<string, {email: string, password: string}> = {
+      admin: { email: 'admin1@euphoria.com', password: 'Admin@1234' },
+      seller: { email: 'seller1@euphoria.com', password: 'Seller@1234' },
+      buyer: { email: 'buyer1@euphoria.com', password: 'Buyer@1234' },
+      agent: { email: 'delivery1@euphoria.com', password: 'Delivery@1234' },
+      support: { email: 'support1@euphoria.com', password: 'Support@1234' },
+    };
+    const creds = mockPasswords[role];
+    if (creds) {
+      await handleRealLogin(creds.email, creds.password);
+    } else {
+      document.cookie = `mockUserRole=${role}; path=/; max-age=86400`;
+      window.location.reload();
+    }
   };
 
   const handleLogout = async () => {
@@ -192,103 +199,90 @@ export default function Navbar() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">
-                {authMode === 'login' ? 'Sign In' : authMode === 'register' ? 'Create Account' : 'Mock Login'}
-              </h2>
-              <button onClick={() => { setShowLoginModal(false); setAuthMode('login'); setError(null); }} className="text-slate-400 hover:text-slate-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <div className="flex items-center gap-2">
+                <img src="/logo-brand.png" alt="Logo" className="h-8 w-auto" />
+                <h2 className="text-xl font-bold text-slate-800">
+                  Sign In
+                </h2>
+              </div>
+              <button onClick={() => { setShowLoginModal(false); setError(null); }} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
-            {authMode === 'mock' ? (
-              <>
-                <p className="text-sm text-slate-500 mb-6">
-                  Select a role to simulate the UI (Database bypass).
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { id: "buyer", title: "Buyer", desc: "Regular customer view" },
-                    { id: "seller", title: "Seller", desc: "Vendor with a store" },
-                    { id: "admin", title: "Admin", desc: "Platform administrator" },
-                    { id: "delivery", title: "Delivery Agent", desc: "Logistics staff" },
-                    { id: "support", title: "Support Agent", desc: "Customer service staff" }
-                  ].map((role) => (
-                    <button
-                      key={role.id}
-                      onClick={() => handleMockLogin(role.id)}
-                      className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                    >
-                      <div>
-                        <h3 className="font-bold text-slate-800 group-hover:text-primary transition-colors">{role.title}</h3>
-                        <p className="text-xs text-slate-500">{role.desc}</p>
-                      </div>
-                      <svg className="text-slate-300 group-hover:text-primary transition-colors" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                  ))}
+            <form onSubmit={handleSupabaseAuth} className="space-y-4">
+              {error && (
+                <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600 font-medium">
+                  {error}
                 </div>
-                <button onClick={() => setAuthMode('login')} className="mt-4 text-xs text-primary hover:underline w-full text-center">Back to Real Login</button>
-              </>
-            ) : (
-              <form onSubmit={handleSupabaseAuth} className="space-y-4">
-                {error && (
-                  <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">
-                    {error}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    placeholder="you@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    placeholder="••••••••"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full rounded-lg bg-primary py-2.5 text-white font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark py-3.5 text-white font-bold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-70 mt-2"
+              >
+                {loading ? 'Processing...' : 'Sign In'}
+              </button>
+              
+              <div className="flex justify-center items-center text-sm mt-5">
+                <span className="text-slate-500 mr-2">
+                  Don't have an account?
+                </span>
+                <Link
+                  href="/register"
+                  onClick={() => setShowLoginModal(false)}
+                  className="font-bold text-primary hover:text-primary-dark hover:underline transition-colors"
                 >
-                  {loading ? 'Processing...' : authMode === 'login' ? 'Sign In' : 'Sign Up'}
-                </button>
-                
-                <div className="flex justify-between items-center text-sm mt-4">
-                  <span className="text-slate-500">
-                    {authMode === 'login' ? "Don't have an account?" : "Already have an account?"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                    className="font-semibold text-primary hover:underline"
-                  >
-                    {authMode === 'login' ? 'Register' : 'Login'}
-                  </button>
-                </div>
+                  Register
+                </Link>
+              </div>
 
-                <div className="border-t pt-4 mt-6">
-                  <button 
-                    type="button"
-                    onClick={() => setAuthMode('mock')}
-                    className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors text-center"
-                  >
-                    Developer: Use Mock UI Simulator
+              <div className="relative flex items-center py-5">
+                <div className="flex-grow border-t border-slate-200"></div>
+                <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-semibold uppercase tracking-wider">Or</span>
+                <div className="flex-grow border-t border-slate-200"></div>
+              </div>
+
+              <div>
+                <p className="text-xs text-center font-semibold text-slate-500 mb-3 uppercase tracking-wider">Quick Login (Testing)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => quickLogin('buyer')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                    👤 Buyer
+                  </button>
+                  <button type="button" onClick={() => quickLogin('seller')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                    🏪 Seller
+                  </button>
+                  <button type="button" onClick={() => quickLogin('admin')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                    🛡️ Admin
+                  </button>
+                  <button type="button" onClick={() => quickLogin('agent')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                    🚚 Agent
                   </button>
                 </div>
-              </form>
-            )}
+              </div>
+            </form>
           </div>
         </div>
       )}

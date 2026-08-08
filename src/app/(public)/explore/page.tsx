@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, Suspense, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import BulkDealModal from '@/components/products/BulkDealModal';
+import { createClient } from '@/utils/supabase/client';
+import Link from 'next/link';
 
 interface Product {
   id: string;
@@ -158,14 +160,62 @@ function ExploreContent() {
   const [isNegotiateOpen, setIsNegotiateOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>(PRODUCTS); // Default to mock initially
+  const router = useRouter();
+
+  const getFirstImage = (images: any): string => {
+    try {
+      if (Array.isArray(images)) return images[0] || '';
+      if (typeof images === 'string') {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) ? parsed[0] : '';
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  };
+
+  const fetchExploreProducts = async (category?: string, search?: string) => {
+    const supabase = createClient();
+    try {
+      let query = supabase
+        .from('products')
+        .select('*, users!seller_id(name)')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (category && category !== 'All') {
+        query = query.eq('category', category);
+      }
+      if (search) {
+        query = query.ilike('name', `%${search}%`);
+      }
+      
+      const { data, error } = await query;
+      if (error || !data || data.length === 0) return PRODUCTS;
+      
+      return data.map(p => ({
+        ...p,
+        seller: p.users?.name || 'Unknown Seller',
+        image: getFirstImage(p.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80'
+      }));
+    } catch (e) {
+      return PRODUCTS;
+    }
+  };
 
   useEffect(() => {
-    import('@/utils/api').then(({ fetchProducts }) => {
-      fetchProducts().then(data => {
-        setProducts(data);
-      });
-    });
-  }, []);
+    const loadProducts = async () => {
+      const data = await fetchExploreProducts(selectedCategory, searchQuery);
+      setProducts(data);
+    };
+
+    const debounceTimer = setTimeout(() => {
+      loadProducts();
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [selectedCategory, searchQuery]);
 
   // Re-sync if URL changes
   useEffect(() => {
@@ -175,13 +225,7 @@ function ExploreContent() {
     }
   }, [initialCategory]);
 
-  const filteredProducts = products.filter(p => {
-    const pCategory = p.category || 'All';
-    const matchesCategory = selectedCategory === 'All' || pCategory === selectedCategory;
-    const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (p.store || p.seller || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredProducts = products;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -320,7 +364,7 @@ function ExploreContent() {
                 <div 
                   key={product.id} 
                   className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
+                  onClick={() => router.push(`/product/${product.id}`)}
                 >
                   <div className="relative h-52 bg-slate-100 overflow-hidden">
                     <img 
@@ -352,15 +396,14 @@ function ExploreContent() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedProduct(product);
+                          showToast(`Added ${product.name} to Cart!`);
                         }}
                         className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
                       >
                         <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z" />
                         </svg>
-                        View Details
+                        Add to Cart
                       </button>
                     </div>
                   </div>
