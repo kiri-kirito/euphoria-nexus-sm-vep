@@ -149,19 +149,26 @@ const PRODUCTS: Product[] = [
 function ExploreContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category');
+  const urlSearch = searchParams.get('search') || '';
+  const urlFilter = searchParams.get('filter') || '';
   
   // Try to match the incoming category param with our valid categories, default to 'All'
   const categories = ['All', 'Industrial & Metals', 'Electronics & Gadgets', 'Home & Furniture', 'Fashion', 'Footwear', 'Accessories'];
   const matchedCategory = categories.find(c => c.toLowerCase() === initialCategory?.toLowerCase()) || 'All';
 
   const [selectedCategory, setSelectedCategory] = useState<string>(matchedCategory);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isNegotiateOpen, setIsNegotiateOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]); // Start empty — load real data
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
+
+  // Keep searchQuery synced with URL param if it changes from Navbar
+  useEffect(() => {
+    setSearchQuery(urlSearch);
+  }, [urlSearch]);
 
   const getFirstImage = (images: any): string => {
     try {
@@ -265,20 +272,6 @@ function ExploreContent() {
             <p className="text-slate-400 mt-2 max-w-2xl text-sm sm:text-base">
               Discover verified Bangladesh suppliers, negotiate bulk prices directly, or place direct orders.
             </p>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="w-full md:w-96 relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products or stores..."
-              className="w-full bg-slate-800/80 border border-slate-700 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary backdrop-blur-md placeholder:text-slate-500"
-            />
-            <svg className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
           </div>
         </div>
       </div>

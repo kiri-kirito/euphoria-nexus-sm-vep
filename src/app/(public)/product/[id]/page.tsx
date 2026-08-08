@@ -65,8 +65,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mt-4">
           <div className="flex flex-col md:flex-row">
             {/* Product Image */}
-            <div className="w-full md:w-1/2 bg-slate-100 p-8 flex items-center justify-center">
-              <img src={image} alt={product.name} className="w-full max-w-md h-auto rounded-xl shadow-lg object-cover" />
+            <div className="w-full md:w-1/2 bg-slate-100 p-6 sm:p-10 flex items-center justify-center">
+              <div className="relative w-full aspect-square max-h-[500px] overflow-hidden rounded-2xl shadow-xl border border-slate-200 bg-white">
+                <img src={image} alt={product.name} className="w-full h-full object-cover object-center" />
+              </div>
             </div>
 
             {/* Product Details */}

@@ -55,13 +55,10 @@ export default function CheckoutPage() {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-          buyer_id: user.id,
-          seller_id: items[0].sellerId || null, // Assuming one seller for simplicity in demo
+          buyer_id: user?.id || null,
           total_amount: total,
           status: 'pending',
-          payment_status: paymentMethod === 'cod' ? 'pending' : 'paid',
-          shipping_address: `${address}, ${city}, ${zone}`,
-          delivery_fee: deliveryOption
+          shipping_address: `${address}, ${city}, ${zone}`
         })
         .select()
         .single();
@@ -72,8 +69,9 @@ export default function CheckoutPage() {
       const orderItems = items.map(item => ({
         order_id: order.id,
         product_id: item.id,
+        seller_id: item.sellerId || null,
         quantity: item.quantity,
-        price_at_time: item.price
+        unit_price: item.price
       }));
 
       const { error: itemsError } = await supabase
@@ -81,6 +79,20 @@ export default function CheckoutPage() {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // 3. Create initial delivery task
+      try {
+        await supabase
+          .from('deliveries')
+          .insert({
+            order_id: order.id,
+            pickup_address: 'Local Seller Hub',
+            delivery_address: `${address}, ${city}, ${zone}`,
+            status: 'assigned'
+          });
+      } catch (delErr) {
+        console.warn('Delivery assignment warning:', delErr);
+      }
 
       // 3. Clear cart and redirect
       clearCart();

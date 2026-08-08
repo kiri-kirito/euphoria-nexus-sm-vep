@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -12,6 +13,21 @@ export default function Navbar() {
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   
   // Real Auth State
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'mock'>('login');
@@ -20,6 +36,15 @@ export default function Navbar() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/explore');
+    }
+  };
 
   const handleRealLogin = async (emailValue: string, passwordValue: string) => {
     setLoading(true);
@@ -33,7 +58,6 @@ export default function Navbar() {
       return;
     }
     
-    // AuthProvider will automatically pick up the session change and update useAuthStore
     setShowLoginModal(false);
     setLoading(false);
   };
@@ -58,6 +82,7 @@ export default function Navbar() {
   };
 
   const handleLogout = async () => {
+    setShowProfileDropdown(false);
     await supabase.auth.signOut();
     window.location.href = '/';
   };
@@ -81,21 +106,23 @@ export default function Navbar() {
             </Link>
 
             {/* Search Bar */}
-            <div className="flex-1 max-w-2xl mx-8 hidden md:flex items-center">
+            <form onSubmit={handleSearchSubmit} className="flex-1 max-w-2xl mx-8 hidden md:flex items-center">
               <div className="relative w-full">
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search products, bundles, or sellers..."
-                  className="w-full pl-4 pr-10 py-2 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all bg-slate-50"
+                  className="w-full pl-4 pr-10 py-2 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all bg-slate-50 text-slate-900"
                 />
-                <button className="absolute right-3 top-2.5 text-slate-400 hover:text-primary">
+                <button type="submit" className="absolute right-3 top-2.5 text-slate-400 hover:text-primary transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                   </svg>
                 </button>
               </div>
-            </div>
+            </form>
 
             {/* Nav Icons & Actions */}
             <div className="flex items-center gap-4 sm:gap-6">
@@ -129,61 +156,108 @@ export default function Navbar() {
                   >
                     Logout
                   </button>
-                  <div className="relative group">
-                  <Link href="/profile" className="text-slate-600 hover:text-primary flex items-center gap-1 py-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </Link>
-                  {/* Profile Dropdown */}
-                  <div className="absolute right-0 top-full mt-0 w-64 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right group-hover:scale-100 scale-95">
-                    <div className="p-3 flex flex-col gap-1">
-                      
-                      {/* Role Switching Section */}
-                      {userRole && userRole !== "buyer" && (
-                        <>
-                          <div className="bg-primary/5 rounded-lg p-3 mb-2 border border-primary/10">
-                            <p className="text-[10px] uppercase font-bold text-primary mb-2 tracking-wider flex items-center gap-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" y1="22" x2="12" y2="12"></line></svg>
-                              Business & Staff
-                            </p>
-                            <Link href={`/${userRole}/dashboard`} className="flex items-center justify-between text-sm font-semibold text-slate-800 hover:text-primary transition-colors bg-white px-3 py-2 rounded-md shadow-sm border border-slate-200">
-                              Switch to {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Mode
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                            </Link>
-                          </div>
-                          <div className="h-px bg-slate-100 my-1"></div>
-                        </>
-                      )}
+                  <div className="relative" ref={dropdownRef}>
+                    <button 
+                      onClick={() => setShowProfileDropdown(prev => !prev)} 
+                      className="text-slate-600 hover:text-primary flex items-center gap-1 py-2 outline-none"
+                      aria-label="User Profile Menu"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold hover:bg-primary hover:text-white transition-colors">
+                        {profile?.name ? profile.name.substring(0, 1).toUpperCase() : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Profile Dropdown */}
+                    {showProfileDropdown && (
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 z-50 transform origin-top-right transition-all">
+                        <div className="p-3 flex flex-col gap-1">
+                          
+                          {/* Role Switching Section */}
+                          {userRole && userRole !== "buyer" && (
+                            <>
+                              <div className="bg-primary/5 rounded-lg p-3 mb-2 border border-primary/10">
+                                <p className="text-[10px] uppercase font-bold text-primary mb-2 tracking-wider flex items-center gap-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><line x1="12" y1="22" x2="12" y2="12"></line></svg>
+                                  Business & Staff
+                                </p>
+                                <Link 
+                                  href={`/${userRole}/dashboard`} 
+                                  onClick={() => setShowProfileDropdown(false)}
+                                  className="flex items-center justify-between text-sm font-semibold text-slate-800 hover:text-primary transition-colors bg-white px-3 py-2 rounded-md shadow-sm border border-slate-200"
+                                >
+                                  Switch to {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Mode
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                                </Link>
+                              </div>
+                              <div className="h-px bg-slate-100 my-1"></div>
+                            </>
+                          )}
 
-                      <Link href="/profile" className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors">My Account</Link>
-                      <Link href="/orders" className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors">My Orders</Link>
-                      <Link href="/wishlist" className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors">Wishlist</Link>
-                      
-                      {userRole === "buyer" && (
-                        <>
-                          <div className="h-px bg-slate-100 my-1"></div>
-                          <div className="px-4 py-2">
-                            <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider">For Business</p>
-                            <Link href="/seller/apply" className="text-sm text-primary font-medium hover:text-primary-dark transition-colors flex items-center justify-between">
-                              Become a Seller
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                            </Link>
-                          </div>
-                        </>
-                      )}
+                          <Link 
+                            href="/profile" 
+                            onClick={() => setShowProfileDropdown(false)} 
+                            className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors flex items-center gap-2"
+                          >
+                            👤 My Account
+                          </Link>
+                          
+                          <Link 
+                            href="/orders" 
+                            onClick={() => setShowProfileDropdown(false)} 
+                            className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors flex items-center gap-2"
+                          >
+                            📦 My Orders
+                          </Link>
+                          
+                          <Link 
+                            href="/wishlist" 
+                            onClick={() => setShowProfileDropdown(false)} 
+                            className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors flex items-center gap-2"
+                          >
+                            ❤️ Wishlist
+                          </Link>
 
-                      <div className="h-px bg-slate-100 my-1"></div>
-                      <button 
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium"
-                      >
-                        Logout
-                      </button>
-                    </div>
-                </div>
-                </div>
+                          <Link 
+                            href="/explore?filter=nearby" 
+                            onClick={() => setShowProfileDropdown(false)} 
+                            className="px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary rounded-md transition-colors flex items-center gap-2 font-medium"
+                          >
+                            📍 Find Local Sellers
+                          </Link>
+                          
+                          {userRole === "buyer" && (
+                            <>
+                              <div className="h-px bg-slate-100 my-1"></div>
+                              <div className="px-4 py-2">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider">For Business</p>
+                                <Link 
+                                  href="/seller/apply" 
+                                  onClick={() => setShowProfileDropdown(false)} 
+                                  className="text-sm text-primary font-medium hover:text-primary-dark transition-colors flex items-center justify-between"
+                                >
+                                  Become a Seller
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                                </Link>
+                              </div>
+                            </>
+                          )}
+
+                          <div className="h-px bg-slate-100 my-1"></div>
+                          <button 
+                            onClick={handleLogout}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium flex items-center gap-2"
+                          >
+                            🚪 Logout
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
