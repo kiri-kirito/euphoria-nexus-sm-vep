@@ -9,6 +9,7 @@ export default function AdminUsers() {
     { id: 'usr-3', name: 'Karim Ahmed', email: 'karim@delivery.com', role: 'Delivery Agent', status: 'Active', joined: 'Mar 15, 2026', orders: 142 },
     { id: 'usr-4', name: 'Sabrina Islam', email: 'sabrina@support.com', role: 'Support Staff', status: 'Active', joined: 'Apr 02, 2026', orders: 0 },
     { id: 'usr-5', name: 'Fake Account Test', email: 'spammer@temp.com', role: 'Buyer', status: 'Banned', joined: 'Aug 04, 2026', orders: 0 },
+    { id: 'usr-6', name: 'New Seller BD', email: 'new@seller.bd', role: 'Seller', status: 'Pending', joined: 'Just now', orders: 0 },
   ]);
 
   const [toast, setToast] = useState<string | null>(null);
@@ -36,6 +37,17 @@ export default function AdminUsers() {
     setShowAgentModal(false);
     setNewAgent({ name: '', email: '', role: 'Delivery Agent' });
     setToast(`${newAgent.role} account created successfully!`);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const approveSeller = (id: string) => {
+    setUsers(prev => prev.map(u => {
+      if (u.id === id) {
+        setToast(`Seller "${u.name}" approved successfully`);
+        return { ...u, status: 'Active' };
+      }
+      return u;
+    }));
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -108,12 +120,22 @@ export default function AdminUsers() {
                   <td className="p-4 text-slate-500">{u.joined}</td>
                   <td className="p-4">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                      u.status === 'Active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      u.status === 'Active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
+                      u.status === 'Pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                      'bg-red-500/20 text-red-400 border border-red-500/30'
                     }`}>
                       {u.status}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 flex gap-2">
+                    {u.status === 'Pending' && (
+                      <button 
+                        onClick={() => approveSeller(u.id)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg border transition bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                      >
+                        Approve
+                      </button>
+                    )}
                     <button 
                       onClick={() => toggleUserStatus(u.id)}
                       className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition ${
@@ -122,7 +144,7 @@ export default function AdminUsers() {
                           : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                       }`}
                     >
-                      {u.status === 'Active' ? 'Ban User' : 'Unban User'}
+                      {u.status === 'Active' ? 'Ban User' : (u.status === 'Banned' ? 'Unban User' : 'Reject')}
                     </button>
                   </td>
                 </tr>
