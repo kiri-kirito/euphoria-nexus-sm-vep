@@ -141,7 +141,7 @@ export default function Navbar() {
                     <div className="p-3 flex flex-col gap-1">
                       
                       {/* Role Switching Section */}
-                      {userRole !== "buyer" && (
+                      {userRole && userRole !== "buyer" && (
                         <>
                           <div className="bg-primary/5 rounded-lg p-3 mb-2 border border-primary/10">
                             <p className="text-[10px] uppercase font-bold text-primary mb-2 tracking-wider flex items-center gap-1">
@@ -265,18 +265,21 @@ export default function Navbar() {
 
               <div>
                 <p className="text-xs text-center font-semibold text-slate-500 mb-3 uppercase tracking-wider">Quick Login (Testing)</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => quickLogin('buyer')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button type="button" onClick={() => quickLogin('buyer')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
                     👤 Buyer
                   </button>
-                  <button type="button" onClick={() => quickLogin('seller')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                  <button type="button" onClick={() => quickLogin('seller')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
                     🏪 Seller
                   </button>
-                  <button type="button" onClick={() => quickLogin('admin')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
+                  <button type="button" onClick={() => quickLogin('admin')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
                     🛡️ Admin
                   </button>
-                  <button type="button" onClick={() => quickLogin('agent')} className="py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1.5">
-                    🚚 Agent
+                  <button type="button" onClick={() => quickLogin('agent')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
+                    🚚 Delivery
+                  </button>
+                  <button type="button" onClick={() => quickLogin('support')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
+                    🎧 Support
                   </button>
                 </div>
               </div>
