@@ -3,11 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState("buyer"); // buyer, seller, admin, delivery, support
   const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  // Real Auth State
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'mock'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('mockUserRole');
@@ -17,7 +26,36 @@ export default function Navbar() {
     }
   }, []);
 
-  const handleLogin = (role: string) => {
+  const handleSupabaseAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    let authError;
+    if (authMode === 'register') {
+      const { error } = await supabase.auth.signUp({ email, password });
+      authError = error;
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      authError = error;
+    }
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      // Successfully authenticated with Supabase. 
+      // Ideally, fetch the user role from public.users here.
+      // For now, default to buyer to get them in.
+      setIsLoggedIn(true);
+      setUserRole('buyer');
+      setShowLoginModal(false);
+      setLoading(false);
+      window.location.reload();
+    }
+  };
+
+  const handleMockLogin = (role: string) => {
     setUserRole(role);
     setIsLoggedIn(true);
     setShowLoginModal(false);
@@ -147,42 +185,108 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mock Login Modal */}
+      {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Mock Login</h2>
-              <button onClick={() => setShowLoginModal(false)} className="text-slate-400 hover:text-slate-600">
+              <h2 className="text-xl font-bold text-slate-800">
+                {authMode === 'login' ? 'Sign In' : authMode === 'register' ? 'Create Account' : 'Mock Login'}
+              </h2>
+              <button onClick={() => { setShowLoginModal(false); setAuthMode('login'); setError(null); }} className="text-slate-400 hover:text-slate-600">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
-            <p className="text-sm text-slate-500 mb-6">
-              Since the backend isn't connected yet, select a role below to simulate logging in. You will be redirected to the Buyer view first (as requested), and can switch roles from your profile dropdown.
-            </p>
-
-            <div className="space-y-3">
-              {[
-                { id: "buyer", title: "Buyer", desc: "Regular customer view" },
-                { id: "seller", title: "Seller", desc: "Vendor with a store" },
-                { id: "admin", title: "Admin", desc: "Platform administrator" },
-                { id: "delivery", title: "Delivery Agent", desc: "Logistics staff" },
-                { id: "support", title: "Support Agent", desc: "Customer service staff" }
-              ].map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => handleLogin(role.id)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                >
-                  <div>
-                    <h3 className="font-bold text-slate-800 group-hover:text-primary transition-colors">{role.title}</h3>
-                    <p className="text-xs text-slate-500">{role.desc}</p>
+            {authMode === 'mock' ? (
+              <>
+                <p className="text-sm text-slate-500 mb-6">
+                  Select a role to simulate the UI (Database bypass).
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { id: "buyer", title: "Buyer", desc: "Regular customer view" },
+                    { id: "seller", title: "Seller", desc: "Vendor with a store" },
+                    { id: "admin", title: "Admin", desc: "Platform administrator" },
+                    { id: "delivery", title: "Delivery Agent", desc: "Logistics staff" },
+                    { id: "support", title: "Support Agent", desc: "Customer service staff" }
+                  ].map((role) => (
+                    <button
+                      key={role.id}
+                      onClick={() => handleMockLogin(role.id)}
+                      className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary/5 transition-all group text-left"
+                    >
+                      <div>
+                        <h3 className="font-bold text-slate-800 group-hover:text-primary transition-colors">{role.title}</h3>
+                        <p className="text-xs text-slate-500">{role.desc}</p>
+                      </div>
+                      <svg className="text-slate-300 group-hover:text-primary transition-colors" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setAuthMode('login')} className="mt-4 text-xs text-primary hover:underline w-full text-center">Back to Real Login</button>
+              </>
+            ) : (
+              <form onSubmit={handleSupabaseAuth} className="space-y-4">
+                {error && (
+                  <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600">
+                    {error}
                   </div>
-                  <svg className="text-slate-300 group-hover:text-primary transition-colors" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    placeholder="you@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-lg bg-primary py-2.5 text-white font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Processing...' : authMode === 'login' ? 'Sign In' : 'Sign Up'}
                 </button>
-              ))}
-            </div>
+                
+                <div className="flex justify-between items-center text-sm mt-4">
+                  <span className="text-slate-500">
+                    {authMode === 'login' ? "Don't have an account?" : "Already have an account?"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    {authMode === 'login' ? 'Register' : 'Login'}
+                  </button>
+                </div>
+
+                <div className="border-t pt-4 mt-6">
+                  <button 
+                    type="button"
+                    onClick={() => setAuthMode('mock')}
+                    className="w-full text-xs text-slate-400 hover:text-slate-600 transition-colors text-center"
+                  >
+                    Developer: Use Mock UI Simulator
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
