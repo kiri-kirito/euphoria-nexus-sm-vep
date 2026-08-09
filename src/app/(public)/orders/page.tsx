@@ -11,6 +11,12 @@ export default function OrdersPage() {
   const supabase = createClient();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Complaint modal state
+  const [complaintOrder, setComplaintOrder] = useState<any | null>(null);
+  const [complaintText, setComplaintText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -37,8 +43,6 @@ export default function OrdersPage() {
         if (error) {
           console.error("Error fetching orders:", error);
         } else if (data) {
-          // Because joining products might fail if foreign keys aren't set up perfectly,
-          // we'll just show order summary logic here.
           setOrders(data);
         }
       } catch (err) {
@@ -50,9 +54,83 @@ export default function OrdersPage() {
     fetchOrders();
   }, [user, supabase]);
 
+  const handleFileComplaint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!complaintOrder || !user || !complaintText.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .insert([{
+          buyer_id: user.id,
+          order_id: complaintOrder.id,
+          description: complaintText,
+          status: 'open'
+        }]);
+
+      if (error) throw error;
+      
+      setToast('Complaint filed successfully. Support will contact you soon.');
+      setComplaintOrder(null);
+      setComplaintText('');
+    } catch (err: any) {
+      console.error(err);
+      setToast('Failed to file complaint: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setToast(null), 4000);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-12">
+    <div className="min-h-screen bg-slate-50 font-sans pb-12 relative">
       <Navbar />
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-slate-900 text-white text-sm font-bold px-6 py-4 rounded-2xl shadow-2xl z-50 animate-bounce">
+          {toast}
+        </div>
+      )}
+
+      {/* Complaint Modal */}
+      {complaintOrder && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">File a Complaint</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Order #{complaintOrder.id.substring(0, 8).toUpperCase()}
+            </p>
+            <form onSubmit={handleFileComplaint}>
+              <textarea 
+                value={complaintText}
+                onChange={(e) => setComplaintText(e.target.value)}
+                placeholder="Please describe your issue in detail..."
+                className="w-full h-32 p-4 border border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-slate-800"
+                required
+              />
+              <div className="flex gap-3 justify-end">
+                <button 
+                  type="button"
+                  onClick={() => setComplaintOrder(null)}
+                  className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/30 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-8">My Orders</h1>
         
@@ -88,7 +166,7 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 md:items-center justify-between">
+              <div key={order.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 md:items-center justify-between group hover:border-blue-200 hover:shadow-md transition-all">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <span className="font-bold text-slate-900 text-lg">Order #{order.id.substring(0, 8).toUpperCase()}</span>
@@ -114,9 +192,17 @@ export default function OrdersPage() {
                     <span className="text-sm text-slate-500 block mb-1">Total Amount</span>
                     <span className="text-2xl font-black text-slate-900">৳{order.total_amount?.toLocaleString() || 0}</span>
                   </div>
-                  <button className="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition">
-                    View Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setComplaintOrder(order)}
+                      className="px-4 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition"
+                    >
+                      File Complaint
+                    </button>
+                    <button className="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition shadow-md">
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

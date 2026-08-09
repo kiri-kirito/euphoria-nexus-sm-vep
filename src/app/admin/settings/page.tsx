@@ -1,24 +1,85 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { exportOrdersToCSV } from './actions';
+import { createClient } from '@/utils/supabase/client';
 
 export default function AdminSettings() {
-  const [commission, setCommission] = useState('5.0');
-  const [minPayout, setMinPayout] = useState('5000');
+  const [commission, setCommission] = useState('10.0');
+  const [minPayout, setMinPayout] = useState('50.00');
+  const [settingsId, setSettingsId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('*')
+          .limit(1)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching settings:", error);
+        } else if (data) {
+          setCommission(data.commission_rate?.toString() || '10.0');
+          setMinPayout(data.minimum_payout?.toString() || '50.00');
+          setSettingsId(data.id);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    fetchSettings();
+  }, [supabase]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Mock API save
-    setTimeout(() => {
+    
+    try {
+      const updates = {
+        commission_rate: parseFloat(commission),
+        minimum_payout: parseFloat(minPayout),
+        updated_at: new Date().toISOString()
+      };
+
+      let error;
+      if (settingsId) {
+        const result = await supabase
+          .from('platform_settings')
+          .update(updates)
+          .eq('id', settingsId);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('platform_settings')
+          .insert([updates])
+          .select()
+          .single();
+        if (result.data) {
+          setSettingsId(result.data.id);
+        }
+        error = result.error;
+      }
+
+      if (error) throw error;
+      
+      setToast('Platform settings saved dynamically to DB!');
+    } catch (err: any) {
+      console.error(err);
+      setToast('Failed to save settings: ' + err.message);
+    } finally {
       setIsLoading(false);
-      setToast('Platform settings saved successfully!');
       setTimeout(() => setToast(null), 3000);
-    }, 1500);
+    }
   };
 
   const handleExportCSV = async () => {
@@ -45,6 +106,10 @@ export default function AdminSettings() {
     }
   };
 
+  if (isFetching) {
+    return <div className="text-white animate-pulse">Loading settings...</div>;
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       {toast && (
@@ -56,7 +121,7 @@ export default function AdminSettings() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Platform System Settings</h1>
-          <p className="text-xs text-slate-400 mt-1">Configure transaction commission fees, payment gateways, and system rules.</p>
+          <p className="text-xs text-slate-400 mt-1">Configure transaction commission fees, payment gateways, and system rules (Live DB).</p>
         </div>
         <button 
           onClick={handleExportCSV}
@@ -72,7 +137,8 @@ export default function AdminSettings() {
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2">Platform Commission Fee (%)</label>
             <input 
-              type="text" 
+              type="number" 
+              step="0.1"
               value={commission}
               onChange={(e) => setCommission(e.target.value)}
               disabled={isLoading}
@@ -84,13 +150,14 @@ export default function AdminSettings() {
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2">Minimum Seller Payout (৳ Taka)</label>
             <input 
-              type="text" 
+              type="number" 
+              step="0.01"
               value={minPayout}
               onChange={(e) => setMinPayout(e.target.value)}
               disabled={isLoading}
               className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl p-3 text-xs outline-none focus:border-blue-500 font-bold disabled:opacity-50" 
             />
-            <p className="text-[11px] text-slate-500 mt-1">Minimum threshold before sellers can request bKash/Bank payout.</p>
+            <p className="text-[11px] text-slate-500 mt-1">Minimum threshold before sellers can request payout.</p>
           </div>
         </div>
 
@@ -100,7 +167,7 @@ export default function AdminSettings() {
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-blue-600/30"
           >
-            {isLoading ? 'Saving...' : 'Save System Settings'}
+            {isLoading ? 'Saving to DB...' : 'Save System Settings'}
           </button>
         </div>
       </form>

@@ -22,6 +22,11 @@ export default async function AdminDashboard() {
     .select('*, users(name, email)')
     .order('created_at', {ascending: false}).limit(10);
     
+  // Fetch platform settings
+  const { data: settingsData } = await supabase.from('platform_settings').select('commission_rate').limit(1).single();
+  const commissionRate = settingsData?.commission_rate || 10.0;
+  const commissionFraction = commissionRate / 100;
+    
   const hasError = gmvError || usersErr || ordersErr || productsErr || recentErr;
 
   // Fallbacks
@@ -91,10 +96,10 @@ export default async function AdminDashboard() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="font-bold text-white text-base">Monthly Commission Growth (2026)</h3>
-              <p className="text-xs text-slate-400">Platform earnings from 5% transaction fees</p>
+              <p className="text-xs text-slate-400">Platform earnings from {commissionRate}% transaction fees</p>
             </div>
             <span className="bg-blue-500/10 text-blue-400 text-xs font-bold px-3 py-1 rounded-full border border-blue-500/20">
-              ৳ {(gmv * 0.05).toLocaleString()} Estimated
+              ৳ {(gmv * commissionFraction).toLocaleString()} Estimated
             </span>
           </div>
 
@@ -169,7 +174,7 @@ export default async function AdminDashboard() {
                 <th className="p-4">Buyer Name</th>
                 <th className="p-4">Buyer Email</th>
                 <th className="p-4">Amount</th>
-                <th className="p-4">Platform Fee (5%)</th>
+                <th className="p-4">Platform Fee ({commissionRate}%)</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Time</th>
               </tr>
@@ -183,7 +188,7 @@ export default async function AdminDashboard() {
                   <td className="p-4 text-white font-semibold">{trx.users?.name || 'Unknown'}</td>
                   <td className="p-4">{trx.users?.email || 'N/A'}</td>
                   <td className="p-4 font-extrabold text-white">৳ {Number(trx.total_amount).toLocaleString()}</td>
-                  <td className="p-4 text-emerald-400 font-bold">৳ {(Number(trx.total_amount) * 0.05).toLocaleString()}</td>
+                  <td className="p-4 text-emerald-400 font-bold">৳ {(Number(trx.total_amount) * commissionFraction).toLocaleString()}</td>
                   <td className="p-4">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                       isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'

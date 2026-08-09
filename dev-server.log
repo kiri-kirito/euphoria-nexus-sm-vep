@@ -1,0 +1,850 @@
+
+> temp-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.56.1:3000
+- Environments: .env.local
+✓ Ready in 8.1s
+✓ Running next.config.ts took 1539ms
+
+ GET / 200 in 3.6s (next.js: 351ms, proxy.ts: 1355ms, application-code: 1876ms)
+Error: Route "/bundle/[...ids]" used `params.ids`. `params` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at BundleDealPage (src\app\(public)\bundle\[...ids]\page.tsx:21:11)
+  19 |
+  20 | export default async function BundleDealPage({ params }: { params: { ids: string[] } }) {
+> 21 |   const { ids } = params;
+     |           ^
+  22 |   if (!ids || ids.length < 2) return notFound();
+  23 |
+  24 |   const [id1, id2] = ids;
+ GET /bundle/189e23ad-5b81-478f-859c-020a032fc9ca/2682ee14-e3fd-4a66-b6b7-4762fec5f0b4 200 in 2.3s (next.js: 2.1s, proxy.ts: 23ms, application-code: 199ms)
+ GET /explore 200 in 273ms (next.js: 90ms, proxy.ts: 25ms, application-code: 158ms)
+Error fetching product: invalid input syntax for type uuid: "p1"
+ GET /product/p1 200 in 761ms (next.js: 446ms, proxy.ts: 20ms, application-code: 295ms)
+ GET /explore 200 in 155ms (next.js: 15ms, proxy.ts: 17ms, application-code: 123ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 331ms (next.js: 56ms, proxy.ts: 18ms, application-code: 257ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 48ms (next.js: 15ms, proxy.ts: 8ms, application-code: 25ms)
+✓ Compiled in 104ms
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 90ms (next.js: 25ms, proxy.ts: 37ms, application-code: 28ms)
+✓ Compiled in 157ms
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 55ms (next.js: 12ms, proxy.ts: 4ms, application-code: 40ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 56ms (next.js: 9ms, proxy.ts: 6ms, application-code: 41ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 68ms (next.js: 14ms, proxy.ts: 6ms, application-code: 48ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 52ms (next.js: 10ms, proxy.ts: 4ms, application-code: 38ms)
+✓ Compiled in 89ms
+✓ Compiled in 92ms
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 70ms (next.js: 25ms, proxy.ts: 8ms, application-code: 36ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 60ms (next.js: 11ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 59ms (next.js: 11ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 39ms (next.js: 9ms, proxy.ts: 4ms, application-code: 26ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 106ms (next.js: 21ms, proxy.ts: 8ms, application-code: 78ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 192ms (next.js: 6ms, proxy.ts: 4ms, application-code: 183ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 254ms (next.js: 15ms, proxy.ts: 8ms, application-code: 232ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 147ms (next.js: 25ms, proxy.ts: 15ms, application-code: 107ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 113ms (next.js: 7ms, proxy.ts: 7ms, application-code: 99ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 83ms (next.js: 31ms, proxy.ts: 7ms, application-code: 46ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 45ms (next.js: 8ms, proxy.ts: 5ms, application-code: 31ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 53ms (next.js: 7ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 79ms (next.js: 10ms, proxy.ts: 7ms, application-code: 62ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 46ms (next.js: 8ms, proxy.ts: 6ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 86ms (next.js: 7ms, proxy.ts: 5ms, application-code: 73ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 113ms (next.js: 15ms, proxy.ts: 6ms, application-code: 92ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 93ms (next.js: 16ms, proxy.ts: 6ms, application-code: 70ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 70ms (next.js: 7ms, proxy.ts: 4ms, application-code: 59ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 75ms (next.js: 5ms, proxy.ts: 6ms, application-code: 64ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 50ms (next.js: 5ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 44ms (next.js: 9ms, proxy.ts: 4ms, application-code: 31ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 6ms, proxy.ts: 3ms, application-code: 33ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 44ms (next.js: 6ms, proxy.ts: 4ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 106ms (next.js: 4ms, proxy.ts: 7ms, application-code: 95ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 108ms (next.js: 10ms, proxy.ts: 10ms, application-code: 89ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 53ms (next.js: 13ms, proxy.ts: 4ms, application-code: 36ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 40ms (next.js: 6ms, proxy.ts: 6ms, application-code: 28ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 72ms (next.js: 5ms, proxy.ts: 4ms, application-code: 63ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 70ms (next.js: 5ms, proxy.ts: 4ms, application-code: 60ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 69ms (next.js: 5ms, proxy.ts: 6ms, application-code: 58ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 69ms (next.js: 5ms, proxy.ts: 4ms, application-code: 60ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 48ms (next.js: 5ms, proxy.ts: 5ms, application-code: 37ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 56ms (next.js: 5ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 49ms (next.js: 7ms, proxy.ts: 12ms, application-code: 30ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 41ms (next.js: 5ms, proxy.ts: 4ms, application-code: 31ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 53ms (next.js: 12ms, proxy.ts: 5ms, application-code: 36ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 41ms (next.js: 6ms, proxy.ts: 3ms, application-code: 31ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 53ms (next.js: 5ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 45ms (next.js: 7ms, proxy.ts: 5ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 40ms (next.js: 6ms, proxy.ts: 5ms, application-code: 29ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 37ms (next.js: 6ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 41ms (next.js: 5ms, proxy.ts: 4ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 81ms (next.js: 5ms, proxy.ts: 5ms, application-code: 72ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 45ms (next.js: 6ms, proxy.ts: 4ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 43ms (next.js: 7ms, proxy.ts: 5ms, application-code: 31ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 52ms (next.js: 11ms, proxy.ts: 5ms, application-code: 36ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 58ms (next.js: 11ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 82ms (next.js: 5ms, proxy.ts: 5ms, application-code: 72ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 77ms (next.js: 5ms, proxy.ts: 6ms, application-code: 66ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 44ms (next.js: 5ms, proxy.ts: 3ms, application-code: 35ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 37ms (next.js: 5ms, proxy.ts: 5ms, application-code: 27ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 83ms (next.js: 4ms, proxy.ts: 4ms, application-code: 75ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 59ms (next.js: 6ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 6ms, proxy.ts: 5ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 45ms (next.js: 5ms, proxy.ts: 3ms, application-code: 36ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 54ms (next.js: 14ms, proxy.ts: 4ms, application-code: 36ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 43ms (next.js: 7ms, proxy.ts: 4ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 6ms, proxy.ts: 3ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 43ms (next.js: 6ms, proxy.ts: 4ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 38ms (next.js: 7ms, proxy.ts: 4ms, application-code: 28ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 41ms (next.js: 4ms, proxy.ts: 4ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 5ms, proxy.ts: 3ms, application-code: 33ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 49ms (next.js: 5ms, proxy.ts: 3ms, application-code: 41ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 64ms (next.js: 7ms, proxy.ts: 4ms, application-code: 53ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 80ms (next.js: 8ms, proxy.ts: 4ms, application-code: 67ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 75ms (next.js: 11ms, proxy.ts: 5ms, application-code: 59ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 6ms, proxy.ts: 5ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 73ms (next.js: 6ms, proxy.ts: 5ms, application-code: 62ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 71ms (next.js: 6ms, proxy.ts: 3ms, application-code: 61ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 74ms (next.js: 5ms, proxy.ts: 3ms, application-code: 65ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 48ms (next.js: 5ms, proxy.ts: 5ms, application-code: 38ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 45ms (next.js: 7ms, proxy.ts: 5ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 52ms (next.js: 6ms, proxy.ts: 5ms, application-code: 42ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 93ms (next.js: 7ms, proxy.ts: 10ms, application-code: 76ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 83ms (next.js: 6ms, proxy.ts: 5ms, application-code: 71ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 83ms (next.js: 12ms, proxy.ts: 7ms, application-code: 63ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 46ms (next.js: 6ms, proxy.ts: 5ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 43ms (next.js: 6ms, proxy.ts: 4ms, application-code: 34ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 37ms (next.js: 5ms, proxy.ts: 5ms, application-code: 27ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 70ms (next.js: 5ms, proxy.ts: 4ms, application-code: 61ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 46ms (next.js: 7ms, proxy.ts: 7ms, application-code: 33ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 41ms (next.js: 6ms, proxy.ts: 3ms, application-code: 31ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 7ms, proxy.ts: 3ms, application-code: 32ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 85ms (next.js: 5ms, proxy.ts: 3ms, application-code: 77ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 67ms (next.js: 7ms, proxy.ts: 5ms, application-code: 56ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 74ms (next.js: 6ms, proxy.ts: 4ms, application-code: 63ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 74ms (next.js: 10ms, proxy.ts: 7ms, application-code: 57ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 40ms (next.js: 5ms, proxy.ts: 5ms, application-code: 30ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 69ms (next.js: 5ms, proxy.ts: 3ms, application-code: 61ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 48ms (next.js: 6ms, proxy.ts: 3ms, application-code: 38ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 44ms (next.js: 7ms, proxy.ts: 5ms, application-code: 33ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 42ms (next.js: 7ms, proxy.ts: 5ms, application-code: 30ms)
+ GET /product/2f53232a-360b-4b80-99ff-ae6f87b49748 200 in 38ms (next.js: 5ms, proxy.ts: 5ms, application-code: 28ms)
+ GET /explore 200 in 100ms (next.js: 17ms, proxy.ts: 7ms, application-code: 76ms)
+ GET /cart 200 in 82ms (next.js: 34ms, proxy.ts: 8ms, application-code: 39ms)
+ GET /explore 200 in 53ms (next.js: 3ms, proxy.ts: 9ms, application-code: 41ms)
+ GET /bundles 200 in 1095ms (next.js: 695ms, proxy.ts: 6ms, application-code: 394ms)
+ GET /profile 200 in 217ms (next.js: 89ms, proxy.ts: 16ms, application-code: 112ms)
+[browser] ./src/components/home/FeaturedBundles.tsx:112:9
+Error: Expected '</', got ')'
+  110 |             </div>
+  111 |           </div>
+> 112 |         ))}
+      |         ^
+  113 |       </div>
+  114 |     </section>
+  115 |   );
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/home/FeaturedBundles.tsx
+    ./src/app/(public)/page.tsx 
+[browser] ./src/components/home/FeaturedBundles.tsx:112:9
+Error: Expected '</', got ')'
+  110 |             </div>
+  111 |           </div>
+> 112 |         ))}
+      |         ^
+  113 |       </div>
+  114 |     </section>
+  115 |   );
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/home/FeaturedBundles.tsx
+    ./src/app/(public)/page.tsx 
+ GET /profile 200 in 30ms (next.js: 3ms, proxy.ts: 4ms, application-code: 23ms)
+ GET /profile 200 in 25ms (next.js: 2ms, proxy.ts: 4ms, application-code: 18ms)
+ GET /profile 200 in 26ms (next.js: 3ms, proxy.ts: 4ms, application-code: 19ms)
+ GET /profile 200 in 207ms (next.js: 53ms, proxy.ts: 120ms, application-code: 33ms)
+ GET /profile 200 in 53ms (next.js: 3ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 27ms (next.js: 4ms, proxy.ts: 5ms, application-code: 18ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /profile 200 in 53ms (next.js: 3ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 59ms (next.js: 5ms, proxy.ts: 3ms, application-code: 51ms)
+ GET /profile 200 in 64ms (next.js: 5ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /profile 200 in 47ms (next.js: 8ms, proxy.ts: 6ms, application-code: 32ms)
+ GET /profile 200 in 40ms (next.js: 5ms, proxy.ts: 6ms, application-code: 28ms)
+ GET /profile 200 in 70ms (next.js: 5ms, proxy.ts: 9ms, application-code: 57ms)
+ GET /profile 200 in 68ms (next.js: 5ms, proxy.ts: 6ms, application-code: 56ms)
+ GET /profile 200 in 60ms (next.js: 3ms, proxy.ts: 4ms, application-code: 52ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 62ms (next.js: 4ms, proxy.ts: 4ms, application-code: 54ms)
+ GET /profile 200 in 71ms (next.js: 8ms, proxy.ts: 6ms, application-code: 57ms)
+ GET /profile 200 in 69ms (next.js: 4ms, proxy.ts: 4ms, application-code: 60ms)
+ GET /profile 200 in 69ms (next.js: 4ms, proxy.ts: 7ms, application-code: 57ms)
+ GET /profile 200 in 103ms (next.js: 5ms, proxy.ts: 4ms, application-code: 94ms)
+ GET /profile 200 in 93ms (next.js: 6ms, proxy.ts: 7ms, application-code: 79ms)
+ GET /profile 200 in 59ms (next.js: 5ms, proxy.ts: 5ms, application-code: 49ms)
+ GET /profile 200 in 56ms (next.js: 5ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /profile 200 in 57ms (next.js: 4ms, proxy.ts: 4ms, application-code: 50ms)
+ GET /profile 200 in 57ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 57ms (next.js: 3ms, proxy.ts: 6ms, application-code: 48ms)
+ GET /profile 200 in 59ms (next.js: 4ms, proxy.ts: 5ms, application-code: 50ms)
+ GET /profile 200 in 65ms (next.js: 5ms, proxy.ts: 5ms, application-code: 56ms)
+ GET /profile 200 in 43ms (next.js: 4ms, proxy.ts: 5ms, application-code: 35ms)
+ GET /profile 200 in 51ms (next.js: 3ms, proxy.ts: 5ms, application-code: 43ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /profile 200 in 56ms (next.js: 5ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 58ms (next.js: 4ms, proxy.ts: 5ms, application-code: 49ms)
+ GET /profile 200 in 64ms (next.js: 3ms, proxy.ts: 5ms, application-code: 55ms)
+ GET /profile 200 in 63ms (next.js: 4ms, proxy.ts: 5ms, application-code: 54ms)
+ GET /profile 200 in 55ms (next.js: 5ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 53ms (next.js: 4ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /profile 200 in 60ms (next.js: 5ms, proxy.ts: 4ms, application-code: 51ms)
+ GET /profile 200 in 56ms (next.js: 8ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /profile 200 in 48ms (next.js: 4ms, proxy.ts: 5ms, application-code: 39ms)
+ GET /profile 200 in 57ms (next.js: 3ms, proxy.ts: 4ms, application-code: 51ms)
+ GET /profile 200 in 59ms (next.js: 4ms, proxy.ts: 3ms, application-code: 51ms)
+ GET /profile 200 in 52ms (next.js: 5ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /profile 200 in 53ms (next.js: 4ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 5ms, application-code: 42ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 57ms (next.js: 4ms, proxy.ts: 3ms, application-code: 50ms)
+ GET /profile 200 in 64ms (next.js: 5ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /profile 200 in 63ms (next.js: 3ms, proxy.ts: 4ms, application-code: 56ms)
+ GET /profile 200 in 58ms (next.js: 4ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 5ms, application-code: 54ms)
+ GET /profile 200 in 62ms (next.js: 8ms, proxy.ts: 5ms, application-code: 49ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 71ms (next.js: 4ms, proxy.ts: 4ms, application-code: 63ms)
+ GET /profile 200 in 108ms (next.js: 4ms, proxy.ts: 3ms, application-code: 101ms)
+ GET /profile 200 in 97ms (next.js: 6ms, proxy.ts: 8ms, application-code: 82ms)
+ GET /profile 200 in 52ms (next.js: 4ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /profile 200 in 53ms (next.js: 4ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 53ms (next.js: 3ms, proxy.ts: 3ms, application-code: 46ms)
+ GET /profile 200 in 59ms (next.js: 3ms, proxy.ts: 5ms, application-code: 51ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 6ms, application-code: 45ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 6ms, application-code: 44ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /profile 200 in 53ms (next.js: 3ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 36ms (next.js: 3ms, proxy.ts: 6ms, application-code: 27ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 6ms, application-code: 47ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 6ms, application-code: 47ms)
+ GET /profile 200 in 60ms (next.js: 3ms, proxy.ts: 4ms, application-code: 53ms)
+ GET /profile 200 in 57ms (next.js: 5ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /profile 200 in 65ms (next.js: 5ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /profile 200 in 68ms (next.js: 3ms, proxy.ts: 4ms, application-code: 61ms)
+ GET /profile 200 in 62ms (next.js: 5ms, proxy.ts: 5ms, application-code: 51ms)
+ GET /profile 200 in 56ms (next.js: 7ms, proxy.ts: 6ms, application-code: 43ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 5ms, application-code: 43ms)
+ GET /profile 200 in 52ms (next.js: 4ms, proxy.ts: 3ms, application-code: 44ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /profile 200 in 67ms (next.js: 4ms, proxy.ts: 4ms, application-code: 58ms)
+ GET /profile 200 in 70ms (next.js: 3ms, proxy.ts: 4ms, application-code: 63ms)
+ GET /profile 200 in 68ms (next.js: 5ms, proxy.ts: 12ms, application-code: 51ms)
+ GET /profile 200 in 57ms (next.js: 5ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 28ms (next.js: 4ms, proxy.ts: 4ms, application-code: 21ms)
+ GET /profile 200 in 31ms (next.js: 4ms, proxy.ts: 7ms, application-code: 20ms)
+ GET /profile 200 in 202ms (next.js: 78ms, proxy.ts: 91ms, application-code: 32ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 6ms, application-code: 44ms)
+ GET /profile 200 in 34ms (next.js: 3ms, proxy.ts: 4ms, application-code: 26ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /profile 200 in 61ms (next.js: 4ms, proxy.ts: 5ms, application-code: 51ms)
+ GET /profile 200 in 70ms (next.js: 3ms, proxy.ts: 4ms, application-code: 63ms)
+ GET /profile 200 in 58ms (next.js: 5ms, proxy.ts: 6ms, application-code: 47ms)
+ GET /profile 200 in 47ms (next.js: 3ms, proxy.ts: 5ms, application-code: 39ms)
+ GET /profile 200 in 47ms (next.js: 3ms, proxy.ts: 4ms, application-code: 39ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /profile 200 in 57ms (next.js: 3ms, proxy.ts: 5ms, application-code: 49ms)
+ GET /profile 200 in 55ms (next.js: 6ms, proxy.ts: 6ms, application-code: 44ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 54ms (next.js: 7ms, proxy.ts: 5ms, application-code: 42ms)
+ GET /profile 200 in 33ms (next.js: 3ms, proxy.ts: 5ms, application-code: 25ms)
+ GET /profile 200 in 60ms (next.js: 3ms, proxy.ts: 5ms, application-code: 52ms)
+ GET /profile 200 in 57ms (next.js: 3ms, proxy.ts: 4ms, application-code: 50ms)
+ GET /profile 200 in 53ms (next.js: 4ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 49ms (next.js: 4ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /profile 200 in 33ms (next.js: 3ms, proxy.ts: 5ms, application-code: 25ms)
+ GET /profile 200 in 67ms (next.js: 3ms, proxy.ts: 4ms, application-code: 60ms)
+ GET /profile 200 in 69ms (next.js: 3ms, proxy.ts: 4ms, application-code: 62ms)
+ GET /profile 200 in 59ms (next.js: 4ms, proxy.ts: 7ms, application-code: 49ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 59ms (next.js: 4ms, proxy.ts: 3ms, application-code: 52ms)
+ GET /profile 200 in 61ms (next.js: 3ms, proxy.ts: 4ms, application-code: 54ms)
+ GET /profile 200 in 68ms (next.js: 4ms, proxy.ts: 5ms, application-code: 58ms)
+ GET /profile 200 in 68ms (next.js: 3ms, proxy.ts: 3ms, application-code: 62ms)
+ GET /profile 200 in 62ms (next.js: 4ms, proxy.ts: 5ms, application-code: 53ms)
+ GET /profile 200 in 61ms (next.js: 5ms, proxy.ts: 5ms, application-code: 50ms)
+ GET /profile 200 in 61ms (next.js: 3ms, proxy.ts: 6ms, application-code: 52ms)
+ GET /profile 200 in 68ms (next.js: 5ms, proxy.ts: 6ms, application-code: 57ms)
+ GET /profile 200 in 64ms (next.js: 7ms, proxy.ts: 6ms, application-code: 52ms)
+ GET /profile 200 in 68ms (next.js: 4ms, proxy.ts: 5ms, application-code: 59ms)
+ GET /profile 200 in 62ms (next.js: 4ms, proxy.ts: 3ms, application-code: 55ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 5ms, application-code: 45ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 53ms (next.js: 4ms, proxy.ts: 3ms, application-code: 46ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 52ms (next.js: 4ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 61ms (next.js: 3ms, proxy.ts: 5ms, application-code: 53ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 3ms, application-code: 46ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /profile 200 in 53ms (next.js: 3ms, proxy.ts: 5ms, application-code: 45ms)
+ GET /profile 200 in 50ms (next.js: 4ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /profile 200 in 66ms (next.js: 5ms, proxy.ts: 7ms, application-code: 55ms)
+ GET /profile 200 in 58ms (next.js: 3ms, proxy.ts: 3ms, application-code: 52ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 6ms, application-code: 47ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /profile 200 in 58ms (next.js: 4ms, proxy.ts: 6ms, application-code: 49ms)
+ GET /profile 200 in 60ms (next.js: 4ms, proxy.ts: 5ms, application-code: 52ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 6ms, application-code: 53ms)
+ GET /profile 200 in 61ms (next.js: 4ms, proxy.ts: 6ms, application-code: 50ms)
+ GET /profile 200 in 57ms (next.js: 4ms, proxy.ts: 6ms, application-code: 48ms)
+ GET /profile 200 in 59ms (next.js: 4ms, proxy.ts: 8ms, application-code: 48ms)
+ GET /profile 200 in 56ms (next.js: 5ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 51ms (next.js: 4ms, proxy.ts: 3ms, application-code: 43ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 5ms, application-code: 45ms)
+ GET /profile 200 in 63ms (next.js: 4ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /profile 200 in 71ms (next.js: 12ms, proxy.ts: 5ms, application-code: 54ms)
+ GET /profile 200 in 58ms (next.js: 6ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 59ms (next.js: 5ms, proxy.ts: 5ms, application-code: 49ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 54ms (next.js: 3ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 28ms (next.js: 3ms, proxy.ts: 5ms, application-code: 20ms)
+ GET /profile 200 in 33ms (next.js: 4ms, proxy.ts: 6ms, application-code: 24ms)
+ GET /profile 200 in 28ms (next.js: 3ms, proxy.ts: 4ms, application-code: 21ms)
+ GET /profile 200 in 301ms (next.js: 83ms, proxy.ts: 165ms, application-code: 54ms)
+ GET /profile 200 in 34ms (next.js: 3ms, proxy.ts: 5ms, application-code: 27ms)
+ GET /profile 200 in 77ms (next.js: 4ms, proxy.ts: 5ms, application-code: 68ms)
+ GET /profile 200 in 56ms (next.js: 6ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 5ms, application-code: 44ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 6ms, application-code: 54ms)
+ GET /profile 200 in 68ms (next.js: 4ms, proxy.ts: 4ms, application-code: 60ms)
+ GET /profile 200 in 44ms (next.js: 9ms, proxy.ts: 5ms, application-code: 29ms)
+ GET /profile 200 in 34ms (next.js: 3ms, proxy.ts: 6ms, application-code: 25ms)
+ GET /profile 200 in 31ms (next.js: 4ms, proxy.ts: 4ms, application-code: 23ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 6ms, application-code: 43ms)
+ GET /profile 200 in 51ms (next.js: 5ms, proxy.ts: 5ms, application-code: 41ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 55ms (next.js: 8ms, proxy.ts: 3ms, application-code: 44ms)
+ GET /profile 200 in 48ms (next.js: 3ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /profile 200 in 49ms (next.js: 3ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /profile 200 in 47ms (next.js: 3ms, proxy.ts: 4ms, application-code: 40ms)
+ GET /profile 200 in 50ms (next.js: 4ms, proxy.ts: 5ms, application-code: 41ms)
+ GET /profile 200 in 49ms (next.js: 4ms, proxy.ts: 3ms, application-code: 43ms)
+ GET /profile 200 in 51ms (next.js: 3ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 51ms (next.js: 4ms, proxy.ts: 6ms, application-code: 41ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 43ms (next.js: 6ms, proxy.ts: 3ms, application-code: 34ms)
+ GET /profile 200 in 55ms (next.js: 5ms, proxy.ts: 11ms, application-code: 39ms)
+ GET /profile 200 in 30ms (next.js: 3ms, proxy.ts: 3ms, application-code: 24ms)
+ GET /profile 200 in 51ms (next.js: 3ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /profile 200 in 57ms (next.js: 4ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /profile 200 in 60ms (next.js: 3ms, proxy.ts: 5ms, application-code: 52ms)
+ GET /profile 200 in 62ms (next.js: 4ms, proxy.ts: 4ms, application-code: 54ms)
+ GET /profile 200 in 63ms (next.js: 3ms, proxy.ts: 5ms, application-code: 56ms)
+ GET /profile 200 in 57ms (next.js: 5ms, proxy.ts: 3ms, application-code: 50ms)
+ GET /profile 200 in 54ms (next.js: 5ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 35ms (next.js: 3ms, proxy.ts: 6ms, application-code: 26ms)
+ GET /profile 200 in 48ms (next.js: 4ms, proxy.ts: 3ms, application-code: 41ms)
+ GET /profile 200 in 51ms (next.js: 3ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 64ms (next.js: 4ms, proxy.ts: 3ms, application-code: 57ms)
+ GET /profile 200 in 63ms (next.js: 4ms, proxy.ts: 5ms, application-code: 54ms)
+ GET /profile 200 in 51ms (next.js: 3ms, proxy.ts: 5ms, application-code: 43ms)
+ GET /profile 200 in 60ms (next.js: 4ms, proxy.ts: 3ms, application-code: 53ms)
+ GET /profile 200 in 96ms (next.js: 4ms, proxy.ts: 6ms, application-code: 86ms)
+ GET /profile 200 in 87ms (next.js: 37ms, proxy.ts: 6ms, application-code: 44ms)
+ GET /profile 200 in 49ms (next.js: 4ms, proxy.ts: 5ms, application-code: 40ms)
+ GET /profile 200 in 48ms (next.js: 3ms, proxy.ts: 3ms, application-code: 41ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 52ms (next.js: 4ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /profile 200 in 50ms (next.js: 4ms, proxy.ts: 4ms, application-code: 42ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /profile 200 in 55ms (next.js: 3ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 51ms (next.js: 4ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 5ms, application-code: 41ms)
+ GET /profile 200 in 63ms (next.js: 3ms, proxy.ts: 4ms, application-code: 56ms)
+ GET /profile 200 in 72ms (next.js: 6ms, proxy.ts: 3ms, application-code: 63ms)
+ GET /profile 200 in 69ms (next.js: 4ms, proxy.ts: 4ms, application-code: 61ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 5ms, application-code: 54ms)
+ GET /profile 200 in 47ms (next.js: 4ms, proxy.ts: 4ms, application-code: 39ms)
+ GET /profile 200 in 48ms (next.js: 3ms, proxy.ts: 3ms, application-code: 42ms)
+ GET /profile 200 in 31ms (next.js: 2ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /profile 200 in 49ms (next.js: 3ms, proxy.ts: 5ms, application-code: 41ms)
+ GET /profile 200 in 47ms (next.js: 2ms, proxy.ts: 3ms, application-code: 41ms)
+ GET /profile 200 in 50ms (next.js: 4ms, proxy.ts: 4ms, application-code: 42ms)
+ GET /profile 200 in 48ms (next.js: 4ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 3ms, application-code: 43ms)
+ GET /profile 200 in 51ms (next.js: 2ms, proxy.ts: 5ms, application-code: 43ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /profile 200 in 28ms (next.js: 5ms, proxy.ts: 4ms, application-code: 20ms)
+ GET /profile 200 in 35ms (next.js: 5ms, proxy.ts: 9ms, application-code: 21ms)
+ GET /profile 200 in 275ms (next.js: 63ms, proxy.ts: 110ms, application-code: 101ms)
+ GET /profile 200 in 65ms (next.js: 4ms, proxy.ts: 8ms, application-code: 52ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 6ms, application-code: 45ms)
+ GET /profile 200 in 36ms (next.js: 4ms, proxy.ts: 5ms, application-code: 27ms)
+ GET /profile 200 in 60ms (next.js: 4ms, proxy.ts: 6ms, application-code: 50ms)
+ GET /profile 200 in 51ms (next.js: 4ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 4ms, application-code: 54ms)
+ GET /profile 200 in 69ms (next.js: 3ms, proxy.ts: 5ms, application-code: 60ms)
+ GET /profile 200 in 56ms (next.js: 8ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 5ms, application-code: 42ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 4ms, application-code: 43ms)
+ GET /profile 200 in 60ms (next.js: 3ms, proxy.ts: 4ms, application-code: 53ms)
+ GET /profile 200 in 57ms (next.js: 5ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 48ms (next.js: 3ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /profile 200 in 54ms (next.js: 4ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 40ms (next.js: 3ms, proxy.ts: 4ms, application-code: 33ms)
+ GET /profile 200 in 58ms (next.js: 5ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /profile 200 in 48ms (next.js: 4ms, proxy.ts: 4ms, application-code: 40ms)
+ GET /profile 200 in 51ms (next.js: 3ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /profile 200 in 52ms (next.js: 7ms, proxy.ts: 5ms, application-code: 40ms)
+ GET /profile 200 in 49ms (next.js: 3ms, proxy.ts: 4ms, application-code: 42ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 3ms, application-code: 44ms)
+ GET /profile 200 in 52ms (next.js: 4ms, proxy.ts: 5ms, application-code: 43ms)
+ GET /profile 200 in 51ms (next.js: 4ms, proxy.ts: 5ms, application-code: 43ms)
+ GET /profile 200 in 58ms (next.js: 3ms, proxy.ts: 5ms, application-code: 51ms)
+ GET /profile 200 in 63ms (next.js: 3ms, proxy.ts: 5ms, application-code: 55ms)
+ GET /profile 200 in 60ms (next.js: 4ms, proxy.ts: 6ms, application-code: 51ms)
+ GET /profile 200 in 50ms (next.js: 3ms, proxy.ts: 5ms, application-code: 42ms)
+ GET /profile 200 in 50ms (next.js: 4ms, proxy.ts: 3ms, application-code: 43ms)
+ GET /profile 200 in 51ms (next.js: 4ms, proxy.ts: 6ms, application-code: 41ms)
+ GET /profile 200 in 52ms (next.js: 3ms, proxy.ts: 4ms, application-code: 45ms)
+ GET /profile 200 in 54ms (next.js: 5ms, proxy.ts: 3ms, application-code: 46ms)
+ GET /profile 200 in 64ms (next.js: 3ms, proxy.ts: 6ms, application-code: 55ms)
+ GET /profile 200 in 64ms (next.js: 4ms, proxy.ts: 4ms, application-code: 56ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 5ms, application-code: 54ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 57ms (next.js: 4ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /profile 200 in 59ms (next.js: 4ms, proxy.ts: 3ms, application-code: 52ms)
+ GET /profile 200 in 63ms (next.js: 4ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /profile 200 in 71ms (next.js: 3ms, proxy.ts: 5ms, application-code: 62ms)
+ GET /profile 200 in 69ms (next.js: 4ms, proxy.ts: 6ms, application-code: 59ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 6ms, application-code: 46ms)
+ GET /profile 200 in 53ms (next.js: 3ms, proxy.ts: 4ms, application-code: 46ms)
+ GET /profile 200 in 32ms (next.js: 3ms, proxy.ts: 5ms, application-code: 24ms)
+ GET /profile 200 in 62ms (next.js: 3ms, proxy.ts: 4ms, application-code: 55ms)
+ GET /profile 200 in 69ms (next.js: 3ms, proxy.ts: 5ms, application-code: 60ms)
+ GET /profile 200 in 88ms (next.js: 5ms, proxy.ts: 4ms, application-code: 78ms)
+ GET /profile 200 in 84ms (next.js: 5ms, proxy.ts: 6ms, application-code: 73ms)
+ GET /profile 200 in 58ms (next.js: 4ms, proxy.ts: 8ms, application-code: 46ms)
+ GET /profile 200 in 70ms (next.js: 4ms, proxy.ts: 7ms, application-code: 59ms)
+ GET /profile 200 in 108ms (next.js: 7ms, proxy.ts: 5ms, application-code: 96ms)
+ GET /profile 200 in 96ms (next.js: 42ms, proxy.ts: 8ms, application-code: 46ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 6ms, application-code: 46ms)
+ GET /profile 200 in 56ms (next.js: 4ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /profile 200 in 55ms (next.js: 4ms, proxy.ts: 5ms, application-code: 46ms)
+ GET /profile 200 in 62ms (next.js: 4ms, proxy.ts: 6ms, application-code: 52ms)
+ GET /profile 200 in 64ms (next.js: 5ms, proxy.ts: 5ms, application-code: 55ms)
+ GET /profile 200 in 66ms (next.js: 5ms, proxy.ts: 5ms, application-code: 56ms)
+ GET /profile 200 in 63ms (next.js: 4ms, proxy.ts: 4ms, application-code: 55ms)
+ GET /profile 200 in 65ms (next.js: 4ms, proxy.ts: 6ms, application-code: 56ms)
+ GET /profile 200 in 62ms (next.js: 5ms, proxy.ts: 5ms, application-code: 52ms)
+ GET /profile 200 in 31ms (next.js: 3ms, proxy.ts: 5ms, application-code: 23ms)
+ GET /profile 200 in 27ms (next.js: 3ms, proxy.ts: 5ms, application-code: 18ms)
+ GET /profile 200 in 32ms (next.js: 4ms, proxy.ts: 7ms, application-code: 21ms)
+ GET /delivery/dashboard 200 in 637ms (next.js: 165ms, proxy.ts: 373ms, application-code: 99ms)
+ GET /delivery/dashboard 200 in 384ms (next.js: 3ms, proxy.ts: 263ms, application-code: 117ms)
+ GET / 200 in 627ms (next.js: 38ms, proxy.ts: 275ms, application-code: 314ms)
+ GET / 200 in 662ms (next.js: 9ms, proxy.ts: 242ms, application-code: 411ms)
+ GET / 200 in 737ms (next.js: 14ms, proxy.ts: 23ms, application-code: 700ms)
+ GET /seller/dashboard 200 in 424ms (next.js: 51ms, proxy.ts: 291ms, application-code: 82ms)
+ GET / 200 in 953ms (next.js: 28ms, proxy.ts: 285ms, application-code: 640ms)
+ GET / 200 in 674ms (next.js: 23ms, proxy.ts: 16ms, application-code: 634ms)
+ GET /admin/dashboard 200 in 1280ms (next.js: 71ms, proxy.ts: 212ms, application-code: 998ms)
+ GET / 200 in 1141ms (next.js: 23ms, proxy.ts: 262ms, application-code: 856ms)
+ GET / 200 in 662ms (next.js: 7ms, proxy.ts: 28ms, application-code: 627ms)
+ GET /support/dashboard 200 in 360ms (next.js: 61ms, proxy.ts: 230ms, application-code: 70ms)
+ GET /support/dashboard 200 in 654ms (next.js: 8ms, proxy.ts: 632ms, application-code: 15ms)
+ GET /support/dashboard 200 in 210ms (next.js: 6ms, proxy.ts: 173ms, application-code: 31ms)
+ GET /support/tickets/0e09ddef-d924-4d77-830e-75130a5fc7e2 404 in 320ms (next.js: 83ms, proxy.ts: 200ms, application-code: 37ms)
+ GET /support/tickets/0e09ddef-d924-4d77-830e-75130a5fc7e2 404 in 239ms (next.js: 11ms, proxy.ts: 178ms, application-code: 50ms)
+ GET /support/dashboard 200 in 254ms (next.js: 15ms, proxy.ts: 230ms, application-code: 10ms)
+ GET /support/dashboard 200 in 217ms (next.js: 7ms, proxy.ts: 180ms, application-code: 29ms)
+ GET /support/dashboard 200 in 187ms (next.js: 9ms, proxy.ts: 167ms, application-code: 12ms)
+ GET /support/dashboard 200 in 234ms (next.js: 7ms, proxy.ts: 189ms, application-code: 38ms)
+ GET / 200 in 692ms (next.js: 14ms, proxy.ts: 222ms, application-code: 456ms)
+ GET /profile 200 in 369ms (next.js: 13ms, proxy.ts: 308ms, application-code: 49ms)
+ GET / 200 in 442ms (next.js: 12ms, proxy.ts: 176ms, application-code: 254ms)
+ GET /cart 200 in 332ms (next.js: 25ms, proxy.ts: 260ms, application-code: 48ms)
+ GET /checkout 200 in 282ms (next.js: 67ms, proxy.ts: 183ms, application-code: 33ms)
+[browser] Cannot update a component (`Router`) while rendering a different component (`CheckoutPage`). To locate the bad setState() call inside `CheckoutPage`, follow the stack trace as described in https://react.dev/link/setstate-in-render 
+    at CheckoutPage (src/app/(public)/checkout/page.tsx:61:12)
+  59 |
+  60 |   if (items.length === 0) {
+> 61 |     router.push('/cart');
+     |            ^
+  62 |     return null;
+  63 |   }
+  64 | (src/app/(public)
+ GET /cart 200 in 419ms (next.js: 9ms, proxy.ts: 237ms, application-code: 173ms)
+ GET /checkout/success 200 in 424ms (next.js: 78ms, proxy.ts: 294ms, application-code: 53ms)
+ GET /cart 200 in 348ms (next.js: 9ms, proxy.ts: 298ms, application-code: 40ms)
+ GET / 200 in 524ms (next.js: 4ms, proxy.ts: 197ms, application-code: 323ms)
+ GET /explore 200 in 459ms (next.js: 31ms, proxy.ts: 386ms, application-code: 42ms)
+ GET /bundles 200 in 394ms (next.js: 21ms, proxy.ts: 175ms, application-code: 198ms)
+ GET /bundle/189e23ad-5b81-478f-859c-020a032fc9ca/2682ee14-e3fd-4a66-b6b7-4762fec5f0b4 200 in 424ms (next.js: 63ms, proxy.ts: 201ms, application-code: 160ms)
+ GET /cart 200 in 236ms (next.js: 4ms, proxy.ts: 208ms, application-code: 24ms)
+ GET / 200 in 400ms (next.js: 6ms, proxy.ts: 192ms, application-code: 202ms)
+ GET /explore 200 in 245ms (next.js: 8ms, proxy.ts: 203ms, application-code: 34ms)
+ GET /product/acdc5118-5434-4019-a697-5720552765d9 200 in 339ms (next.js: 15ms, proxy.ts: 187ms, application-code: 137ms)
+ GET /cart 200 in 222ms (next.js: 7ms, proxy.ts: 189ms, application-code: 25ms)
+ GET /checkout 200 in 217ms (next.js: 10ms, proxy.ts: 173ms, application-code: 33ms)
+ GET /checkout/success 200 in 305ms (next.js: 12ms, proxy.ts: 185ms, application-code: 108ms)
+ GET /cart 200 in 304ms (next.js: 8ms, proxy.ts: 234ms, application-code: 62ms)
+ GET /cart 200 in 239ms (next.js: 14ms, proxy.ts: 187ms, application-code: 38ms)
+ GET / 200 in 383ms (next.js: 8ms, proxy.ts: 8ms, application-code: 367ms)
+ GET /delivery/dashboard 200 in 321ms (next.js: 12ms, proxy.ts: 259ms, application-code: 49ms)
+ GET / 200 in 444ms (next.js: 7ms, proxy.ts: 239ms, application-code: 198ms)
+ GET / 200 in 549ms (next.js: 10ms, proxy.ts: 13ms, application-code: 526ms)
+ GET /orders 200 in 1250ms (next.js: 909ms, proxy.ts: 264ms, application-code: 77ms)
+ GET / 200 in 470ms (next.js: 18ms, proxy.ts: 239ms, application-code: 214ms)
+ GET / 200 in 594ms (next.js: 8ms, proxy.ts: 16ms, application-code: 570ms)
+ GET / 200 in 654ms (next.js: 9ms, proxy.ts: 9ms, application-code: 635ms)
+ GET /admin/dashboard 200 in 1252ms (next.js: 18ms, proxy.ts: 241ms, application-code: 993ms)
+ GET /admin/sellers 200 in 519ms (next.js: 127ms, proxy.ts: 247ms, application-code: 145ms)
+ GET /admin/settings 200 in 389ms (next.js: 126ms, proxy.ts: 212ms, application-code: 51ms)
+ GET /admin/dashboard 200 in 1166ms (next.js: 6ms, proxy.ts: 205ms, application-code: 954ms)
+✓ Compiled in 1347ms
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+⨯ ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders.
+
+
+./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist.
+
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+ GET /admin/dashboard 500 in 5.4s (next.js: 3.4s, proxy.ts: 1844ms, application-code: 208ms)
+⨯ ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders.
+
+
+./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist.
+
+ GET /admin/dashboard 500 in 422ms (next.js: 55ms, proxy.ts: 342ms, application-code: 25ms)
+⨯ ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders.
+
+
+./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist.
+
+ GET /admin/dashboard 500 in 330ms (next.js: 68ms, proxy.ts: 231ms, application-code: 31ms)
+[browser] Uncaught Error: ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders.
+
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/orders
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/orders and /orders. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+⨯ ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist.
+
+ GET /admin/dashboard 500 in 667ms (next.js: 20ms, proxy.ts: 639ms, application-code: 7ms)
+[browser] Uncaught Error: ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist.
+
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+[browser] ./src/app/wishlist
+Error: You cannot have two parallel pages that resolve to the same path. Please check /(public)/wishlist and /wishlist. 
+ GET /admin/dashboard 200 in 1410ms (next.js: 68ms, proxy.ts: 512ms, application-code: 830ms)
+ GET /login 404 in 260ms (next.js: 12ms, proxy.ts: 224ms, application-code: 24ms)
+ GET / 200 in 496ms (next.js: 27ms, proxy.ts: 201ms, application-code: 267ms)
+ GET / 200 in 879ms (next.js: 16ms, proxy.ts: 26ms, application-code: 837ms)
+ GET /orders 200 in 366ms (next.js: 19ms, proxy.ts: 270ms, application-code: 76ms)
+ GET / 200 in 432ms (next.js: 11ms, proxy.ts: 18ms, application-code: 403ms)
+ GET / 200 in 539ms (next.js: 6ms, proxy.ts: 229ms, application-code: 304ms)
+ GET / 200 in 887ms (next.js: 12ms, proxy.ts: 16ms, application-code: 860ms)
+ GET / 200 in 522ms (next.js: 8ms, proxy.ts: 216ms, application-code: 298ms)
+ GET / 200 in 470ms (next.js: 6ms, proxy.ts: 182ms, application-code: 282ms)
+ GET / 200 in 796ms (next.js: 14ms, proxy.ts: 254ms, application-code: 528ms)
+✓ Compiled in 223ms
+ GET /delivery/tasks 200 in 3.0s (next.js: 1502ms, proxy.ts: 1255ms, application-code: 275ms)
+ GET /delivery/earnings 200 in 509ms (next.js: 127ms, proxy.ts: 256ms, application-code: 126ms)
+ GET /delivery/tasks/84392 200 in 3.5s (next.js: 2.7s, proxy.ts: 698ms, application-code: 94ms)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails (src/app/delivery/tasks/[id]/page.tsx:42:14)
+  40 |
+  41 |     fetchTask();
+> 42 |   }, [params.id, supabase]);
+     |              ^
+  43 |
+  44 |   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
+  45 |     if (!task) return; (src/app/delivery/tasks/[id]/page.tsx:42:14)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails (src/app/delivery/tasks/[id]/page.tsx:42:14)
+  40 |
+  41 |     fetchTask();
+> 42 |   }, [params.id, supabase]);
+     |              ^
+  43 |
+  44 |   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
+  45 |     if (!task) return; (src/app/delivery/tasks/[id]/page.tsx:42:14)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails.useEffect.fetchTask (src/app/delivery/tasks/[id]/page.tsx:27:28)
+    at TaskDetails.useEffect (src/app/delivery/tasks/[id]/page.tsx:41:5)
+  25 |             )
+  26 |           `)
+> 27 |           .eq('id', params.id)
+     |                            ^
+  28 |           .single();
+  29 |
+  30 |         if (error) { (src/app/delivery/tasks/[id]/page.tsx:27:28)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails.useEffect.fetchTask (src/app/delivery/tasks/[id]/page.tsx:27:28)
+    at TaskDetails.useEffect (src/app/delivery/tasks/[id]/page.tsx:41:5)
+  25 |             )
+  26 |           `)
+> 27 |           .eq('id', params.id)
+     |                            ^
+  28 |           .single();
+  29 |
+  30 |         if (error) { (src/app/delivery/tasks/[id]/page.tsx:27:28)
+[browser] Error fetching task: {
+  code: [32m'22P02'[39m,
+  details: [1mnull[22m,
+  hint: [1mnull[22m,
+  message: [32m'invalid input syntax for type uuid: "undefined"'[39m
+} 
+    at TaskDetails.useEffect.fetchTask (src/app/delivery/tasks/[id]/page.tsx:31:19)
+  29 |
+  30 |         if (error) {
+> 31 |           console.error("Error fetching task:", error);
+     |                   ^
+  32 |         } else if (data) {
+  33 |           setTask(data);
+  34 |         } (src/app/delivery/tasks/[id]/page.tsx:31:19)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails (src/app/delivery/tasks/[id]/page.tsx:42:14)
+  40 |
+  41 |     fetchTask();
+> 42 |   }, [params.id, supabase]);
+     |              ^
+  43 |
+  44 |   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
+  45 |     if (!task) return; (src/app/delivery/tasks/[id]/page.tsx:42:14)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails (src/app/delivery/tasks/[id]/page.tsx:42:14)
+  40 |
+  41 |     fetchTask();
+> 42 |   }, [params.id, supabase]);
+     |              ^
+  43 |
+  44 |   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
+  45 |     if (!task) return; (src/app/delivery/tasks/[id]/page.tsx:42:14)
+[browser] Error fetching task: {
+  code: [32m'22P02'[39m,
+  details: [1mnull[22m,
+  hint: [1mnull[22m,
+  message: [32m'invalid input syntax for type uuid: "undefined"'[39m
+} 
+    at TaskDetails.useEffect.fetchTask (src/app/delivery/tasks/[id]/page.tsx:31:19)
+  29 |
+  30 |         if (error) {
+> 31 |           console.error("Error fetching task:", error);
+     |                   ^
+  32 |         } else if (data) {
+  33 |           setTask(data);
+  34 |         } (src/app/delivery/tasks/[id]/page.tsx:31:19)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails (src/app/delivery/tasks/[id]/page.tsx:42:14)
+  40 |
+  41 |     fetchTask();
+> 42 |   }, [params.id, supabase]);
+     |              ^
+  43 |
+  44 |   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
+  45 |     if (!task) return; (src/app/delivery/tasks/[id]/page.tsx:42:14)
+[browser] A param property was accessed directly with `params.id`. `params` is a Promise and must be unwrapped with `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis 
+    at TaskDetails (src/app/delivery/tasks/[id]/page.tsx:42:14)
+  40 |
+  41 |     fetchTask();
+> 42 |   }, [params.id, supabase]);
+     |              ^
+  43 |
+  44 |   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
+  45 |     if (!task) return; (src/app/delivery/tasks/[id]/page.tsx:42:14)
+ GET /delivery/dashboard 200 in 380ms (next.js: 48ms, proxy.ts: 265ms, application-code: 67ms)
+ GET /delivery/profile 200 in 1930ms (next.js: 1324ms, proxy.ts: 519ms, application-code: 87ms)
+ GET /delivery/profile 200 in 313ms (next.js: 16ms, proxy.ts: 251ms, application-code: 46ms)
+ GET / 200 in 894ms (next.js: 42ms, proxy.ts: 283ms, application-code: 570ms)
+ GET / 200 in 1367ms (next.js: 32ms, proxy.ts: 46ms, application-code: 1289ms)
+ GET /admin/dashboard 200 in 1935ms (next.js: 46ms, proxy.ts: 370ms, application-code: 1519ms)
+ GET /admin/payouts 200 in 1831ms (next.js: 859ms, proxy.ts: 303ms, application-code: 669ms)
+ GET /admin/payouts 200 in 830ms (next.js: 31ms, proxy.ts: 255ms, application-code: 545ms)
+ GET /admin/users 200 in 1080ms (next.js: 271ms, proxy.ts: 270ms, application-code: 539ms)
+ GET / 200 in 997ms (next.js: 26ms, proxy.ts: 266ms, application-code: 705ms)
+✓ Finished writing to filesystem cache in 13.8s
