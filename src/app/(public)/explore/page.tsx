@@ -196,11 +196,23 @@ function ExploreContent() {
         query = query.eq('category', category);
       }
       if (search) {
-        query = query.ilike('name', `%${search}%`);
+        // Use an OR query to search in name OR description
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
       }
       
       const { data, error } = await query;
-      if (error || !data || data.length === 0) return PRODUCTS;
+      if (error || !data || data.length === 0) {
+        // Fallback filtering on mock data to also match description
+        if (search) {
+          const lowerSearch = search.toLowerCase();
+          return PRODUCTS.filter(p => 
+            p.name.toLowerCase().includes(lowerSearch) || 
+            p.description.toLowerCase().includes(lowerSearch) ||
+            p.store.toLowerCase().includes(lowerSearch)
+          );
+        }
+        return PRODUCTS;
+      }
       
       return data.map(p => ({
         ...p,

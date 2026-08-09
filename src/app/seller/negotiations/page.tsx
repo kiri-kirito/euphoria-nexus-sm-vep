@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { createClient } from "@/utils/supabase/client";
 
 interface Negotiation {
   id: number;
@@ -18,75 +18,93 @@ interface Negotiation {
   finalPrice?: number;
 }
 
+const MOCK_ACTIVE: Negotiation[] = [
+  {
+    id: 1,
+    buyer: "Rahim Store",
+    location: "Dhaka, BD",
+    product: "Logitech MX Master 3S",
+    image: "https://images.unsplash.com/photo-1527814050087-379381547969?q=80&w=200&auto=format&fit=crop",
+    originalPrice: 10500,
+    offeredPrice: 9000,
+    discount: "14%",
+    qty: 25,
+    message: "Looking for a better deal on a bulk order for our new branch.",
+    status: "Pending"
+  }
+];
+
+const MOCK_CLOSED: Negotiation[] = [
+  {
+    id: 4,
+    buyer: "Gadget Hub",
+    location: "Khulna, BD",
+    product: "Sony WH-1000XM4",
+    image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=200&auto=format&fit=crop",
+    originalPrice: 32000,
+    offeredPrice: 28000,
+    finalPrice: 29500,
+    qty: 5,
+    message: "",
+    status: "Accepted"
+  }
+];
+
 export default function NegotiationsPage() {
-  const [activeNegotiations, setActiveNegotiations] = useState<Negotiation[]>([
-    {
-      id: 1,
-      buyer: "Rahim Store",
-      location: "Dhaka, BD",
-      product: "Logitech MX Master 3S",
-      image: "https://images.unsplash.com/photo-1527814050087-379381547969?q=80&w=200&auto=format&fit=crop",
-      originalPrice: 10500,
-      offeredPrice: 9000,
-      discount: "14%",
-      qty: 25,
-      message: "Looking for a better deal on a bulk order for our new branch.",
-      status: "Pending"
-    }
-  ]);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [activeNegotiations, setActiveNegotiations] = useState<Negotiation[]>([]);
+  const [closedNegotiations, setClosedNegotiations] = useState<Negotiation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const [dbActive, setDbActive] = useState(false);
 
   useEffect(() => {
-    // Connect to specific namespace
-    const newSocket = io("http://localhost:5000/negotiations", {
-      transports: ["websocket", "polling"],
-    });
-
-    newSocket.on("connect", () => {
-      console.log("Connected to negotiations namespace:", newSocket.id);
-    });
-
-    newSocket.on("receive_bulk_request", (data: Negotiation) => {
-      console.log("Received new bulk request:", data);
-      setActiveNegotiations((prev) => [data, ...prev]);
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  const handleCounter = (id: number) => {
-    if (socket) {
-      socket.emit("propose_price", { id, newPrice: 9500, status: "Countered" });
-      setActiveNegotiations(prev => prev.map(n => n.id === id ? { ...n, status: "Countered", offeredPrice: 9500 } : n));
+    async function fetchNegotiations() {
+      try {
+        const { data, error } = await supabase.from('negotiations').select('*');
+        if (error) {
+          // Table doesn't exist, use mock fallback
+          setActiveNegotiations(MOCK_ACTIVE);
+          setClosedNegotiations(MOCK_CLOSED);
+          setDbActive(false);
+        } else if (data) {
+          setActiveNegotiations(data.filter(n => n.status !== 'Accepted'));
+          setClosedNegotiations(data.filter(n => n.status === 'Accepted'));
+          setDbActive(true);
+        }
+      } catch (err) {
+        setActiveNegotiations(MOCK_ACTIVE);
+        setClosedNegotiations(MOCK_CLOSED);
+        setDbActive(false);
+      } finally {
+        setLoading(false);
+      }
     }
+    fetchNegotiations();
+  }, [supabase]);
+
+  const handleCounter = async (id: number) => {
+    if (dbActive) {
+      await supabase.from('negotiations').update({ status: 'Countered', offeredPrice: 9500 }).eq('id', id);
+    }
+    setActiveNegotiations(prev => prev.map(n => n.id === id ? { ...n, status: "Countered", offeredPrice: 9500 } : n));
   };
 
-  const handleAccept = (id: number) => {
-    if (socket) {
-      socket.emit("propose_price", { id, status: "Accepted" });
-      setActiveNegotiations(prev => prev.filter(n => n.id !== id));
-      // In reality, this would move to closed negotiations and generate checkout link
+  const handleAccept = async (id: number) => {
+    const itemToAccept = activeNegotiations.find(n => n.id === id);
+    if (!itemToAccept) return;
+    
+    if (dbActive) {
+      await supabase.from('negotiations').update({ status: 'Accepted', finalPrice: itemToAccept.offeredPrice }).eq('id', id);
     }
+    
+    const closedItem = { ...itemToAccept, status: "Accepted", finalPrice: itemToAccept.offeredPrice };
+    setActiveNegotiations(prev => prev.filter(n => n.id !== id));
+    setClosedNegotiations(prev => [closedItem, ...prev]);
   };
 
-  const closedNegotiations = [
-    {
-      id: 4,
-      buyer: "Gadget Hub",
-      location: "Khulna, BD",
-      product: "Sony WH-1000XM4",
-      image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=200&auto=format&fit=crop",
-      originalPrice: 32000,
-      offeredPrice: 28000,
-      finalPrice: 29500,
-      qty: 5,
-      status: "Accepted"
-    }
-  ];
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 animate-pulse">Loading negotiations...</div>;
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -124,7 +142,7 @@ export default function NegotiationsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                      {item.buyer.charAt(0)}
+                      {item.buyer?.charAt(0) || '?'}
                     </div>
                     <span className="text-sm font-semibold text-slate-900">{item.buyer}</span>
                     <span className="text-xs text-slate-400">• {item.location}</span>

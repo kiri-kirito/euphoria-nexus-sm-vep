@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { createClient } from "@/utils/supabase/client";
 
 interface StockRequest {
   id: number;
@@ -12,56 +12,67 @@ interface StockRequest {
   status: string;
 }
 
+const MOCK_REQUESTS: StockRequest[] = [
+  {
+    id: 1,
+    sellerName: "Anonymous Seller",
+    product: "Mechanical Keyboard Keycaps (Blue/White)",
+    quantity: 50,
+    targetPrice: 2000,
+    status: "Open",
+  },
+  {
+    id: 2,
+    sellerName: "Anonymous Seller",
+    product: "Logitech MX Master 3S",
+    quantity: 15,
+    targetPrice: 8500,
+    status: "Open",
+  },
+];
+
 export default function BlindBiddingPage() {
-  const [requests, setRequests] = useState<StockRequest[]>([
-    {
-      id: 1,
-      sellerName: "Anonymous Seller",
-      product: "Mechanical Keyboard Keycaps (Blue/White)",
-      quantity: 50,
-      targetPrice: 2000,
-      status: "Open",
-    },
-    {
-      id: 2,
-      sellerName: "Anonymous Seller",
-      product: "Logitech MX Master 3S",
-      quantity: 15,
-      targetPrice: 8500,
-      status: "Open",
-    },
-  ]);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [requests, setRequests] = useState<StockRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const [dbActive, setDbActive] = useState(false);
   const [bidAmounts, setBidAmounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    const newSocket = io("http://localhost:5000/bidding", {
-      transports: ["websocket", "polling"],
-    });
+    async function fetchBids() {
+      try {
+        const { data, error } = await supabase.from('bids').select('*');
+        if (error) {
+          setRequests(MOCK_REQUESTS);
+          setDbActive(false);
+        } else if (data) {
+          setRequests(data);
+          setDbActive(true);
+        }
+      } catch (err) {
+        setRequests(MOCK_REQUESTS);
+        setDbActive(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBids();
+  }, [supabase]);
 
-    newSocket.on("connect", () => {
-      console.log("Connected to bidding namespace:", newSocket.id);
-    });
-
-    newSocket.on("receive_stock_request", (data: StockRequest) => {
-      setRequests((prev) => [data, ...prev]);
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  const handleBidSubmit = (id: number) => {
-    if (socket && bidAmounts[id]) {
-      socket.emit("submit_bid", { requestId: id, bidPrice: bidAmounts[id] });
+  const handleBidSubmit = async (id: number) => {
+    if (bidAmounts[id]) {
+      if (dbActive) {
+        await supabase.from('bids').update({ status: 'Bid Placed' }).eq('id', id);
+      }
       alert(`Bid of ৳${bidAmounts[id]} submitted securely!`);
       // Hide or update UI to show bid was placed
       setRequests(prev => prev.map(req => req.id === id ? { ...req, status: "Bid Placed" } : req));
     }
   };
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 animate-pulse">Loading bidding board...</div>;
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">

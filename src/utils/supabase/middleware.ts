@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Protect /delivery routes
-  if (request.nextUrl.pathname.startsWith('/delivery') && userRole !== 'delivery') {
+  if (request.nextUrl.pathname.startsWith('/delivery') && userRole !== 'delivery' && userRole !== 'agent') {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

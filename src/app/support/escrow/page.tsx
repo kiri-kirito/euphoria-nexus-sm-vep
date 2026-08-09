@@ -1,17 +1,49 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
+
+const MOCK_ESCROWS = [
+  { id: 'ESC-5001', fromSeller: 'TechHub', toSeller: 'GadgetStore', amount: 4500, status: 'Held', date: '2026-08-08', desc: 'Bulk GPUs' },
+  { id: 'ESC-5002', fromSeller: 'WearablesCo', toSeller: 'FashionFiesta', amount: 1200, status: 'Released', date: '2026-08-07', desc: 'Smartwatches' },
+  { id: 'ESC-5003', fromSeller: 'HomeGoods', toSeller: 'FurnishingsInc', amount: 3200, status: 'Disputed', date: '2026-08-06', desc: 'Sofa Sets' },
+];
 
 export default function EscrowManagementPage() {
-  const [escrows, setEscrows] = useState([
-    { id: 'ESC-5001', fromSeller: 'TechHub', toSeller: 'GadgetStore', amount: 4500, status: 'Held', date: '2026-08-08', desc: 'Bulk GPUs' },
-    { id: 'ESC-5002', fromSeller: 'WearablesCo', toSeller: 'FashionFiesta', amount: 1200, status: 'Released', date: '2026-08-07', desc: 'Smartwatches' },
-    { id: 'ESC-5003', fromSeller: 'HomeGoods', toSeller: 'FurnishingsInc', amount: 3200, status: 'Disputed', date: '2026-08-06', desc: 'Sofa Sets' },
-  ]);
+  const [escrows, setEscrows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const [dbActive, setDbActive] = useState(false);
 
-  const handleAction = (id: string, newStatus: string) => {
+  useEffect(() => {
+    async function fetchEscrows() {
+      try {
+        const { data, error } = await supabase.from('escrow').select('*').order('created_at', { ascending: false });
+        if (error) {
+          setEscrows(MOCK_ESCROWS);
+          setDbActive(false);
+        } else if (data) {
+          setEscrows(data);
+          setDbActive(true);
+        }
+      } catch (e) {
+        setEscrows(MOCK_ESCROWS);
+        setDbActive(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEscrows();
+  }, [supabase]);
+
+  const handleAction = async (id: string, newStatus: string) => {
+    if (dbActive) {
+      await supabase.from('escrow').update({ status: newStatus }).eq('id', id);
+    }
     setEscrows(escrows.map(e => e.id === id ? { ...e, status: newStatus } : e));
   };
+
+  if (loading) return <div className="p-8 max-w-6xl mx-auto text-slate-100 animate-pulse">Loading escrow transactions...</div>;
 
   return (
     <div className="p-8 max-w-6xl mx-auto text-slate-100">

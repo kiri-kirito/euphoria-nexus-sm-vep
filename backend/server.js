@@ -154,6 +154,47 @@ biddingNamespace.on('connection', (socket) => {
   });
 });
 
+// /chat namespace — Global Chat Widget
+const chatNamespace = io.of('/chat');
+chatNamespace.on('connection', (socket) => {
+  console.log(`[Chat] Connected: ${socket.id}`);
+
+  // User joins their own personal room (using their userId) to receive direct messages
+  socket.on('register_user', (userId) => {
+    socket.join(userId);
+    console.log(`[Chat] User ${userId} registered and joined their personal room.`);
+  });
+
+  // Handle sending a direct message
+  socket.on('send_message', (data) => {
+    console.log(`[Chat] Message from ${data.senderId} to ${data.receiverId}: ${data.text}`);
+    
+    // Broadcast to the receiver's personal room
+    chatNamespace.to(data.receiverId).emit('receive_message', {
+      id: Date.now().toString(),
+      senderId: data.senderId,
+      senderName: data.senderName,
+      receiverId: data.receiverId,
+      text: data.text,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Also echo back to the sender so they can see their own message if they have multiple tabs open
+    chatNamespace.to(data.senderId).emit('receive_message', {
+      id: Date.now().toString(),
+      senderId: data.senderId,
+      senderName: data.senderName,
+      receiverId: data.receiverId,
+      text: data.text,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[Chat] Disconnected: ${socket.id}`);
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`[Server] Euphoria Nexus Backend running on port ${PORT}`);

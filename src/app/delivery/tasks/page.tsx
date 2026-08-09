@@ -1,22 +1,56 @@
 'use client';
 
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function DeliveryTasksOverview() {
-  const routePoints = [
-    { id: 'start', type: 'location', label: 'Current Location', address: 'Agent Location (Uttara)', time: '09:00 AM', status: 'completed' },
-    { id: 'pick-84392', type: 'pickup', label: 'Pickup from Seller', address: 'Banani Supermarket', time: '09:45 AM', status: 'next' },
-    { id: 'drop-84392', type: 'dropoff', label: 'Dropoff (ORD-84392)', address: 'House 42, Road 11, Banani', time: '10:15 AM', status: 'pending' },
-    { id: 'pick-98214', type: 'pickup', label: 'Pickup from Hub', address: 'Gulshan 1 Hub', time: '11:00 AM', status: 'pending' },
-    { id: 'drop-98214', type: 'dropoff', label: 'Dropoff (ORD-98214)', address: 'Plot 15, Sector 4, Uttara', time: '11:45 AM', status: 'pending' },
-  ];
+  const { user } = useAuthStore();
+  const supabase = createClient();
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchTasks = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('deliveries')
+          .select(`
+            *,
+            orders (
+              id,
+              total_amount
+            )
+          `)
+          .order('created_at', { ascending: true }); // in a real app, filter by agent_id = user.id
+
+        if (error) {
+          console.error("Error fetching tasks:", error);
+        } else if (data) {
+          setTasks(data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+    };
+
+    fetchTasks();
+  }, [user, supabase]);
 
   return (
     <div className="p-4 space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-extrabold text-slate-900">Optimized Route</h1>
-        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">ETA: 2h 45m</span>
+        <h1 className="text-xl font-extrabold text-slate-900">Active Tasks</h1>
+        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+          {tasks.length} tasks
+        </span>
       </div>
 
       {/* Map View Placeholder */}
@@ -50,48 +84,50 @@ export default function DeliveryTasksOverview() {
           <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
           
           <div className="space-y-6 relative z-10">
-            {routePoints.map((point, index) => (
-              <div key={point.id} className="flex gap-4 items-start">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-4 border-white shadow-sm ${
-                  point.status === 'completed' ? 'bg-slate-300 text-white' : 
-                  point.status === 'next' ? 'bg-blue-600 text-white animate-pulse' : 
-                  'bg-white border-slate-300 text-slate-400'
-                }`}>
-                  {point.status === 'completed' ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                  ) : point.type === 'pickup' ? (
-                    <span className="text-[10px] font-bold">↑</span>
-                  ) : point.type === 'dropoff' ? (
-                    <span className="text-[10px] font-bold">↓</span>
-                  ) : (
-                    <div className="w-2.5 h-2.5 rounded-full bg-current"></div>
-                  )}
-                </div>
-                
-                <div className="flex-1 pt-1">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className={`font-bold text-sm ${point.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                      {point.label}
-                    </h3>
-                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                      {point.time}
-                    </span>
+            {loading ? (
+              <div className="text-center text-slate-500 py-4 animate-pulse">Loading tasks...</div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center text-slate-500 py-4">No tasks found.</div>
+            ) : (
+              tasks.map((task) => (
+                <div key={task.id} className="flex gap-4 items-start">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-4 border-white shadow-sm ${
+                    task.status === 'delivered' ? 'bg-slate-300 text-white' : 
+                    task.status === 'assigned' || task.status === 'picked_up' || task.status === 'in_transit' ? 'bg-blue-600 text-white animate-pulse' : 
+                    'bg-white border-slate-300 text-slate-400'
+                  }`}>
+                    {task.status === 'delivered' ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <span className="text-[10px] font-bold">↓</span>
+                    )}
                   </div>
-                  <p className="text-xs text-slate-500">{point.address}</p>
                   
-                  {point.status === 'next' && (
-                    <div className="mt-3">
-                      <Link 
-                        href={`/delivery/tasks/${point.id.replace(/^(pick-|drop-)/, '')}`}
-                        className="inline-block px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg shadow-md hover:bg-slate-800 transition"
-                      >
-                        View Details & Navigate
-                      </Link>
+                  <div className="flex-1 pt-1">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className={`font-bold text-sm ${task.status === 'delivered' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                        Deliver Order #{task.order_id.substring(0, 8)}
+                      </h3>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md uppercase">
+                        {task.status}
+                      </span>
                     </div>
-                  )}
+                    <p className="text-xs text-slate-500">To: {task.delivery_address}</p>
+                    
+                    {task.status !== 'delivered' && (
+                      <div className="mt-3">
+                        <Link 
+                          href={`/delivery/tasks/${task.id}`}
+                          className="inline-block px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg shadow-md hover:bg-slate-800 transition"
+                        >
+                          View Details & Navigate
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
