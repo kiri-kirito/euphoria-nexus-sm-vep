@@ -4352,3 +4352,265 @@ Is there any other feature you want to build or test next?
 > The current local time is: 2026-08-09T23:55:16+06:00.
 > </ADDITIONAL_METADATA>
 
+---
+
+# Cursor AI Session — Euphoria Nexus Hardening (Aug 12–13, 2026)
+
+> **Assistant:** Cursor (Composer)  
+> **Repo:** `kiri-kirito/euphoria-nexus-sm-vep` / local `SM-VEP`  
+> **Master context doc:** `PROJECT_MASTER_CONTEXT.md` (porle full project context pawa jabe)  
+> **Raw transcript:** `agent-transcripts/431708c8-8cc4-4b38-a4cf-d91487c2c44f.jsonl`
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 1) — 2026-08-12 9:24 PM
+> so here's the thing ... ei project ta niye ami already onk gula kaj korsi anti gravity use kore.... r or shate joto kotha hoise sob conversation tumi conversation_history.md file er moddhe paba. oikhan theke pore tumi ei project er jonno ki ki kaj hoise ta bujhte parba. project folder er moddhe aro onk gula md files ase so oigulao check korio project er bepare aro information collect er jonno. ekhon main kotha hocche ei project er moddhe ekhono onk bug ase like ekhono kichu page thik moto show kore na, kichu logical flaw ase plus onk kichui missing ja thaka uchit amr requirements onujai. to ami chai tumi sob kichu pore eita 1st a ber koro ki ki flaw ase ekhono, kothay kothay problem ase ekhono. then oitar ekta md file banao for your convenience; ei md file ta tomar check list er moto kaj korbe , bujhte help korbe je ki ki baki r ki ki solve korso.
+
+## 🤖 AI Response
+`conversation_history.md`, `REQUIREMENTS_AND_PROCESS.md`, `PROJECT_UPDATE.md`, `DUMMY_DATA_PLAN.md` pore full codebase audit kore **`PROJECT_AUDIT_CHECKLIST.md`** banano hoyeche.
+
+**Short verdict:** `PROJECT_UPDATE.md` e "complete" mark thakleo asole ~55–65% demo-ready.
+
+**Top 10 problems found:**
+1. Mock fallback everywhere — DB fail hole silently fake data
+2. Bundles broken — homepage bundle click single product page e jay
+3. Local Seller Discovery fake — PostGIS RPC missing
+4. Schema mismatches — `bids` vs `stock_bids`, escrow missing, negotiations wrong columns
+5. Socket.io not persisted
+6. Seller advanced features mostly static/mock
+7. Support ticket detail, escrow, moderation hardcoded
+8. Product images inconsistent
+9. No real-time cross-role sync
+10. Missing pages — About, wishlist, seller apply
+
+**Verified working (partial):** Auth+RBAC, explore catalog, seller product list, checkout partial, admin approval, delivery routing fix, DB seeded.
+
+Git commit korini — user explicitly na bolle commit korbo na.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 2) — 2026-08-12 9:35 PM
+> well tumi shuru theke shuru koro- ja fix kora lagbe serially fix kore jao ; jodi mone hoy eitaa age korle better hoy then oita koro age no problem. ami just chai je project ta perfect hoy real world base. kono logical flaw jno na thake , ekta arektar shate jno inter connected thake jmnta actually houa uchit ja eitar moddhe ekhon nai. ar jeta korte hobe sheta hocche protita fix er por tumi code ta git commit kore diba. ar btw ami kintu project ta already vercel a host korsi so oikhane valo vabe jno kaj kore etao ektu mathay rakhio
+
+## 🤖 AI Response
+Serial fix shuru — **4 ta git commit** (local, push hoyni initially):
+
+| Commit | Fix |
+|--------|-----|
+| `6ca1886` | Schema migration, bundle seed, audit checklist |
+| `46b6ac4` | Checkout → payments + deliveries, bundle pages, local sellers |
+| `8075895` | Seller bidding/negotiations, explore, Vercel image config |
+| `785887c` | Delivery pickup, bulk negotiations DB persist |
+
+**Key fixes:** `003_schema_fixes.sql`, mock fallback komano, checkout real flow, bundles `/bundle/id1/id2`, PostGIS local sellers, seller bidding/negotiations/escrow, delivery pick up flow.
+
+**User manual steps:** Run `003_schema_fixes.sql`, `node seed_bundles.js`, then `git push origin main`.
+
+**Still remaining:** Seller bundling CRUD, settings save, support ticket detail, wishlist, about, Realtime, seller apply submit.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 3) — 2026-08-12 10:00 PM
+> accha next kaj shuru korar age tumi bundle seed ar push origin ta kore deo , ami db te oi sql query ta run kore disi tumi chaile check o korte paro ekbar. eita hoia gele next kaj ta shuru koro
+
+## 🤖 AI Response
+- `node backend/seed_bundles.js` → **15 cross-seller bundles**
+- Verified: escrow OK, negotiations cols OK, RPC OK (0 stores — location empty)
+- Push: `28f9458` — seller bundling/settings, support tickets/moderation
+- Implemented: Seller Bundling DB CRUD, Settings → stores, Support ticket detail, Moderation, `seed_store_locations.js`
+
+**Optional SQL for local sellers:**
+```sql
+UPDATE stores SET location = ST_SetSRID(ST_MakePoint(
+  (settings->>'lng')::float, (settings->>'lat')::float
+), 4326) WHERE settings->>'lat' IS NOT NULL AND location IS NULL;
+```
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 4) — 2026-08-12 10:16 PM
+> local seller fix er sql code ta run kore disi , ekhon tumi jei file ta run korte chaiso koro then next kaj start kore deo
+
+## 🤖 AI Response
+- `seed_store_locations.js` → 50 stores lat/lng set
+- PostGIS location still 0 (user SQL seed er age chilo — abar run dorkar)
+- Phase E: Wishlist, `/about`, seller apply → stores, mock cleanup support/admin
+- User run: location sync SQL + `004_wishlists.sql`
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 5) — 2026-08-12 10:27 PM
+> okay ami oi 2ta sql run kore disi ekhon ekbar abr check kore neo then push kore deo. push sesh hoile next kaj start kore deo
+
+## 🤖 AI Response
+**DB verify:** 50 stores with PostGIS, RPC returns 12 nearby sellers, wishlists OK.
+
+**Push:** `4173a4a` — wishlist, about, seller apply, local sellers.
+
+**Next implemented (local, not pushed yet):** Profile real orders/negotiations, proper logout all roles, `useCurrentUser` from DB, optional `005_users_company.sql`.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 6) — 2026-08-12 10:35 PM
+> accha na company niye kichu korar dorkar nai ig jehetu eita amader requirements er moddheo chilo na..... ja ja kaj korso sheigula push kore deo r next kaj shuru koro. r hae backend host korbo kokhon sheta amay janaio r kivabe korte hobe oitao ektu guide korio
+
+## 🤖 AI Response
+Company skip. **3 commits pushed:** `4173a4a`, `c84f13e`, `79f3e14`.
+
+**Backend host guide (Render):**
+- **Ekhon lagbe na** — core marketplace Supabase diye cholche
+- **Lagbe jokhon** live Socket.io chat/bidding demo dite chao
+- Render: root `backend`, `node server.js`, env: SUPABASE_URL, SERVICE_ROLE_KEY, FRONTEND_URL
+- Vercel: `NEXT_PUBLIC_BACKEND_URL=https://xxx.onrender.com`
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 7) — 2026-08-12 11:10 PM
+> accha next kaj shuru korar age amay backend ta ektu fix kore deo; eikhane jokhon ami build disi tokhon build failed ashche "Export encountered an error on /delivery/page: /delivery, exiting the build." eitar jonno ki korbo?
+
+## 🤖 AI Response
+**Fix:** Delete `src/app/delivery/page.tsx`, add redirect in `next.config.ts` `/delivery` → `/delivery/dashboard`. Commit `4a6ccc0`.
+
+**Render note:** Root Directory must be `backend`, not `.` — na hole Next.js build fail.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 8) — 2026-08-12 11:18 PM
+> accha eita ki push korso origin a ? na korle kore felo then next kaj shuru koro
+
+## 🤖 AI Response
+Push already on `origin/main`. Latest `900f003` — bundle cart + single delivery fee at checkout. Bundle page "Add Bundle to Cart" works; checkout shows 1 delivery fee per bundle.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 9) — 2026-08-13 12:15 AM
+> accha ami vercel er moddhe backend er environment er link disi ekhon ekbar check kore neo jodi kono error thake fix kore deo r next kaj ja baki ase start kore deo
+
+## 🤖 AI Response
+**Fix commit `baf488e`:** `backendUrl.ts`, socket reconnect, CORS `*.vercel.app`, explore nearby filter, `/api/backend-health`.
+
+**Vercel env:** `NEXT_PUBLIC_BACKEND_URL` no trailing slash. **Render:** `FRONTEND_URL` = live frontend domain. Render redeploy needed for CORS fix.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 10) — 2026-08-13 12:30 AM
+> wait are you saying amr render er link mane backend vercel er shate connect na? amr ki environmental a problem ase?
+
+## 🤖 AI Response
+**Na** — bolchi verify kora dorkar. Dui alada service:
+- Vercel = frontend (`NEXT_PUBLIC_BACKEND_URL`)
+- Render = backend (`FRONTEND_URL` for CORS)
+
+Shop/cart/checkout Supabase diye cholbe Render charao. Socket/chat er jonno Render lagbe.
+
+Check: `/api/backend-health` on Vercel + `/api/health` on Render direct.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 11) — 2026-08-13 12:36 AM
+> render er fontend url a ki ami fontend er domain url link ta dibo jeikhane amr fontend ta show hoitese naki vercel er moddhe kono link?
+
+## 🤖 AI Response
+**Browser e je URL e site khule** — oita `FRONTEND_URL`. Custom domain thakle oita, na thakle `.vercel.app` URL. Vercel internal/git link na.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 12) — 2026-08-13 12:42 AM
+> accha redeploy kora sesh tao tumi ekbar check kore neo then next kaj a shuru koro ; btw tumi git origin push to diteso taina?
+
+## 🤖 AI Response
+**Redeploy OK:** `api/backend-health` → ok:true. Git at `baf488e` synced with origin.
+
+**Next (local, not pushed):** Negotiation checkout link — buyer profile "Checkout Now", `/checkout?negotiation=<id>`, seller "Copy buyer checkout link".
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 13) — 2026-08-13 12:55 AM
+> okay next kaj shuru koro
+
+## 🤖 AI Response
+**Batch implemented (local):**
+1. Bulk deal checkout link complete
+2. Delivery portal — real active task, online toggle → `users.is_online`, real profile
+3. Chat persistence — `005_chat_messages.sql`, backend save, widget loads history
+4. Bundle return policy notice on bundle page
+
+**User action:** Run `005_chat_messages.sql` in Supabase. Render needs `SUPABASE_SERVICE_ROLE_KEY`.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 14) — 2026-08-13 1:07 AM
+> Failed to run sql query: ERROR: 42601: syntax error at or near "NOT" LINE 17: CREATE POLICY IF NOT EXISTS "Users read own chat messages" — ei error ta ashche ; eita thik kore deo r next kaj jeta ase oita o start kore deo , ami na hoy eita r next jeita ase ekbare up kore dilam
+
+## 🤖 AI Response
+**SQL fix:** PostgreSQL doesn't support `CREATE POLICY IF NOT EXISTS` → changed to `DROP POLICY IF EXISTS` + `CREATE POLICY`.
+
+**Also implemented:**
+- Socket bidding → DB (`stock_requests`, `stock_bids`, `escrow`)
+- Admin agent performance leaderboards
+- `006_stores_bids_policies.sql` for RLS
+
+User run: fixed `005`, then `006`. Render redeploy for `server.js` changes.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 15) — 2026-08-13 2:12 AM
+> okay sql run plus deploy kora sesh i dont think kono issues ase ekhon tarporo tumi ekbar check kore neo r porer kaj gula start koro
+
+## 🤖 AI Response
+**Production check OK:** backend-health ok, homepage real products + local sellers, mock data almost gone.
+
+**Implemented (not yet deployed):** `/terms`, `/privacy`, `/support`, footer fixes, seller stock request form, explore seller banner, `007_bundle_policies.sql`.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 16) — 2026-08-13 2:20 AM
+> okay sql run r vercel redeploy kora sesh tumi git commit plus push kore next je kaj baki ase oita dhoro but oita dhorar age amay ektu janao r baki ase ki ki
+
+## 🤖 AI Response
+**Git:** commit `ebbc9a2` pushed to `origin/main`. Working tree clean at that point.
+
+**Remaining list given:**
+1. Product images fix
+2. Mock fallback cleanup
+3. Socket.io auth
+4. Real buyer↔seller chat (user picker)
+5. Return/refund flow
+6. Wallet — skip if user says
+7. Notifications
+8–14. Polish items (map, dead code, checklist sync)
+
+**Recommended order:** images → mock gate → chat → refund → cleanup.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 17) — 2026-08-13 2:27 AM
+> accha 6 no. ta baad diye baki gula koro jmn plan korso
+
+## 🤖 AI Response
+**Session 3 complete (#6 wallet skipped). Build pass.**
+
+1. **Product images** — expanded `productImages.ts`, new `ProductImage.tsx`
+2. **Mock removal** — explore hardcoded PRODUCTS deleted, `DbErrorBanner`, no fake local sellers
+3. **Chat widget** — real contacts from DB (support, sellers/buyers)
+4. **Return/refund** — orders page buttons, support refund → order/payment, `008_complaints_refund.sql`
+5. **Cleanup** — deleted `ProductGrid.tsx`, `FilterSidebar.tsx`
+
+**NOT committed/pushed yet.** User run `008_complaints_refund.sql`.
+
+---
+
+## 🧑‍💻 User Request (Cursor Step 18) — 2026-08-13 2:38 AM
+> accha tomar ekhon 1st kaj ta hocche ekta md file lekha jeita porle tumi full context bujhe jaba ei project er like ami ki chaisi project a ki ki hoise kivabe hoise r ekhon ki ki kora baki ase eisob plus ager je conversation history md file ta chilo oitar moddhe ager lekha gula to thakbei shate amader eikhane ja ja kotha hoise 1st to last amr cmd your reply sob oitar moddhe add kore deo
+
+## 🤖 AI Response
+**Created `PROJECT_MASTER_CONTEXT.md`** — full project handoff doc (vision, stack, deploy, timeline, migrations, test accounts, what's done/remaining, rules for next assistant).
+
+**Updated `conversation_history.md`** — appended this entire Cursor session (Steps 1–18) below Anti Gravity history. Prior Anti Gravity content (Steps 0–4793) unchanged.
+
+**Current git state after Session 3:** uncommitted changes in explore, orders, chat, productImages, ProductImage, DbErrorBanner, migration 008, deleted dead components. Last pushed commit remains `ebbc9a2`.
+
+---
+
+*End of Cursor AI Session transcript append.*
+
