@@ -20,6 +20,7 @@ export default function OrdersPage() {
   const [complaintOrder, setComplaintOrder] = useState<any | null>(null);
   const [complaintType, setComplaintType] = useState<ComplaintType>('general');
   const [complaintText, setComplaintText] = useState('');
+  const [returnProductId, setReturnProductId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [expandedMapOrderId, setExpandedMapOrderId] = useState<string | null>(null);
@@ -73,7 +74,7 @@ export default function OrdersPage() {
     try {
       const prefix =
         complaintType === 'return'
-          ? '[RETURN REQUEST] '
+          ? `[RETURN REQUEST]${returnProductId ? ` product: ${returnProductId}` : ''} `
           : complaintType === 'refund'
             ? '[REFUND REQUEST] '
             : '';
@@ -143,6 +144,7 @@ export default function OrdersPage() {
     setComplaintOrder(order);
     setComplaintType(type);
     setComplaintText('');
+    setReturnProductId(order.order_items?.[0]?.product_id || '');
   };
 
   return (
@@ -173,6 +175,22 @@ export default function OrdersPage() {
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-2 mb-4">
                 Bundle orders: partial returns void the bundle discount per our return policy.
               </p>
+            )}
+            {complaintType === 'return' && (complaintOrder.order_items?.length ?? 0) > 1 && (
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Item to return</label>
+                <select
+                  value={returnProductId}
+                  onChange={(e) => setReturnProductId(e.target.value)}
+                  className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2"
+                >
+                  {(complaintOrder.order_items || []).map((item: { product_id: string; quantity: number }) => (
+                    <option key={item.product_id} value={item.product_id}>
+                      Product {item.product_id.substring(0, 8)} × {item.quantity}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
             <form onSubmit={handleFileComplaint}>
               <textarea

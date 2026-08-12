@@ -17,22 +17,28 @@ interface BundleProduct {
 interface Props {
   item1: BundleProduct;
   item2: BundleProduct;
+  bundlePrice?: number;
+  dbBundleId?: string;
 }
 
-export default function BundleAddToCartButton({ item1, item2 }: Props) {
+export default function BundleAddToCartButton({ item1, item2, bundlePrice, dbBundleId }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const router = useRouter();
   const [added, setAdded] = useState(false);
-  const bundleId = `bundle-${item1.id}-${item2.id}`;
+  const bundleId = dbBundleId || `bundle-${item1.id}-${item2.id}`;
 
   const handleAdd = () => {
     const img1 = item1.image || resolveProductImage(item1);
     const img2 = item2.image || resolveProductImage(item2);
+    const originalTotal = Number(item1.price) + Number(item2.price);
+    const paidTotal = bundlePrice ?? Math.round(originalTotal * 0.85);
+    const price1 = Math.round(paidTotal * (Number(item1.price) / originalTotal));
+    const price2 = paidTotal - price1;
 
     addItem({
       id: item1.id,
       name: item1.name,
-      price: Number(item1.price),
+      price: price1,
       quantity: 1,
       image: img1,
       sellerId: item1.seller_id,
@@ -41,7 +47,7 @@ export default function BundleAddToCartButton({ item1, item2 }: Props) {
     addItem({
       id: item2.id,
       name: item2.name,
-      price: Number(item2.price),
+      price: price2,
       quantity: 1,
       image: img2,
       sellerId: item2.seller_id,

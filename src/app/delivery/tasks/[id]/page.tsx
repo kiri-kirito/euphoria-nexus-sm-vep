@@ -141,6 +141,18 @@ export default function TaskDetails({ params }: { params: { id: string } }) {
               <p className="text-xs text-slate-500 font-medium">Pickup from: {task.pickup_address}</p>
             </div>
           </div>
+          {Array.isArray(task.pickup_stops) && task.pickup_stops.length > 1 && (
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+              <p className="text-xs font-bold text-blue-800 mb-2">Multi-pickup route ({task.pickup_stops.length} stops)</p>
+              <ol className="space-y-2">
+                {task.pickup_stops.map((stop: { sequence?: number; store_name?: string; address?: string }) => (
+                  <li key={stop.sequence} className="text-xs text-blue-900">
+                    {stop.sequence}. {stop.store_name} — {stop.address}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
 
         {/* Status Update Action Buttons */}

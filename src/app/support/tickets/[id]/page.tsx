@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { resolveProductImage } from "@/utils/productImages";
+import { loadOrderRefundAmount } from "@/utils/bundlePayouts";
 
 interface ChatMessage {
   id: number;
@@ -106,11 +107,19 @@ export default function TicketDetails() {
 
   const handleProcessRefund = async () => {
     if (!complaint) return;
-    const amount = Number(complaint.orders?.total_amount || 0);
+    const amount = await loadOrderRefundAmount(
+      supabase,
+      complaint.order_id,
+      complaint.complaint_type || 'refund',
+      complaint.description || ''
+    );
+    const isPartial = amount < Number(complaint.orders?.total_amount || 0);
     const resolutionMsg = {
       id: 999,
       sender: 'Support',
-      text: `Refund of ৳${amount.toLocaleString()} approved.`,
+      text: isPartial
+        ? `Partial bundle refund of ৳${amount.toLocaleString()} approved (bundle discount voided for returned item).`
+        : `Refund of ৳${amount.toLocaleString()} approved.`,
       time: new Date().toLocaleTimeString(),
     };
     const updatedResolution = JSON.stringify([...messages, resolutionMsg]);
@@ -126,8 +135,14 @@ export default function TicketDetails() {
       .eq('id', complaint.id);
 
     if (complaint.order_id) {
-      await supabase.from('orders').update({ status: 'refunded' }).eq('id', complaint.order_id);
+      await supabase.from('orders').update({ status: isPartial ? 'partially_refunded' : 'refunded' }).eq('id', complaint.order_id);
       await supabase.from('payments').update({ status: 'refunded' }).eq('order_id', complaint.order_id);
+      if (isPartial) {
+        await supabase
+          .from('seller_payouts')
+          .update({ status: 'adjusted' })
+          .eq('order_id', complaint.order_id);
+      }
     }
 
     setMessages((prev) => [...prev, resolutionMsg as ChatMessage]);

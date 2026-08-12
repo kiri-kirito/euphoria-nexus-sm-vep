@@ -97,7 +97,7 @@ export default async function BundleDealPage({ params }: { params: Promise<{ ids
             </div>
           </div>
 
-          <BundleAddToCartButton item1={item1} item2={item2} />
+          <BundleAddToCartButton item1={item1} item2={item2} bundlePrice={bundlePrice} />
           <p className="text-xs text-slate-500 text-center mt-3">
             Cross-seller bundles ship together — you pay one delivery fee for this combo.
           </p>

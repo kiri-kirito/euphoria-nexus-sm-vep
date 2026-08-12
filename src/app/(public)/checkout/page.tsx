@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { createClient } from '@/utils/supabase/client';
 import { isValidUuid, resolveProductImage } from '@/utils/productImages';
 import { calcShippingFee, countDeliveryUnits, shippingLabel } from '@/utils/deliveryFee';
+import { processBundleOrderAfterCheckout } from '@/utils/bundlePayouts';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -249,7 +250,10 @@ function CheckoutContent() {
         pickup_address: 'Seller Hub — Dhaka',
         delivery_address: shippingAddress,
         status: 'pending',
+        pickup_stops: [],
       });
+
+      await processBundleOrderAfterCheckout(supabase, order.id, items, shippingAddress);
 
       if (activeNegotiationId) {
         await supabase
