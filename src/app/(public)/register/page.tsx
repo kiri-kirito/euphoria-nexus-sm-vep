@@ -28,6 +28,12 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!['buyer', 'seller'].includes(role)) {
+      setError('Delivery agents, support staff, and admins are created internally by platform admin.');
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
     
     // Supabase auth signup
@@ -157,8 +163,11 @@ export default function RegisterPage() {
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
               >
                 <option value="buyer">Buyer</option>
-                <option value="seller">Seller</option>
+                <option value="seller">Seller (requires admin approval)</option>
               </select>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Delivery, support, and admin accounts are created internally — not via public registration.
+              </p>
             </div>
           </div>
 

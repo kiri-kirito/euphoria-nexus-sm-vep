@@ -5,6 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
+import { useSocket } from '@/hooks/useSocket';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const FEE_PER_DELIVERY = 120;
 
@@ -15,6 +17,21 @@ export default function DeliveryDashboard() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
   const { user } = useAuthStore();
+  const { socket } = useSocket('/delivery');
+  const { refresh: refreshNotifications } = useNotifications();
+
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+    socket.emit('register_agent', user.id);
+    const onPing = () => {
+      fetchDeliveryData();
+      refreshNotifications();
+    };
+    socket.on('priority_delivery', onPing);
+    return () => {
+      socket.off('priority_delivery', onPing);
+    };
+  }, [socket, user?.id]);
 
   const fetchDeliveryData = useCallback(async () => {
     if (!user?.id) {
@@ -46,7 +63,10 @@ export default function DeliveryDashboard() {
     ]);
 
     setActiveDeliveries(mine || []);
-    setAvailableDeliveries(open || []);
+    const sorted = (open || []).sort(
+      (a, b) => Number(b.is_priority) - Number(a.is_priority)
+    );
+    setAvailableDeliveries(sorted);
     setCompletedCount(count || 0);
     setLoading(false);
   }, [supabase, user?.id]);
@@ -120,7 +140,12 @@ export default function DeliveryDashboard() {
           <h2 className="text-base font-bold text-slate-900 mb-4">Available to Pick Up ({availableDeliveries.length})</h2>
           <div className="space-y-4">
             {availableDeliveries.map((delivery) => (
-              <div key={delivery.id} className="bg-amber-50 rounded-2xl border border-amber-200 p-5">
+              <div key={delivery.id} className={`rounded-2xl border p-5 ${delivery.is_priority ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200'}`}>
+                {delivery.is_priority && (
+                  <span className="inline-block mb-2 text-[10px] font-bold uppercase tracking-wide text-red-700 bg-red-100 px-2 py-1 rounded-full">
+                    ⚡ Priority {delivery.delivery_type?.replace('_', ' ') || 'express'}
+                  </span>
+                )}
                 <p className="font-bold text-sm">{delivery.orders?.users?.name || 'Customer'}</p>
                 <p className="text-xs text-slate-600 mt-2">📍 {delivery.delivery_address}</p>
                 <button

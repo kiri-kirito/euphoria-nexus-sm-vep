@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { io } from "socket.io-client";
 import { getBackendSocketUrl } from "@/utils/backendUrl";
 import { buildSocketAuthOptions } from "@/utils/socketAuth";
+import { openStockExchangeChat } from "@/utils/stockExchangeChat";
 
 interface StockRequestView {
   id: string;
@@ -35,9 +36,10 @@ export default function BlindBiddingPage() {
   const [postProductId, setPostProductId] = useState("");
   const [postQty, setPostQty] = useState("10");
   const [postTarget, setPostTarget] = useState("");
+  const [postFulfillment, setPostFulfillment] = useState<"bulk_transfer" | "dropship">("bulk_transfer");
   const [posting, setPosting] = useState(false);
   const supabase = createClient();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
 
   const loadBoard = useCallback(async () => {
     const { data, error } = await supabase
@@ -112,6 +114,18 @@ export default function BlindBiddingPage() {
     const amount = Number(bidAmounts[requestId]);
     if (!amount || !user?.id) return;
 
+    const { data: existing } = await supabase
+      .from("stock_bids")
+      .select("id")
+      .eq("request_id", requestId)
+      .eq("bidding_seller_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      alert("You already submitted one blind bid for this request.");
+      return;
+    }
+
     const { data: bidRow, error } = await supabase
       .from("stock_bids")
       .insert({
@@ -169,6 +183,20 @@ export default function BlindBiddingPage() {
         status: "held",
         description: "Stock exchange escrow — awaiting transfer confirmation",
       });
+
+      const { data: requestRow } = await supabase
+        .from("stock_requests")
+        .select("fulfillment_type")
+        .eq("id", requestId)
+        .maybeSingle();
+
+      await openStockExchangeChat(supabase, {
+        fromSellerId: user.id,
+        toSellerId: bid.bidding_seller_id,
+        fromName: profile?.name || user.email || "Seller",
+        requestId,
+        fulfillmentType: (requestRow?.fulfillment_type as string) || "bulk_transfer",
+      });
     }
 
     try {
@@ -200,6 +228,7 @@ export default function BlindBiddingPage() {
         quantity,
         target_price: targetPrice,
         status: "open",
+        fulfillment_type: postFulfillment,
       })
       .select("id")
       .single();
@@ -276,6 +305,17 @@ export default function BlindBiddingPage() {
             placeholder="Target price per unit (৳)"
             className="border rounded-xl px-4 py-2 text-sm"
           />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-slate-600 block mb-1">Preferred fulfillment if bid accepted</label>
+          <select
+            value={postFulfillment}
+            onChange={(e) => setPostFulfillment(e.target.value as "bulk_transfer" | "dropship")}
+            className="border rounded-xl px-4 py-2 text-sm w-full md:w-auto"
+          >
+            <option value="bulk_transfer">Bulk transfer via delivery agent</option>
+            <option value="dropship">Dropship directly to my buyer</option>
+          </select>
         </div>
         <button
           type="submit"

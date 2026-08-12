@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ReactNode, useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { signOutAndRedirect } from "@/utils/logout";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const NAV_ITEMS = [
   {
@@ -63,19 +64,13 @@ const NAV_ITEMS = [
   },
 ];
 
-const NOTIFICATIONS = [
-  { icon: "🛒", text: "New order #ORD-1043 from GamerZone", time: "2 min ago", unread: true },
-  { icon: "💬", text: "Dhaka Gadgets sent a bulk deal request", time: "18 min ago", unread: true },
-  { icon: "📦", text: "Mechanical Keycaps stock is low (8 left)", time: "1 hr ago", unread: true },
-  { icon: "✅", text: "Order #ORD-1040 marked as delivered", time: "3 hrs ago", unread: false },
-];
-
 export default function SellerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const { notifications, unreadCount, markAllRead } = useNotifications();
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -159,29 +154,50 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
               </button>
 
               {notifOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50">
                   <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-bold text-slate-900 text-sm">Notifications</h3>
-                    <span className="text-xs text-primary font-semibold cursor-pointer hover:underline">Mark all read</span>
+                    <button
+                      type="button"
+                      onClick={markAllRead}
+                      className="text-xs text-primary font-semibold cursor-pointer hover:underline"
+                    >
+                      Mark all read
+                    </button>
                   </div>
                   <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-                    {NOTIFICATIONS.map((n, i) => (
-                      <div key={i} className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors ${n.unread ? "bg-primary/5" : ""}`}>
-                        <span className="text-xl mt-0.5">{n.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm leading-snug ${n.unread ? "font-semibold text-slate-900" : "text-slate-600"}`}>{n.text}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{n.time}</p>
-                        </div>
-                        {n.unread && <span className="w-2 h-2 bg-primary rounded-full mt-1.5 flex-shrink-0"></span>}
-                      </div>
-                    ))}
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-6 text-sm text-slate-500 text-center">No notifications yet.</p>
+                    ) : (
+                      notifications.map((n) => (
+                        <Link
+                          key={n.id}
+                          href={n.link || '#'}
+                          className={`flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors ${!n.is_read ? 'bg-primary/5' : ''}`}
+                        >
+                          <span className="text-xl mt-0.5">🔔</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm leading-snug ${!n.is_read ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>
+                              {n.title}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.body}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {new Date(n.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          {!n.is_read && <span className="w-2 h-2 bg-primary rounded-full mt-1.5 flex-shrink-0"></span>}
+                        </Link>
+                      ))
+                    )}
                   </div>
                   <div className="px-4 py-3 border-t border-slate-100 text-center">
-                    <span className="text-xs text-primary font-semibold cursor-pointer hover:underline">View all notifications</span>
+                    <span className="text-xs text-slate-500">{unreadCount} unread</span>
                   </div>
                 </div>
               )}

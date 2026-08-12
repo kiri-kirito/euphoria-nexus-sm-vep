@@ -12,8 +12,18 @@ export default function AdminSettings() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string; slug: string; is_active: boolean }[]>([]);
+  const [newCategory, setNewCategory] = useState('');
 
   const supabase = createClient();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase.from('product_categories').select('*').order('name');
+      setCategories(data || []);
+    };
+    fetchCategories();
+  }, [supabase]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -80,6 +90,25 @@ export default function AdminSettings() {
       setIsLoading(false);
       setTimeout(() => setToast(null), 3000);
     }
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategory.trim()) return;
+    const slug = newCategory.trim().toLowerCase().replace(/\s+/g, '-');
+    const { data, error } = await supabase
+      .from('product_categories')
+      .insert({ name: newCategory.trim(), slug })
+      .select()
+      .single();
+    if (error) {
+      setToast('Category error: ' + error.message);
+    } else if (data) {
+      setCategories((prev) => [...prev, data]);
+      setNewCategory('');
+      setToast('Category added.');
+    }
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleExportCSV = async () => {
@@ -171,6 +200,37 @@ export default function AdminSettings() {
           </button>
         </div>
       </form>
+
+      <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+        <h2 className="text-sm font-bold text-white">Product Categories</h2>
+        <p className="text-xs text-slate-400">Manage platform-wide product categories for sellers.</p>
+        <form onSubmit={handleAddCategory} className="flex gap-3">
+          <input
+            type="text"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="New category name"
+            className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl p-3 text-xs outline-none focus:border-blue-500"
+          />
+          <button
+            type="submit"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition"
+          >
+            Add Category
+          </button>
+        </form>
+        <ul className="divide-y divide-slate-800">
+          {categories.map((cat) => (
+            <li key={cat.id} className="flex items-center justify-between py-2 text-sm text-slate-300">
+              <span>{cat.name}</span>
+              <span className="text-xs text-slate-500">{cat.slug}</span>
+            </li>
+          ))}
+          {categories.length === 0 && (
+            <li className="py-4 text-center text-slate-500 text-xs">No categories yet.</li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 }

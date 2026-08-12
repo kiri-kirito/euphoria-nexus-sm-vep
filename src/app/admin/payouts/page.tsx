@@ -11,6 +11,12 @@ export default async function AdminPayouts() {
     .order('created_at', {ascending:false})
     .limit(100);
 
+  const { data: commissionLogs } = await supabase
+    .from('commission_logs')
+    .select('*, orders(id), users!seller_id(name)')
+    .order('created_at', { ascending: false })
+    .limit(100);
+
   return (
     <div className="space-y-6">
       <div>
@@ -52,6 +58,46 @@ export default async function AdminPayouts() {
               )})}
               {(payments || []).length === 0 && (
                 <tr><td colSpan={6} className="p-4 text-center text-slate-500">No payments found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-bold text-white tracking-tight mb-1">Commission Logs</h2>
+        <p className="text-xs text-slate-400 mb-4">Platform commission deducted per completed order.</p>
+      </div>
+
+      <div className="bg-slate-950 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-900/80 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th className="p-4">Order</th>
+                <th className="p-4">Seller</th>
+                <th className="p-4">Order Total</th>
+                <th className="p-4">Commission</th>
+                <th className="p-4">Rate</th>
+                <th className="p-4">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 text-slate-300 font-medium">
+              {(commissionLogs || []).map((log) => {
+                const seller = Array.isArray(log.users) ? log.users[0] : log.users;
+                return (
+                  <tr key={log.id} className="hover:bg-slate-900/50 transition">
+                    <td className="p-4 font-mono text-slate-400">#{log.order_id?.substring(0, 8)}</td>
+                    <td className="p-4 font-bold text-white">{seller?.name || 'Unknown'}</td>
+                    <td className="p-4">৳ {log.gross_amount}</td>
+                    <td className="p-4 font-extrabold text-emerald-400">৳ {log.commission_amount}</td>
+                    <td className="p-4">{log.commission_rate}%</td>
+                    <td className="p-4 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+              {(commissionLogs || []).length === 0 && (
+                <tr><td colSpan={6} className="p-4 text-center text-slate-500">No commission logs yet.</td></tr>
               )}
             </tbody>
           </table>

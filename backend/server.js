@@ -179,6 +179,18 @@ biddingNamespace.on('connection', (socket) => {
     const supabase = getSupabaseAdmin();
 
     if (supabase && data.requestId && data.biddingSellerId && data.amount) {
+      const { data: existing } = await supabase
+        .from('stock_bids')
+        .select('id')
+        .eq('request_id', data.requestId)
+        .eq('bidding_seller_id', data.biddingSellerId)
+        .maybeSingle();
+
+      if (existing) {
+        socket.emit('bid_error', { message: 'You already submitted a bid for this request.' });
+        return;
+      }
+
       const { data: row, error } = await supabase
         .from('stock_bids')
         .insert({
@@ -249,6 +261,8 @@ biddingNamespace.on('connection', (socket) => {
       ...data,
       escrowState,
       message: 'Escrow initiated. Awaiting physical stock confirmation.',
+      openChat: true,
+      fulfillmentOptions: ['dropship', 'bulk_transfer'],
     });
   });
 
@@ -314,6 +328,29 @@ chatNamespace.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[Chat] Disconnected: ${socket.id}`);
+  });
+});
+
+// /delivery namespace — priority pings for online agents
+const deliveryNamespace = io.of('/delivery');
+attachNamespaceAuth(deliveryNamespace, '/delivery');
+deliveryNamespace.on('connection', (socket) => {
+  console.log(`[Delivery] Connected: ${socket.id}`);
+
+  socket.on('priority_ping', (data) => {
+    const ids = data?.agentIds || [];
+    ids.forEach((agentId) => {
+      deliveryNamespace.to(agentId).emit('priority_delivery', data);
+    });
+    deliveryNamespace.emit('priority_delivery', data);
+  });
+
+  socket.on('register_agent', (agentId) => {
+    if (agentId) socket.join(String(agentId));
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[Delivery] Disconnected: ${socket.id}`);
   });
 });
 

@@ -8,6 +8,9 @@ import { createClient } from '@/utils/supabase/client';
 import { isValidUuid, resolveProductImage } from '@/utils/productImages';
 import { calcShippingFee, countDeliveryUnits, shippingLabel } from '@/utils/deliveryFee';
 import { processBundleOrderAfterCheckout } from '@/utils/bundlePayouts';
+import { configureLocalDelivery } from '@/utils/localDelivery';
+import { recordCommissionLogs } from '@/utils/commissionLogs';
+import { createNotification } from '@/utils/localDelivery';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -254,6 +257,21 @@ function CheckoutContent() {
       });
 
       await processBundleOrderAfterCheckout(supabase, order.id, items, shippingAddress);
+      await configureLocalDelivery(supabase, order.id, items, deliveryOption === 120);
+      await recordCommissionLogs(supabase, order.id, total);
+
+      const sellerIds = [...new Set(items.map((i) => i.sellerId).filter(Boolean))] as string[];
+      await Promise.all(
+        sellerIds.map((sid) =>
+          createNotification(
+            supabase,
+            sid,
+            'New order received',
+            `Order #${order.id.slice(0, 8)} — ৳${total.toLocaleString()}`,
+            '/seller/orders'
+          )
+        )
+      );
 
       if (activeNegotiationId) {
         await supabase
