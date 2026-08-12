@@ -50,7 +50,7 @@ export default function GlobalChatWidget() {
 
     const messagePayload = {
       senderId: user.id,
-      senderName: user.name || 'User',
+      senderName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
       receiverId: receiverId,
       text: newMessage.trim(),
     };

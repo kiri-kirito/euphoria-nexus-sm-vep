@@ -43,6 +43,7 @@ const MOCK_CLOSED: Negotiation[] = [
     image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=200&auto=format&fit=crop",
     originalPrice: 32000,
     offeredPrice: 28000,
+    discount: "12%",
     finalPrice: 29500,
     qty: 5,
     message: "",
