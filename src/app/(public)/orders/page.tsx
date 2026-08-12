@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import OrderTrackingMap from '@/components/maps/OrderTrackingMapLazy';
+import { deliveryMapPoints } from '@/utils/deliveryMap';
 
 type ComplaintType = 'general' | 'return' | 'refund';
 
@@ -20,6 +22,7 @@ export default function OrdersPage() {
   const [complaintText, setComplaintText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [expandedMapOrderId, setExpandedMapOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -34,7 +37,8 @@ export default function OrdersPage() {
             .from('orders')
             .select(`
               *,
-              order_items (id, quantity, unit_price, product_id)
+              order_items (id, quantity, unit_price, product_id),
+              deliveries (id, status, pickup_address, delivery_address, agent_id)
             `)
             .eq('buyer_id', user.id)
             .order('created_at', { ascending: false }),
@@ -223,11 +227,15 @@ export default function OrdersPage() {
             {orders.map((order) => {
               const ticket = complaintsByOrder[order.id];
               const canReturn = order.status === 'delivered' || order.status === 'processing';
+              const mapOpen = expandedMapOrderId === order.id;
+              const mapData = deliveryMapPoints(order);
+              const showMap = order.status !== 'cancelled';
               return (
                 <div
                   key={order.id}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 md:items-center justify-between"
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col gap-4"
                 >
+                  <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
                   <div>
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <span className="font-bold text-slate-900 text-lg">
@@ -255,6 +263,15 @@ export default function OrdersPage() {
                       ৳{Number(order.total_amount).toLocaleString()}
                     </span>
                     <div className="flex flex-wrap gap-2 justify-end">
+                      {showMap && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedMapOrderId(mapOpen ? null : order.id)}
+                          className="px-3 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100"
+                        >
+                          {mapOpen ? 'Hide Map' : 'Track Delivery'}
+                        </button>
+                      )}
                       {!ticket && (
                         <>
                           <button
@@ -291,6 +308,16 @@ export default function OrdersPage() {
                       )}
                     </div>
                   </div>
+                  </div>
+                  {mapOpen && showMap && (
+                    <OrderTrackingMap
+                      pickup={mapData.pickup}
+                      delivery={mapData.delivery}
+                      agent={order.status !== 'delivered' ? mapData.agent : undefined}
+                      status={mapData.status}
+                      className="w-full"
+                    />
+                  )}
                 </div>
               );
             })}

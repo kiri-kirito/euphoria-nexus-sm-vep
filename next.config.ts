@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
         destination: '/register',
         permanent: false,
       },
+      {
+        source: '/products',
+        destination: '/explore',
+        permanent: false,
+      },
     ];
   },
   typescript: {
