@@ -1,11 +1,11 @@
 import React from 'react';
-import { createAdminClient } from '@/utils/supabase/server-admin';
+import { getAdminSupabase } from '@/utils/supabase/server-admin';
 import AgentClient from './AgentClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AgentManagement() {
-  const supabase = createAdminClient();
+  const supabase = await getAdminSupabase();
   
   const { data: deliveryAgents } = await supabase
     .from('users')

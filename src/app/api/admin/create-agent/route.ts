@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase/server-admin';
+import { createAdminClient, AdminServiceKeyMissingError } from '@/utils/supabase/server-admin';
 
 export async function POST(req: Request) {
   try {
@@ -36,7 +36,13 @@ export async function POST(req: Request) {
     }
     
     return NextResponse.json({ success: true, user: data.user });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message =
+      error instanceof AdminServiceKeyMissingError
+        ? 'SUPABASE_SERVICE_ROLE_KEY is not configured on the server'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

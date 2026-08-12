@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
+import { getDashboardPath, getRoleLabel } from "@/utils/roleRoutes";
 
 export default function Navbar() {
   const { isLoggedIn, role: userRole, profile } = useAuthStore();
@@ -58,8 +59,24 @@ export default function Navbar() {
       return;
     }
     
+    if (!data.user) {
+      setLoading(false);
+      return;
+    }
+
     setShowLoginModal(false);
     setLoading(false);
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+    const role = userData?.role || 'buyer';
+    const dashboardPath = getDashboardPath(role);
+    if (dashboardPath) {
+      router.push(dashboardPath);
+    }
   };
 
   const handleSupabaseAuth = async (e: React.FormEvent) => {
@@ -186,11 +203,11 @@ export default function Navbar() {
                                   Business & Staff
                                 </p>
                                 <Link 
-                                  href={`/${userRole}/dashboard`} 
+                                  href={getDashboardPath(userRole) || '/'} 
                                   onClick={() => setShowProfileDropdown(false)}
                                   className="flex items-center justify-between text-sm font-semibold text-slate-800 hover:text-primary transition-colors bg-white px-3 py-2 rounded-md shadow-sm border border-slate-200"
                                 >
-                                  Switch to {userRole.charAt(0).toUpperCase() + userRole.slice(1)} Mode
+                                  Switch to {getRoleLabel(userRole)} Mode
                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                                 </Link>
                               </div>

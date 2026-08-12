@@ -1,10 +1,10 @@
 import React from 'react';
-import { createAdminClient } from '@/utils/supabase/server-admin';
+import { getAdminSupabase } from '@/utils/supabase/server-admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPayouts() {
-  const supabase = createAdminClient();
+  const supabase = await getAdminSupabase();
   const { data: payments } = await supabase
     .from('payments')
     .select('*, orders(status, buyer_id, users!buyer_id(name))')

@@ -1,11 +1,11 @@
 import React from 'react';
-import { createAdminClient } from '@/utils/supabase/server-admin';
+import { getAdminSupabase, hasAdminServiceKey } from '@/utils/supabase/server-admin';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  const supabase = createAdminClient();
+  const supabase = await getAdminSupabase();
   
   // Real GMV: sum of all order amounts
   const { data: gmvData, error: gmvError } = await supabase.from('orders').select('total_amount, status');
@@ -19,7 +19,7 @@ export default async function AdminDashboard() {
 
   // Recent activity (last 10 orders)
   const { data: recentOrders, error: recentErr } = await supabase.from('orders')
-    .select('*, users(name, email)')
+    .select('*, users!buyer_id(name, email)')
     .order('created_at', {ascending: false}).limit(10);
     
   // Fetch platform settings
@@ -87,6 +87,11 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {!hasAdminServiceKey() && (
+        <div className="bg-blue-500/10 border border-blue-500/30 text-blue-200 text-sm px-4 py-3 rounded-xl">
+          Add <code className="text-blue-100">SUPABASE_SERVICE_ROLE_KEY</code> in Vercel env for full admin access. Using session fallback for now.
+        </div>
+      )}
       {hasError && (
         <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm px-4 py-3 rounded-xl">
           Some dashboard metrics could not be loaded. Check Supabase connection.

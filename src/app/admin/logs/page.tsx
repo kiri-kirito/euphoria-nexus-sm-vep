@@ -1,10 +1,10 @@
 import React from 'react';
-import { createAdminClient } from '@/utils/supabase/server-admin';
+import { getAdminSupabase } from '@/utils/supabase/server-admin';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminLogs() {
-  const supabase = createAdminClient();
+  const supabase = await getAdminSupabase();
   
   const { data: orders } = await supabase.from('orders').select('*, users!buyer_id(name)').order('created_at', {ascending:false}).limit(50);
   const { data: complaints } = await supabase.from('complaints').select('*, users!buyer_id(name)').order('created_at', {ascending:false}).limit(50);
