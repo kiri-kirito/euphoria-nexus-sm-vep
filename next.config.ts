@@ -11,7 +11,15 @@ const nextConfig: NextConfig = {
     ],
     unoptimized: true,
   },
-  // Allow build to succeed even with minor type issues in generated files
+  async redirects() {
+    return [
+      {
+        source: '/delivery',
+        destination: '/delivery/dashboard',
+        permanent: false,
+      },
+    ];
+  },
   typescript: {
     ignoreBuildErrors: false,
   },

@@ -2,14 +2,12 @@ services:
   - type: web
     name: euphoria-nexus-backend
     env: node
+    rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
+    healthCheckPath: /api/health
     envVars:
-      - key: PORT
-        value: 10000
       - key: NODE_ENV
         value: production
-      # Set the following variables manually in the Render Dashboard after deployment:
-      # SUPABASE_URL = https://zkezevgkanjfsvxhipuc.supabase.co
-      # SUPABASE_SERVICE_ROLE_KEY = <your-service-role-key>
-      # FRONTEND_URL = <your-vercel-url>
+      # Set manually in Render Dashboard after deploy:
+      # PORT (auto-set by Render), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, FRONTEND_URL
