@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 const FEE_PER_DELIVERY = 120;
 
@@ -53,6 +54,9 @@ export default function DeliveryDashboard() {
   useEffect(() => {
     fetchDeliveryData();
   }, [fetchDeliveryData]);
+
+  useSupabaseRealtime('deliveries', fetchDeliveryData, !!user?.id);
+  useSupabaseRealtime('orders', fetchDeliveryData, !!user?.id);
 
   const handlePickUp = async (deliveryId: string) => {
     if (!user?.id) return;

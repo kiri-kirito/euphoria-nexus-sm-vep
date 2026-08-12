@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 export default function SupportDashboard() {
   const [filter, setFilter] = useState('All');
@@ -10,11 +11,7 @@ export default function SupportDashboard() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchSupportData();
-  }, []);
-
-  const fetchSupportData = async () => {
+  const fetchSupportData = useCallback(async () => {
     try {
       const { data: openComplaints, error: openError } = await supabase
         .from('complaints')
@@ -22,17 +19,14 @@ export default function SupportDashboard() {
         .eq('status', 'open')
         .order('created_at', { ascending: false })
         .limit(20);
-      
-      const { data: resolvedComplaints, error: resolvedError } = await supabase
+
+      const { data: resolvedComplaints } = await supabase
         .from('complaints')
         .select('id')
         .eq('status', 'resolved');
-        
-      if (openError) {
-        console.error("Open complaints error", openError);
-        throw openError;
-      }
-      
+
+      if (openError) throw openError;
+
       setData({
         openTickets: openComplaints || [],
         resolvedCount: resolvedComplaints?.length || 0,
@@ -40,12 +34,18 @@ export default function SupportDashboard() {
         satisfaction: 94,
       });
     } catch (e) {
-      console.error("Support dashboard fetch error", e);
+      console.error('Support dashboard fetch error', e);
       setData({ openTickets: [], resolvedCount: 0, avgResponseTime: '—', satisfaction: 0 });
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSupportData();
+  }, [fetchSupportData]);
+
+  useSupabaseRealtime('complaints', fetchSupportData);
 
   const handleResolve = async (ticketId: string) => {
     try {

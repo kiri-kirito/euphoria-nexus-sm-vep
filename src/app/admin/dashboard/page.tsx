@@ -26,27 +26,20 @@ export default async function AdminDashboard() {
   const { data: settingsData } = await supabase.from('platform_settings').select('commission_rate').limit(1).single();
   const commissionRate = settingsData?.commission_rate || 10.0;
   const commissionFraction = commissionRate / 100;
-    
-  const hasError = gmvError || usersErr || ordersErr || productsErr || recentErr;
 
-  // Fallbacks
-  const safeGmvData = hasError ? [{ total_amount: 12000, status: 'delivered' }, { total_amount: 5000, status: 'pending' }] : (gmvData || []);
-  const gmv = safeGmvData.reduce((s, o) => s + Number(o.total_amount), 0);
+  const hasError = !!(gmvError || usersErr || ordersErr || productsErr || recentErr);
+  const gmvDataSafe = gmvData || [];
+  const gmv = gmvDataSafe.reduce((s, o) => s + Number(o.total_amount), 0);
+  const safeTotalUsers = totalUsers || 0;
+  const safeSellerCount = sellerCount || 0;
+  const safeBuyerCount = buyerCount || 0;
+  const safeOrderCount = orderCount || 0;
+  const safeProductCount = productCount || 0;
+  const safeRecentOrders = recentOrders || [];
 
-  const safeTotalUsers = hasError ? 150 : (totalUsers || 0);
-  const safeSellerCount = hasError ? 12 : (sellerCount || 0);
-  const safeBuyerCount = hasError ? 135 : (buyerCount || 0);
-  const safeOrderCount = hasError ? 342 : (orderCount || 0);
-  const safeProductCount = hasError ? 84 : (productCount || 0);
-  
-  const safeRecentOrders = hasError ? [
-    { id: 'mock-1', users: { name: 'Alice', email: 'alice@test.com' }, total_amount: 2500, status: 'delivered', created_at: new Date().toISOString() },
-    { id: 'mock-2', users: { name: 'Bob', email: 'bob@test.com' }, total_amount: 8000, status: 'pending', created_at: new Date().toISOString() }
-  ] : (recentOrders || []);
-  
-  const deliveredCount = safeGmvData.filter(o => o.status === 'delivered').length;
-  const pendingCount = safeGmvData.filter(o => o.status === 'pending').length;
-  const totalOrd = safeGmvData.length || 1;
+  const deliveredCount = gmvDataSafe.filter(o => o.status === 'delivered').length;
+  const pendingCount = gmvDataSafe.filter(o => o.status === 'pending').length;
+  const totalOrd = gmvDataSafe.length || 1;
   const deliveredPct = Math.round((deliveredCount / totalOrd) * 100);
   const pendingPct = Math.round((pendingCount / totalOrd) * 100);
 
@@ -60,7 +53,11 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Page Title */}
+      {hasError && (
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm px-4 py-3 rounded-xl">
+          Some dashboard metrics could not be loaded. Check Supabase connection.
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">System Performance & Revenue</h1>
