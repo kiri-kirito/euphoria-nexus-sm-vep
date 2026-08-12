@@ -1,21 +1,13 @@
 import { notFound } from 'next/navigation';
 import { fetchProducts } from '@/utils/api';
 import Link from 'next/link';
+import BundleAddToCartButton from '@/components/products/BundleAddToCartButton';
+import { resolveProductImage } from '@/utils/productImages';
 
 export const revalidate = 0; // Dynamic rendering
 
-const getFirstImage = (images: any): string => {
-  try {
-    if (Array.isArray(images)) return images[0] || '';
-    if (typeof images === 'string') {
-      const parsed = JSON.parse(images);
-      return Array.isArray(parsed) ? parsed[0] : '';
-    }
-    return '';
-  } catch {
-    return '';
-  }
-};
+const getFirstImage = (product: { images?: unknown; name?: string; category?: string }) =>
+  resolveProductImage(product);
 
 export default async function BundleDealPage({ params }: { params: Promise<{ ids: string[] }> }) {
   const resolvedParams = await params;
@@ -54,7 +46,7 @@ export default async function BundleDealPage({ params }: { params: Promise<{ ids
           {/* Image 1 */}
           <div className="relative w-full max-w-[240px] aspect-square rounded-2xl overflow-hidden shadow-lg border-4 border-white transform hover:scale-105 transition-transform">
             <img 
-              src={getFirstImage(item1.images) || 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600&h=600&fit=crop'} 
+              src={getFirstImage(item1)} 
               alt={item1.name} 
               className="object-cover w-full h-full"
             />
@@ -65,7 +57,7 @@ export default async function BundleDealPage({ params }: { params: Promise<{ ids
           {/* Image 2 */}
           <div className="relative w-full max-w-[240px] aspect-square rounded-2xl overflow-hidden shadow-lg border-4 border-white transform hover:scale-105 transition-transform">
             <img 
-              src={getFirstImage(item2.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop'} 
+              src={getFirstImage(item2)} 
               alt={item2.name} 
               className="object-cover w-full h-full"
             />
@@ -105,10 +97,10 @@ export default async function BundleDealPage({ params }: { params: Promise<{ ids
             </div>
           </div>
 
-          <button className="w-full py-4 px-8 bg-primary hover:bg-primary-dark text-white font-bold text-lg rounded-xl shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-            Add Bundle to Cart
-          </button>
+          <BundleAddToCartButton item1={item1} item2={item2} />
+          <p className="text-xs text-slate-500 text-center mt-3">
+            Cross-seller bundles ship together — you pay one delivery fee for this combo.
+          </p>
         </div>
       </div>
     </div>

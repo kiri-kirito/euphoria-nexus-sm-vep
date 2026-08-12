@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface CartItem {
-  id: string; // product id
+  id: string;
   name: string;
   price: number;
   quantity: number;
   image?: string;
   sellerId?: string;
+  /** Same id on bundle items → single delivery fee */
+  bundleId?: string;
 }
 
 interface CartState {

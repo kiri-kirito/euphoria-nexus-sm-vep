@@ -6,6 +6,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { createClient } from '@/utils/supabase/client';
 import { isValidUuid } from '@/utils/productImages';
+import { calcShippingFee, countDeliveryUnits, shippingLabel } from '@/utils/deliveryFee';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -61,7 +62,10 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getTotal();
-  const total = subtotal + deliveryOption;
+  const deliveryRate = deliveryOption;
+  const shippingFee = calcShippingFee(items, deliveryRate);
+  const deliveryUnits = countDeliveryUnits(items);
+  const total = subtotal + shippingFee;
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +197,7 @@ export default function CheckoutPage() {
                   <input type="radio" name="delivery" checked={deliveryOption === 60} onChange={() => setDeliveryOption(60)} className="w-4 h-4" />
                   <div className="flex-1">
                     <p className="font-semibold text-slate-900">Standard Delivery (3-5 days)</p>
+                    <p className="text-xs text-slate-500">৳60 per bundle or seller group</p>
                   </div>
                   <span className="font-bold">৳60</span>
                 </label>
@@ -200,9 +205,15 @@ export default function CheckoutPage() {
                   <input type="radio" name="delivery" checked={deliveryOption === 120} onChange={() => setDeliveryOption(120)} className="w-4 h-4" />
                   <div className="flex-1">
                     <p className="font-semibold text-slate-900">Express Delivery (24 hrs)</p>
+                    <p className="text-xs text-slate-500">৳120 per bundle or seller group</p>
                   </div>
                   <span className="font-bold">৳120</span>
                 </label>
+                {deliveryUnits > 1 && (
+                  <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                    {shippingLabel(items)} — {deliveryUnits} delivery unit{deliveryUnits > 1 ? 's' : ''} × ৳{deliveryRate} = ৳{shippingFee}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -248,7 +259,7 @@ export default function CheckoutPage() {
               </div>
               <div className="space-y-4 text-sm mb-6 border-t pt-6">
                 <div className="flex justify-between"><span>Subtotal</span><span>৳{subtotal.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Shipping</span><span>৳{deliveryOption}</span></div>
+                <div className="flex justify-between"><span>Shipping ({shippingLabel(items)})</span><span>৳{shippingFee.toLocaleString()}</span></div>
                 <div className="flex justify-between font-bold text-lg border-t pt-4"><span>Total</span><span>৳{total.toLocaleString()}</span></div>
               </div>
               <button disabled={loading} type="submit" className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 disabled:opacity-50">
