@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import BulkDealModal from '@/components/products/BulkDealModal';
 import { createClient } from '@/utils/supabase/client';
 import { resolveProductImage } from '@/utils/productImages';
+import ProductImage from '@/components/products/ProductImage';
+import DbErrorBanner from '@/components/ui/DbErrorBanner';
 import { fetchLocalSellers } from '@/utils/api';
 import { useCartStore } from '@/store/useCartStore';
 import Link from 'next/link';
@@ -25,129 +27,6 @@ interface Product {
   specs: Record<string, string>;
   bulkTiers: { qty: string; price: number }[];
 }
-
-const PRODUCTS: Product[] = [
-  {
-    id: 'p1',
-    name: 'Industrial High-Purity Copper Wire (99.99%)',
-    category: 'Industrial & Metals',
-    price: 450,
-    unit: 'kg',
-    minOrder: '500 kg',
-    store: 'MetalCraft BD Ltd.',
-    rating: 4.9,
-    reviews: 128,
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1574345371569-b5413bc7cb9f?w=600&h=600&fit=crop&q=80',
-    description: 'Electrolytic tough pitch copper wire for electrical wiring, motors, and high-performance manufacturing. Tested for high conductivity and durability.',
-    specs: { Grade: 'ETP Grade A', Purity: '99.99%', Diameter: '1.2mm - 4.5mm', Standard: 'ASTM B3' },
-    bulkTiers: [
-      { qty: '500 - 1,000 kg', price: 450 },
-      { qty: '1,001 - 5,000 kg', price: 420 },
-      { qty: '5,000+ kg', price: 390 }
-    ]
-  },
-  {
-    id: 'p2',
-    name: 'Sony WH-1000XM5 Wireless Headphones',
-    category: 'Electronics & Gadgets',
-    price: 32000,
-    unit: 'unit',
-    minOrder: '5 units',
-    store: 'AudioWorld BD',
-    rating: 4.8,
-    reviews: 94,
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80',
-    description: 'Industry-leading noise canceling headphones with dual processors and 8 microphones. Crystal clear hands-free calling and up to 30-hour battery life.',
-    specs: { Brand: 'Sony', Connectivity: 'Bluetooth 5.2', Battery: '30 Hours', Warranty: '1 Year Official' },
-    bulkTiers: [
-      { qty: '5 - 10 units', price: 32000 },
-      { qty: '11 - 25 units', price: 29800 },
-      { qty: '25+ units', price: 28000 }
-    ]
-  },
-  {
-    id: 'p3',
-    name: 'Structural Steel Beams (I-Beam Grade 50)',
-    category: 'Industrial & Metals',
-    price: 95000,
-    unit: 'ton',
-    minOrder: '2 tons',
-    store: 'SteelCo Bangladesh',
-    rating: 4.7,
-    reviews: 62,
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1518349542013-176b6a03cc09?w=600&h=600&fit=crop&q=80',
-    description: 'High-tensile structural steel I-beams for commercial building frames, bridges, and infrastructure projects.',
-    specs: { Length: '12 Meters', Coating: 'Anti-corrosion primer', 'Yield Strength': '345 MPa' },
-    bulkTiers: [
-      { qty: '2 - 10 tons', price: 95000 },
-      { qty: '11 - 50 tons', price: 91000 },
-      { qty: '50+ tons', price: 86000 }
-    ]
-  },
-  {
-    id: 'p4',
-    name: 'Ergonomic Mesh Executive Chair',
-    category: 'Home & Furniture',
-    price: 14500,
-    unit: 'unit',
-    minOrder: '5 units',
-    store: 'WoodWorks Furniture',
-    rating: 4.6,
-    reviews: 43,
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=600&h=600&fit=crop&q=80',
-    description: 'Premium breathable mesh office chair with 3D lumbar support, adjustable armrests, and 135-degree recline.',
-    specs: { Material: 'Breathable Nylon Mesh', Base: 'Aluminum Heavy Duty', 'Max Weight': '150 kg' },
-    bulkTiers: [
-      { qty: '5 - 15 units', price: 14500 },
-      { qty: '16 - 50 units', price: 13200 },
-      { qty: '50+ units', price: 12000 }
-    ]
-  },
-  {
-    id: 'p5',
-    name: 'Monocrystalline Solar Panels (550W)',
-    category: 'Electronics & Gadgets',
-    price: 18500,
-    unit: 'panel',
-    minOrder: '10 panels',
-    store: 'GreenTech Energy Solutions',
-    rating: 4.9,
-    reviews: 110,
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=600&fit=crop&q=80',
-    description: 'High-efficiency PERC monocrystalline solar panels. Designed for industrial solar rooftops and off-grid solar farms.',
-    specs: { Wattage: '550W', Efficiency: '21.3%', Glass: 'Tempered Anti-reflective', Warranty: '25 Years' },
-    bulkTiers: [
-      { qty: '10 - 50 panels', price: 18500 },
-      { qty: '51 - 200 panels', price: 16800 },
-      { qty: '200+ panels', price: 15500 }
-    ]
-  },
-  {
-    id: 'p6',
-    name: 'Custom RGB Mechanical Keyboard Kit',
-    category: 'Electronics & Gadgets',
-    price: 4800,
-    unit: 'unit',
-    minOrder: '10 units',
-    store: 'GamerZone BD',
-    rating: 4.8,
-    reviews: 76,
-    inStock: true,
-    image: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600&h=600&fit=crop&q=80',
-    description: 'Hot-swappable gasket-mounted mechanical keyboard with south-facing RGB and sound dampening foam.',
-    specs: { Layout: '75% Compact', Connection: 'Tri-Mode (BT/2.4G/Type-C)', Switches: 'Pre-lubed Linear' },
-    bulkTiers: [
-      { qty: '10 - 30 units', price: 4800 },
-      { qty: '31 - 100 units', price: 4300 },
-      { qty: '100+ units', price: 3900 }
-    ]
-  }
-];
 
 function ExploreContent() {
   const searchParams = useSearchParams();
@@ -171,6 +50,7 @@ function ExploreContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [nearbySellerIds, setNearbySellerIds] = useState<Set<string>>(new Set());
   const [sellerStoreName, setSellerStoreName] = useState<string | null>(null);
   const router = useRouter();
@@ -219,7 +99,8 @@ function ExploreContent() {
       }
 
       const { data, error } = await query;
-      if (error || !data) return [];
+      if (error) throw error;
+      if (!data) return [];
 
       return data.map((p: Record<string, unknown>) => ({
         ...p,
@@ -230,8 +111,9 @@ function ExploreContent() {
         unit: 'unit',
         inStock: (p.quantity as number) > 0,
       }));
-    } catch {
-      return [];
+    } catch (err) {
+      console.error('fetchExploreProducts:', err);
+      throw err;
     }
   };
 
@@ -258,8 +140,14 @@ function ExploreContent() {
   useEffect(() => {
     const loadProducts = async () => {
       setIsLoading(true);
-      const data = await fetchExploreProducts(selectedCategory, searchQuery, sellerFilter || undefined);
-      setProducts(data);
+      setFetchError(null);
+      try {
+        const data = await fetchExploreProducts(selectedCategory, searchQuery, sellerFilter || undefined);
+        setProducts(data);
+      } catch {
+        setProducts([]);
+        setFetchError('Product catalog could not be loaded from the database. Please refresh or try again later.');
+      }
       setIsLoading(false);
     };
 
@@ -331,6 +219,9 @@ function ExploreContent() {
               Clear seller filter ×
             </button>
           </div>
+        )}
+        {fetchError && (
+          <DbErrorBanner message={fetchError} className="mb-6" />
         )}
         <div className="flex flex-col lg:flex-row gap-8">
           
@@ -457,9 +348,9 @@ function ExploreContent() {
                 >
 
                   <div className="relative h-52 bg-slate-100 overflow-hidden">
-                    <img 
-                      src={product.image} 
-                      alt={product.name} 
+                    <ProductImage
+                      product={{ name: product.name, category: product.category, images: product.images }}
+                      alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/20">
@@ -521,9 +412,9 @@ function ExploreContent() {
             
             {/* Modal Image */}
             <div className="w-full md:w-1/2 bg-slate-100 relative min-h-[260px] md:min-h-full">
-              <img 
-                src={selectedProduct.image} 
-                alt={selectedProduct.name} 
+              <ProductImage
+                product={{ name: selectedProduct.name, category: selectedProduct.category, images: selectedProduct.images }}
+                alt={selectedProduct.name}
                 className="w-full h-full object-cover"
               />
               <button 

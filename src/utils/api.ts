@@ -110,7 +110,7 @@ export async function fetchLocalSellers(
 
   if (error) {
     console.error('fetchLocalSellers RPC error:', error.message);
-    return fetchLocalSellersFallback();
+    return [];
   }
 
   if (!data || data.length === 0) return [];
@@ -125,30 +125,6 @@ export async function fetchLocalSellers(
     image: (row.image as string) || undefined,
     isSameDay: row.is_same_day !== false,
     category: row.category as string,
-  }));
-}
-
-/** When RPC unavailable — query stores with locations, sorted arbitrarily */
-async function fetchLocalSellersFallback(): Promise<LocalSeller[]> {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from('stores')
-    .select('user_id, store_name, rating, logo_url, users!user_id(id, name)')
-    .eq('is_approved', true)
-    .not('location', 'is', null)
-    .limit(6);
-
-  if (!data?.length) return [];
-
-  return data.map((s: Record<string, unknown>, i: number) => ({
-    id: (s.user_id as string) || `store-${i}`,
-    name: (s.store_name as string) || 'Local Seller',
-    distance: `${(1.2 + i * 0.8).toFixed(1)} km`,
-    rating: Number(s.rating) || 4.5,
-    products: 0,
-    image: s.logo_url as string | undefined,
-    isSameDay: true,
-    category: 'Verified Local Seller',
   }));
 }
 

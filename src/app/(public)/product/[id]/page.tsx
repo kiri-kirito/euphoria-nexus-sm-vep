@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import AddToCartButton from '@/components/products/AddToCartButton';
 import WishlistButton from '@/components/products/WishlistButton';
+import ProductImage from '@/components/products/ProductImage';
 import { resolveProductImage } from '@/utils/productImages';
 
 async function getProduct(id: string) {
@@ -37,8 +38,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const image = resolveProductImage(product);
   const sellerName = product.users?.name || 'Unknown Seller';
+  const cartImage = resolveProductImage(product);
   const storeName = sellerName; // Fallback to user name since store is in a different table without direct FK
 
   return (
@@ -54,7 +55,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             {/* Product Image */}
             <div className="w-full md:w-1/2 bg-slate-100 p-6 sm:p-10 flex items-center justify-center">
               <div className="relative w-full aspect-square max-h-[500px] overflow-hidden rounded-2xl shadow-xl border border-slate-200 bg-white">
-                <img src={image} alt={product.name} className="w-full h-full object-cover object-center" />
+                <ProductImage
+                  product={{ name: product.name, category: product.category, images: product.images }}
+                  alt={product.name}
+                  className="w-full h-full object-cover object-center"
+                />
               </div>
             </div>
 
@@ -100,7 +105,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                       id: product.id,
                       name: product.name,
                       price: product.price,
-                      image: image,
+                      image: cartImage,
                       sellerId: product.seller_id
                     }} />
                   </div>

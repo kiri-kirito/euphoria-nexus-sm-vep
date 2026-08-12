@@ -406,6 +406,7 @@ Many items marked "✅ complete" in `conversation_history.md` / `PROJECT_UPDATE.
 | Date | Action |
 |------|--------|
 | 2026-08-12 | Initial audit created from conversation_history.md, requirements docs, codebase grep, route inventory, browser homepage snapshot |
+| 2026-08-13 | Sessions 2–3: negotiation checkout, chat/bidding DB, delivery portal, admin stats, legal pages, product images, mock removal, return/refund, migrations 005–008 |
 
 ---
 

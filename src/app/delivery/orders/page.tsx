@@ -2,41 +2,42 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
+import DbErrorBanner from '@/components/ui/DbErrorBanner';
 
 export default function DeliveryOrdersPage() {
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
   const supabase = createClient();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchDeliveries();
-  }, []);
+  }, [user?.id]);
 
   const fetchDeliveries = async () => {
+    setLoading(true);
+    setFetchError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      let agentId = user?.id;
-      
-      if (!agentId) {
-        const { data: agents } = await supabase.from('users').select('id').eq('role', 'agent').limit(1);
-        agentId = agents?.[0]?.id;
+      if (!user?.id) {
+        setDeliveries([]);
+        return;
       }
 
       const { data, error } = await supabase
         .from('deliveries')
         .select('*, orders(id, status, total_amount, shipping_address, users!buyer_id(name, email))')
-        .eq('agent_id', agentId)
+        .eq('agent_id', user.id)
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
       setDeliveries(data || []);
     } catch (e) {
-      console.log('Using mock deliveries');
-      setDeliveries([
-        { id: 'd1', status: 'assigned', pickup_address: 'Gulshan 1, Dhaka', delivery_address: 'Mirpur 10, Dhaka', orders: { total_amount: 5500, shipping_address: 'Mirpur 10, Dhaka', users: { name: 'Rahim Khan', email: 'rahim@test.com' } } },
-        { id: 'd2', status: 'delivered', pickup_address: 'Banani, Dhaka', delivery_address: 'Uttara Sector 7, Dhaka', orders: { total_amount: 12000, shipping_address: 'Uttara Sector 7, Dhaka', users: { name: 'Nasrin Begum', email: 'nasrin@test.com' } } },
-      ]);
+      console.error(e);
+      setDeliveries([]);
+      setFetchError('Deliveries could not be loaded. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -58,6 +59,7 @@ export default function DeliveryOrdersPage() {
 
   return (
     <div className="p-4 space-y-6">
+      {fetchError && <DbErrorBanner message={fetchError} />}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-xl font-bold text-slate-900">All Deliveries</h1>
         
@@ -76,6 +78,9 @@ export default function DeliveryOrdersPage() {
         </div>
       </div>
 
+      {filtered.length === 0 ? (
+        <p className="text-center text-slate-500 py-8">No deliveries in this view.</p>
+      ) : (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -116,6 +121,7 @@ export default function DeliveryOrdersPage() {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }

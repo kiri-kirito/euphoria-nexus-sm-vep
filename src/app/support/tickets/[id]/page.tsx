@@ -76,7 +76,7 @@ export default function TicketDetails() {
 
     const { data: items } = await supabase
       .from("order_items")
-      .select("quantity, price, products (id, name, images, seller_id)")
+      .select("quantity, unit_price, products (id, name, images, seller_id)")
       .eq("order_id", data.order_id);
 
     setOrderItems(items || []);
@@ -106,9 +106,33 @@ export default function TicketDetails() {
 
   const handleProcessRefund = async () => {
     if (!complaint) return;
-    const amount = complaint.orders?.total_amount || 0;
-    await supabase.from("complaints").update({ status: "resolved", resolution: JSON.stringify([...messages, { id: 999, sender: "Support", text: `Refund of ৳${amount} approved.`, time: new Date().toLocaleTimeString() }]) }).eq("id", complaint.id);
-    setToast(`Refund of ৳${Number(amount).toLocaleString()} approved & queued!`);
+    const amount = Number(complaint.orders?.total_amount || 0);
+    const resolutionMsg = {
+      id: 999,
+      sender: 'Support',
+      text: `Refund of ৳${amount.toLocaleString()} approved.`,
+      time: new Date().toLocaleTimeString(),
+    };
+    const updatedResolution = JSON.stringify([...messages, resolutionMsg]);
+
+    await supabase
+      .from('complaints')
+      .update({
+        status: 'resolved',
+        complaint_type: 'refund',
+        refund_amount: amount,
+        resolution: updatedResolution,
+      })
+      .eq('id', complaint.id);
+
+    if (complaint.order_id) {
+      await supabase.from('orders').update({ status: 'refunded' }).eq('id', complaint.order_id);
+      await supabase.from('payments').update({ status: 'refunded' }).eq('order_id', complaint.order_id);
+    }
+
+    setMessages((prev) => [...prev, resolutionMsg as ChatMessage]);
+    setComplaint((prev: any) => ({ ...prev, status: 'resolved' }));
+    setToast(`Refund of ৳${amount.toLocaleString()} approved & queued!`);
     setTimeout(() => setToast(null), 3500);
   };
 
