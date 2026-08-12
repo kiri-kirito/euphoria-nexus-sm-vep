@@ -2,105 +2,101 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useAuthStore } from "@/store/useAuthStore";
+import { resolveProductImage } from "@/utils/productImages";
 
-interface Negotiation {
-  id: number;
+interface NegotiationView {
+  id: string;
   buyer: string;
-  location: string;
   product: string;
   image: string;
   originalPrice: number;
   offeredPrice: number;
-  discount: string;
   qty: number;
   message: string;
   status: string;
   finalPrice?: number;
 }
 
-const MOCK_ACTIVE: Negotiation[] = [
-  {
-    id: 1,
-    buyer: "Rahim Store",
-    location: "Dhaka, BD",
-    product: "Logitech MX Master 3S",
-    image: "https://images.unsplash.com/photo-1527814050087-379381547969?q=80&w=200&auto=format&fit=crop",
-    originalPrice: 10500,
-    offeredPrice: 9000,
-    discount: "14%",
-    qty: 25,
-    message: "Looking for a better deal on a bulk order for our new branch.",
-    status: "Pending"
-  }
-];
+function mapRow(row: Record<string, unknown>): NegotiationView {
+  const product = row.products as Record<string, unknown> | null;
+  const buyer = row.users as { name?: string } | null;
+  const original = Number(row.original_price ?? product?.price ?? row.current_price);
+  const offered = Number(row.current_price);
 
-const MOCK_CLOSED: Negotiation[] = [
-  {
-    id: 4,
-    buyer: "Gadget Hub",
-    location: "Khulna, BD",
-    product: "Sony WH-1000XM4",
-    image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=200&auto=format&fit=crop",
-    originalPrice: 32000,
-    offeredPrice: 28000,
-    discount: "12%",
-    finalPrice: 29500,
-    qty: 5,
-    message: "",
-    status: "Accepted"
-  }
-];
+  return {
+    id: row.id as string,
+    buyer: buyer?.name || 'Buyer',
+    product: (product?.name as string) || 'Product',
+    image: product ? resolveProductImage(product as { name?: string; category?: string; images?: unknown }) : '',
+    originalPrice: original,
+    offeredPrice: offered,
+    qty: Number(row.quantity) || 1,
+    message: (row.message as string) || 'Bulk order inquiry',
+    status: (row.status as string) || 'open',
+    finalPrice: row.final_price != null ? Number(row.final_price) : undefined,
+  };
+}
 
 export default function NegotiationsPage() {
-  const [activeNegotiations, setActiveNegotiations] = useState<Negotiation[]>([]);
-  const [closedNegotiations, setClosedNegotiations] = useState<Negotiation[]>([]);
+  const [activeNegotiations, setActiveNegotiations] = useState<NegotiationView[]>([]);
+  const [closedNegotiations, setClosedNegotiations] = useState<NegotiationView[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
-  const [dbActive, setDbActive] = useState(false);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     async function fetchNegotiations() {
-      try {
-        const { data, error } = await supabase.from('negotiations').select('*');
-        if (error) {
-          // Table doesn't exist, use mock fallback
-          setActiveNegotiations(MOCK_ACTIVE);
-          setClosedNegotiations(MOCK_CLOSED);
-          setDbActive(false);
-        } else if (data) {
-          setActiveNegotiations(data.filter(n => n.status !== 'Accepted'));
-          setClosedNegotiations(data.filter(n => n.status === 'Accepted'));
-          setDbActive(true);
-        }
-      } catch (err) {
-        setActiveNegotiations(MOCK_ACTIVE);
-        setClosedNegotiations(MOCK_CLOSED);
-        setDbActive(false);
-      } finally {
+      if (!user?.id) {
         setLoading(false);
+        return;
       }
+
+      const { data, error } = await supabase
+        .from('negotiations')
+        .select(`
+          id, current_price, original_price, final_price, quantity, message, status,
+          products (name, price, category, images),
+          users!buyer_id (name)
+        `)
+        .eq('seller_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error || !data) {
+        setActiveNegotiations([]);
+        setClosedNegotiations([]);
+        setLoading(false);
+        return;
+      }
+
+      const mapped = data.map((row) => mapRow(row as Record<string, unknown>));
+      setActiveNegotiations(mapped.filter((n) => n.status !== 'accepted'));
+      setClosedNegotiations(mapped.filter((n) => n.status === 'accepted'));
+      setLoading(false);
     }
     fetchNegotiations();
-  }, [supabase]);
+  }, [supabase, user?.id]);
 
-  const handleCounter = async (id: number) => {
-    if (dbActive) {
-      await supabase.from('negotiations').update({ status: 'Countered', offeredPrice: 9500 }).eq('id', id);
-    }
-    setActiveNegotiations(prev => prev.map(n => n.id === id ? { ...n, status: "Countered", offeredPrice: 9500 } : n));
+  const handleCounter = async (id: string, counterPrice: number) => {
+    await supabase
+      .from('negotiations')
+      .update({ status: 'countered', current_price: counterPrice })
+      .eq('id', id);
+    setActiveNegotiations((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, status: 'countered', offeredPrice: counterPrice } : n))
+    );
   };
 
-  const handleAccept = async (id: number) => {
-    const itemToAccept = activeNegotiations.find(n => n.id === id);
-    if (!itemToAccept) return;
-    
-    if (dbActive) {
-      await supabase.from('negotiations').update({ status: 'Accepted', finalPrice: itemToAccept.offeredPrice }).eq('id', id);
-    }
-    
-    const closedItem = { ...itemToAccept, status: "Accepted", finalPrice: itemToAccept.offeredPrice };
-    setActiveNegotiations(prev => prev.filter(n => n.id !== id));
-    setClosedNegotiations(prev => [closedItem, ...prev]);
+  const handleAccept = async (item: NegotiationView) => {
+    await supabase
+      .from('negotiations')
+      .update({ status: 'accepted', final_price: item.offeredPrice })
+      .eq('id', item.id);
+    setActiveNegotiations((prev) => prev.filter((n) => n.id !== item.id));
+    setClosedNegotiations((prev) => [
+      { ...item, status: 'accepted', finalPrice: item.offeredPrice },
+      ...prev,
+    ]);
   };
 
   if (loading) {
@@ -109,90 +105,64 @@ export default function NegotiationsPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Negotiations</h1>
-      </div>
+      <h1 className="text-2xl font-bold text-slate-900">Negotiations</h1>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-800">Active Requests ({activeNegotiations.length})</h2>
-        <div className="grid grid-cols-1 gap-4">
-          {activeNegotiations.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow">
-              {/* Product Info */}
+        <h2 className="text-lg font-semibold">Active Requests ({activeNegotiations.length})</h2>
+        {activeNegotiations.length === 0 ? (
+          <p className="text-slate-500">No active bulk requests right now.</p>
+        ) : (
+          activeNegotiations.map((item) => (
+            <div key={item.id} className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col md:flex-row gap-6">
               <div className="flex gap-4 md:w-1/3">
                 <img src={item.image} alt={item.product} className="w-20 h-20 rounded-xl object-cover bg-slate-100" />
                 <div>
-                  <h3 className="font-bold text-slate-900 line-clamp-2 leading-tight">{item.product}</h3>
-                  <p className="text-sm text-slate-500 mt-1">Qty Requested: <span className="font-semibold text-slate-700">{item.qty} units</span></p>
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-xs font-semibold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    {item.status}
-                  </div>
+                  <h3 className="font-bold text-slate-900">{item.product}</h3>
+                  <p className="text-sm text-slate-500">Qty: {item.qty}</p>
+                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">{item.status}</span>
                 </div>
               </div>
-
-              {/* Pricing */}
-              <div className="md:w-1/4 border-l border-slate-100 pl-6 flex flex-col justify-center">
-                <div className="text-sm text-slate-500 line-through">৳{item.originalPrice.toLocaleString()}</div>
-                <div className="text-xl font-bold text-slate-900">৳{item.offeredPrice.toLocaleString()}</div>
-                <div className="text-xs font-medium text-emerald-600 mt-1">They want {item.discount} off</div>
+              <div className="md:w-1/4 border-l pl-6">
+                <div className="text-sm text-slate-400 line-through">৳{item.originalPrice.toLocaleString()}</div>
+                <div className="text-xl font-bold">৳{item.offeredPrice.toLocaleString()}</div>
               </div>
-
-              {/* Buyer Info & Actions */}
-              <div className="flex-1 border-l border-slate-100 pl-6 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                      {item.buyer?.charAt(0) || '?'}
-                    </div>
-                    <span className="text-sm font-semibold text-slate-900">{item.buyer}</span>
-                    <span className="text-xs text-slate-400">• {item.location}</span>
-                  </div>
-                  <p className="text-sm text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    "{item.message}"
-                  </p>
-                </div>
+              <div className="flex-1 border-l pl-6">
+                <p className="text-sm font-semibold">{item.buyer}</p>
+                <p className="text-sm text-slate-600 italic mt-2 bg-slate-50 p-2 rounded">&quot;{item.message}&quot;</p>
                 <div className="flex gap-3 mt-4">
-                  <button onClick={() => handleAccept(item.id)} className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold py-2 rounded-lg transition-colors text-sm shadow-sm">
+                  <button onClick={() => handleAccept(item)} className="flex-1 bg-primary text-white font-semibold py-2 rounded-lg text-sm">
                     Accept Offer
                   </button>
-                  <button onClick={() => handleCounter(item.id)} className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-2 rounded-lg transition-colors text-sm">
-                    Counter Offer
+                  <button
+                    onClick={() => handleCounter(item.id, Math.round(item.offeredPrice * 1.05))}
+                    className="flex-1 border border-slate-300 font-semibold py-2 rounded-lg text-sm"
+                  >
+                    Counter +5%
                   </button>
                 </div>
               </div>
             </div>
-          ))}
-          {activeNegotiations.length === 0 && (
-            <p className="text-slate-500 py-4">No active bulk requests right now.</p>
-          )}
-        </div>
+          ))
+        )}
       </div>
 
-      <div className="space-y-4 pt-6">
-        <h2 className="text-lg font-semibold text-slate-500">Closed Negotiations</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-75">
-          {closedNegotiations.map((item) => (
-            <div key={item.id} className="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex gap-4">
-              <img src={item.image} alt={item.product} className="w-16 h-16 rounded-lg object-cover grayscale" />
-              <div className="flex-1">
-                <div className="flex items-start justify-between">
-                  <h3 className="font-semibold text-slate-700 line-clamp-1">{item.product}</h3>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                    item.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {item.status}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">{item.buyer} • {item.qty} units</p>
-                <div className="mt-2 text-sm font-medium text-slate-700">
-                  {item.status === 'Accepted' ? `Settled at ৳${item.finalPrice?.toLocaleString()}` : `Offered ৳${item.offeredPrice.toLocaleString()}`}
+      {closedNegotiations.length > 0 && (
+        <div className="space-y-4 pt-6">
+          <h2 className="text-lg font-semibold text-slate-500">Closed</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {closedNegotiations.map((item) => (
+              <div key={item.id} className="bg-slate-50 rounded-2xl border p-4 flex gap-4">
+                <img src={item.image} alt={item.product} className="w-16 h-16 rounded-lg object-cover grayscale" />
+                <div>
+                  <h3 className="font-semibold">{item.product}</h3>
+                  <p className="text-xs text-slate-500">{item.buyer} · {item.qty} units</p>
+                  <p className="text-sm font-medium mt-1">Settled at ৳{item.finalPrice?.toLocaleString()}</p>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -2,72 +2,77 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useAuthStore } from "@/store/useAuthStore";
 
-interface StockRequest {
-  id: number;
-  sellerName: string;
+interface StockRequestView {
+  id: string;
   product: string;
   quantity: number;
   targetPrice: number;
   status: string;
+  requesterLabel: string;
 }
 
-const MOCK_REQUESTS: StockRequest[] = [
-  {
-    id: 1,
-    sellerName: "Anonymous Seller",
-    product: "Mechanical Keyboard Keycaps (Blue/White)",
-    quantity: 50,
-    targetPrice: 2000,
-    status: "Open",
-  },
-  {
-    id: 2,
-    sellerName: "Anonymous Seller",
-    product: "Logitech MX Master 3S",
-    quantity: 15,
-    targetPrice: 8500,
-    status: "Open",
-  },
-];
-
 export default function BlindBiddingPage() {
-  const [requests, setRequests] = useState<StockRequest[]>([]);
+  const [requests, setRequests] = useState<StockRequestView[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bidAmounts, setBidAmounts] = useState<Record<string, string>>({});
   const supabase = createClient();
-  const [dbActive, setDbActive] = useState(false);
-  const [bidAmounts, setBidAmounts] = useState<Record<number, number>>({});
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    async function fetchBids() {
-      try {
-        const { data, error } = await supabase.from('bids').select('*');
-        if (error) {
-          setRequests(MOCK_REQUESTS);
-          setDbActive(false);
-        } else if (data) {
-          setRequests(data);
-          setDbActive(true);
-        }
-      } catch (err) {
-        setRequests(MOCK_REQUESTS);
-        setDbActive(false);
-      } finally {
+    async function fetchRequests() {
+      const { data, error } = await supabase
+        .from('stock_requests')
+        .select(`
+          id, quantity, target_price, status,
+          products (name),
+          users!requesting_seller_id (name)
+        `)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false });
+
+      if (error || !data) {
+        setRequests([]);
         setLoading(false);
+        return;
       }
+
+      setRequests(
+        data.map((row: Record<string, unknown>) => ({
+          id: row.id as string,
+          product: (row.products as { name?: string })?.name || 'Product',
+          quantity: row.quantity as number,
+          targetPrice: Number(row.target_price),
+          status: (row.status as string) || 'open',
+          requesterLabel: 'Anonymous Seller',
+        }))
+      );
+      setLoading(false);
     }
-    fetchBids();
+    fetchRequests();
   }, [supabase]);
 
-  const handleBidSubmit = async (id: number) => {
-    if (bidAmounts[id]) {
-      if (dbActive) {
-        await supabase.from('bids').update({ status: 'Bid Placed' }).eq('id', id);
-      }
-      alert(`Bid of ৳${bidAmounts[id]} submitted securely!`);
-      // Hide or update UI to show bid was placed
-      setRequests(prev => prev.map(req => req.id === id ? { ...req, status: "Bid Placed" } : req));
+  const handleBidSubmit = async (requestId: string) => {
+    const amount = Number(bidAmounts[requestId]);
+    if (!amount || !user?.id) return;
+
+    const { error } = await supabase.from('stock_bids').insert({
+      request_id: requestId,
+      bidding_seller_id: user.id,
+      bid_price: amount,
+      status: 'pending',
+    });
+
+    if (error) {
+      alert('Could not submit bid: ' + error.message);
+      return;
     }
+
+    setRequests((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, status: 'bid_placed' } : r))
+    );
+    alert(`Bid of ৳${amount.toLocaleString()} submitted securely!`);
   };
 
   if (loading) {
@@ -76,67 +81,59 @@ export default function BlindBiddingPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Inter-Seller Stock Exchange</h1>
-          <p className="text-slate-500 text-sm mt-1">Source products anonymously from other sellers</p>
-        </div>
-        <button className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-lg transition-all">
-          + Post Stock Request
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Inter-Seller Stock Exchange</h1>
+        <p className="text-slate-500 text-sm mt-1">Source products anonymously from other sellers</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {requests.map((req) => (
-          <div key={req.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow flex flex-col">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg">{req.product}</h3>
-                <p className="text-sm text-slate-500">Requested by: {req.sellerName}</p>
+      {requests.length === 0 ? (
+        <p className="text-slate-500 py-8 text-center">No open stock requests right now.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {requests.map((req) => (
+            <div key={req.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-lg">{req.product}</h3>
+                  <p className="text-sm text-slate-500">Requested by: {req.requesterLabel}</p>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                  {req.status === 'open' ? 'Open' : 'Bid Placed'}
+                </span>
               </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                req.status === 'Open' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
-              }`}>
-                {req.status}
-              </span>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex justify-between mb-6">
-              <div>
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Quantity Needed</p>
-                <p className="font-bold text-slate-900">{req.quantity} units</p>
+              <div className="bg-slate-50 p-4 rounded-xl flex justify-between mb-6">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase mb-1">Quantity</p>
+                  <p className="font-bold">{req.quantity} units</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 uppercase mb-1">Target / unit</p>
+                  <p className="font-bold">৳{req.targetPrice.toLocaleString()}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Target Price / unit</p>
-                <p className="font-bold text-slate-900">৳{req.targetPrice.toLocaleString()}</p>
-              </div>
-            </div>
-
-            <div className="mt-auto">
-              {req.status === 'Open' ? (
-                <div className="flex gap-3">
-                  <input 
-                    type="number" 
-                    placeholder="Your Bid Price (৳)"
+              {req.status === 'open' ? (
+                <div className="flex gap-3 mt-auto">
+                  <input
+                    type="number"
+                    placeholder="Your bid (৳)"
                     className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    onChange={(e) => setBidAmounts({...bidAmounts, [req.id]: Number(e.target.value)})}
+                    value={bidAmounts[req.id] || ''}
+                    onChange={(e) => setBidAmounts({ ...bidAmounts, [req.id]: e.target.value })}
                   />
-                  <button 
+                  <button
                     onClick={() => handleBidSubmit(req.id)}
-                    className="bg-slate-900 hover:bg-black text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+                    className="bg-slate-900 text-white font-semibold px-4 py-2 rounded-lg text-sm"
                   >
                     Submit Blind Bid
                   </button>
                 </div>
               ) : (
-                <div className="text-center p-3 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium">
-                  Bid securely submitted. Awaiting response.
-                </div>
+                <p className="text-center text-sm text-slate-600 bg-slate-100 p-3 rounded-lg">Bid submitted — awaiting response.</p>
               )}
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

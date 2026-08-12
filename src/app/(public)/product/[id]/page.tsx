@@ -1,31 +1,17 @@
-import React from 'react';
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import AddToCartButton from '@/components/products/AddToCartButton';
-
-const getFirstImage = (images: any): string => {
-  try {
-    if (Array.isArray(images)) return images[0] || '';
-    if (typeof images === 'string') {
-      const parsed = JSON.parse(images);
-      return Array.isArray(parsed) ? parsed[0] : '';
-    }
-    return '';
-  } catch {
-    return '';
-  }
-};
+import { resolveProductImage } from '@/utils/productImages';
 
 async function getProduct(id: string) {
-  // Use client-side supabase (anon key) — public products are readable
   const supabase = createClient();
   const { data, error } = await supabase
     .from('products')
     .select('*, users!seller_id(name, email, phone)')
     .eq('id', id)
     .single();
-    
+
   if (error) {
     console.error('Error fetching product:', error.message);
   }
@@ -50,7 +36,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const image = getFirstImage(product.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80';
+  const image = resolveProductImage(product);
   const sellerName = product.users?.name || 'Unknown Seller';
   const storeName = sellerName; // Fallback to user name since store is in a different table without direct FK
 
@@ -98,11 +84,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <span className="block text-xs font-semibold text-slate-500 mb-1">Stock Available</span>
-                  <span className="font-bold text-emerald-600">{product.stock_quantity || 'In Stock'}</span>
+                  <span className="font-bold text-emerald-600">{product.quantity ?? 0} units</span>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <span className="block text-xs font-semibold text-slate-500 mb-1">Minimum Order</span>
-                  <span className="font-bold text-slate-800">{product.min_order_quantity || 1} {product.unit || 'units'}</span>
+                  <span className="font-bold text-slate-800">{product.moq || 1} units</span>
                 </div>
               </div>
 

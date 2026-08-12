@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'source.unsplash.com' },
       { protocol: 'https', hostname: 'placehold.co' },
       { protocol: 'https', hostname: 'picsum.photos' },
+      { protocol: 'https', hostname: '**.supabase.co' },
     ],
     unoptimized: true,
   },

@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, Suspense, useEffect } from 'react';
+import React, { useState, Suspense, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import BulkDealModal from '@/components/products/BulkDealModal';
 import { createClient } from '@/utils/supabase/client';
+import { resolveProductImage } from '@/utils/productImages';
+import { useCartStore } from '@/store/useCartStore';
 import Link from 'next/link';
 
 interface Product {
@@ -150,111 +152,92 @@ function ExploreContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category');
   const urlSearch = searchParams.get('search') || '';
-  const urlFilter = searchParams.get('filter') || '';
-  
-  // Try to match the incoming category param with our valid categories, default to 'All'
-  const categories = ['All', 'Industrial & Metals', 'Electronics & Gadgets', 'Home & Furniture', 'Fashion', 'Footwear', 'Accessories'];
+  const urlNearby = searchParams.get('nearby') === '1';
+  const urlSeller = searchParams.get('seller') || '';
+
+  const categories = ['All', 'Electronics', 'Fashion', 'Home', 'Sports', 'Food', 'Industrial'];
   const matchedCategory = categories.find(c => c.toLowerCase() === initialCategory?.toLowerCase()) || 'All';
 
   const [selectedCategory, setSelectedCategory] = useState<string>(matchedCategory);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
+  const [nearbyOnly, setNearbyOnly] = useState(urlNearby);
+  const [sellerFilter, setSellerFilter] = useState(urlSeller);
+  const [sortBy, setSortBy] = useState('popular');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isNegotiateOpen, setIsNegotiateOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [products, setProducts] = useState<any[]>([]); // Start empty — load real data
+  const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
+  const addItem = useCartStore((s) => s.addItem);
 
-  // Keep searchQuery synced with URL param if it changes from Navbar
   useEffect(() => {
     setSearchQuery(urlSearch);
-  }, [urlSearch]);
+    setNearbyOnly(urlNearby);
+    setSellerFilter(urlSeller);
+  }, [urlSearch, urlNearby, urlSeller]);
 
-  const getFirstImage = (images: any): string => {
-    try {
-      if (Array.isArray(images)) return images[0] || '';
-      if (typeof images === 'string') {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed[0] : '';
-      }
-      return '';
-    } catch {
-      return '';
-    }
-  };
-
-  const fetchExploreProducts = async (category?: string, search?: string) => {
+  const fetchExploreProducts = async (category?: string, search?: string, sellerId?: string) => {
     const supabase = createClient();
     try {
       let query = supabase
         .from('products')
-        .select('*, users!seller_id(name)')
+        .select('*, users!seller_id(name, id)')
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(50);
-      
+        .limit(80);
+
       if (category && category !== 'All') {
-        query = query.eq('category', category);
+        query = query.ilike('category', `%${category}%`);
       }
       if (search) {
-        // Use an OR query to search in name OR description
         query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
       }
-      
-      const { data, error } = await query;
-      if (error || !data || data.length === 0) {
-        // Fallback filtering on mock data to also match description
-        if (search) {
-          const lowerSearch = search.toLowerCase();
-          return PRODUCTS.filter(p => 
-            p.name.toLowerCase().includes(lowerSearch) || 
-            p.description.toLowerCase().includes(lowerSearch) ||
-            p.store.toLowerCase().includes(lowerSearch)
-          );
-        }
-        return PRODUCTS;
+      if (sellerId) {
+        query = query.eq('seller_id', sellerId);
       }
-      
-      return data.map(p => ({
+
+      const { data, error } = await query;
+      if (error || !data) return [];
+
+      return data.map((p: Record<string, unknown>) => ({
         ...p,
-        seller: p.users?.name || 'Unknown Seller',
-        image: getFirstImage(p.images) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop&q=80'
+        seller: (p.users as { name?: string })?.name || 'Unknown Seller',
+        store: (p.users as { name?: string })?.name || 'Unknown Seller',
+        image: resolveProductImage(p as { name?: string; category?: string; images?: unknown }),
+        minOrder: `${(p.moq as number) || 1} units`,
+        unit: 'unit',
+        inStock: (p.quantity as number) > 0,
       }));
-    } catch (e) {
-      return PRODUCTS;
+    } catch {
+      return [];
     }
   };
 
   useEffect(() => {
-    // Immediate load on mount
     const loadProducts = async () => {
       setIsLoading(true);
-      const data = await fetchExploreProducts(selectedCategory, searchQuery);
+      const data = await fetchExploreProducts(selectedCategory, searchQuery, sellerFilter || undefined);
       setProducts(data);
       setIsLoading(false);
     };
 
-    if (searchQuery === '') {
-      // No debounce for empty search / category change
-      loadProducts();
-    } else {
-      // Debounce only when typing search
-      const debounceTimer = setTimeout(() => {
-        loadProducts();
-      }, 500);
-      return () => clearTimeout(debounceTimer);
-    }
-  }, [selectedCategory, searchQuery]);
+    const debounceTimer = setTimeout(loadProducts, searchQuery ? 400 : 0);
+    return () => clearTimeout(debounceTimer);
+  }, [selectedCategory, searchQuery, sellerFilter]);
 
-
-  // Re-sync if URL changes
-  useEffect(() => {
-    if (initialCategory) {
-      const match = categories.find(c => c.toLowerCase() === initialCategory.toLowerCase());
-      if (match) setSelectedCategory(match);
-    }
-  }, [initialCategory]);
-
-  const filteredProducts = products;
+  const filteredProducts = useMemo(() => {
+    let list = [...products];
+    const min = priceMin ? Number(priceMin) : null;
+    const max = priceMax ? Number(priceMax) : null;
+    if (min != null) list = list.filter((p) => Number(p.price) >= min);
+    if (max != null) list = list.filter((p) => Number(p.price) <= max);
+    if (sortBy === 'price-asc') list.sort((a, b) => Number(a.price) - Number(b.price));
+    if (sortBy === 'price-desc') list.sort((a, b) => Number(b.price) - Number(a.price));
+    return list;
+  }, [products, priceMin, priceMax, sortBy]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -339,9 +322,19 @@ function ExploreContent() {
               <div className="mb-6 border-t border-slate-100 pt-5">
                 <h4 className="font-semibold text-slate-800 text-sm mb-3">Price Range (৳)</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" placeholder="Min" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary" />
-                  <input type="number" placeholder="Max" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary" />
+                  <input type="number" placeholder="Min" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary" />
+                  <input type="number" placeholder="Max" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-primary" />
                 </div>
+              </div>
+
+              <div className="mb-6 border-t border-slate-100 pt-5 space-y-3">
+                <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input type="checkbox" checked={nearbyOnly} onChange={(e) => setNearbyOnly(e.target.checked)} className="rounded" />
+                  Nearby sellers only
+                </label>
+                <Link href="/bundles" className="block text-sm font-semibold text-primary hover:underline">
+                  🎁 Find Bundle Deals
+                </Link>
               </div>
 
               {/* Location Filter */}
@@ -365,10 +358,10 @@ function ExploreContent() {
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 font-medium">Sort by:</span>
-                <select className="bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none focus:border-primary">
-                  <option>Most Popular</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none focus:border-primary">
+                  <option value="popular">Most Popular</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
                 </select>
               </div>
             </div>
@@ -434,7 +427,15 @@ function ExploreContent() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          showToast(`Added ${product.name} to Cart!`);
+                          addItem({
+                            id: product.id,
+                            name: product.name,
+                            price: Number(product.price),
+                            quantity: 1,
+                            image: product.image,
+                            sellerId: product.seller_id,
+                          });
+                          showToast(`Added ${product.name} to cart!`);
                         }}
                         className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
                       >
