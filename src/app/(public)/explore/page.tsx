@@ -527,6 +527,14 @@ function ExploreContent() {
               <div className="mt-auto flex flex-col gap-3 pt-4 border-t border-slate-100">
                 <button 
                   onClick={() => {
+                    addItem({
+                      id: selectedProduct.id,
+                      name: selectedProduct.name,
+                      price: Number(selectedProduct.price),
+                      quantity: 1,
+                      image: selectedProduct.image,
+                      sellerId: selectedProduct.seller_id,
+                    });
                     showToast(`Added ${selectedProduct.name} to Cart!`);
                     setSelectedProduct(null);
                   }}
@@ -562,6 +570,8 @@ function ExploreContent() {
         onClose={() => setIsNegotiateOpen(false)}
         productName={selectedProduct?.name || ''}
         productId={selectedProduct?.id}
+        sellerId={selectedProduct?.seller_id}
+        originalPrice={Number(selectedProduct?.price) || 0}
       />
     </div>
   );
