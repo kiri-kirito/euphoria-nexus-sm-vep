@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { resolveProductImage } from "@/utils/productImages";
+import { sendCheckoutLinkInChat } from "@/utils/negotiationChat";
 
 interface NegotiationView {
   id: string;
   buyer: string;
+  buyerId: string;
   product: string;
   image: string;
   originalPrice: number;
@@ -27,6 +29,7 @@ function mapRow(row: Record<string, unknown>): NegotiationView {
   return {
     id: row.id as string,
     buyer: buyer?.name || 'Buyer',
+    buyerId: row.buyer_id as string,
     product: (product?.name as string) || 'Product',
     image: product ? resolveProductImage(product as { name?: string; category?: string; images?: unknown }) : '',
     originalPrice: original,
@@ -44,7 +47,7 @@ export default function NegotiationsPage() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const supabase = createClient();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
 
   useEffect(() => {
     async function fetchNegotiations() {
@@ -56,7 +59,7 @@ export default function NegotiationsPage() {
       const { data, error } = await supabase
         .from('negotiations')
         .select(`
-          id, current_price, original_price, final_price, quantity, message, status,
+          id, buyer_id, current_price, original_price, final_price, quantity, message, status,
           products (name, price, category, images),
           users!buyer_id (name)
         `)
@@ -101,6 +104,16 @@ export default function NegotiationsPage() {
       .from('negotiations')
       .update({ status: 'accepted', final_price: item.offeredPrice })
       .eq('id', item.id);
+
+    if (item.buyerId && user?.id) {
+      await sendCheckoutLinkInChat(supabase, {
+        negotiationId: item.id,
+        sellerId: user.id,
+        buyerId: item.buyerId,
+        sellerName: profile?.name || user.email || 'Seller',
+      });
+    }
+
     setActiveNegotiations((prev) => prev.filter((n) => n.id !== item.id));
     setClosedNegotiations((prev) => [
       { ...item, status: 'accepted', finalPrice: item.offeredPrice },

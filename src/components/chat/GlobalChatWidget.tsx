@@ -255,7 +255,15 @@ export default function GlobalChatWidget() {
                           : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'
                       }`}
                     >
-                      {msg.text}
+                      {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                        /^https?:\/\//.test(part) ? (
+                          <a key={i} href={part} className="underline font-semibold break-all" target="_blank" rel="noopener noreferrer">
+                            {part.includes('checkout?negotiation=') ? 'Open checkout link →' : part}
+                          </a>
+                        ) : (
+                          <span key={i}>{part}</span>
+                        )
+                      )}
                     </div>
                     <span className="text-[9px] text-slate-400 mt-0.5 mx-1">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

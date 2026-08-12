@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { createClient } from '@/utils/supabase/client';
+import { sendCheckoutLinkInChat } from '@/utils/negotiationChat';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -56,7 +57,7 @@ export default function ProfilePage() {
       supabase
         .from('negotiations')
         .select(`
-          id, current_price, final_price, status, quantity, created_at,
+          id, seller_id, current_price, final_price, status, quantity, created_at,
           products (name),
           seller:users!negotiations_seller_id_fkey (name)
         `)
@@ -310,6 +311,14 @@ export default function ProfilePage() {
                               final_price: neg.current_price,
                             })
                             .eq('id', neg.id);
+                          if (neg.seller_id && user?.id) {
+                            await sendCheckoutLinkInChat(supabase, {
+                              negotiationId: neg.id,
+                              sellerId: neg.seller_id,
+                              buyerId: user.id,
+                              sellerName: neg.seller?.name || 'Seller',
+                            });
+                          }
                           setNegotiations((prev) =>
                             prev.map((n) =>
                               n.id === neg.id
