@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import BulkDealModal from '@/components/products/BulkDealModal';
 import { createClient } from '@/utils/supabase/client';
 import { resolveProductImage } from '@/utils/productImages';
+import { fetchLocalSellers } from '@/utils/api';
 import { useCartStore } from '@/store/useCartStore';
 import Link from 'next/link';
 
@@ -170,6 +171,7 @@ function ExploreContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [nearbySellerIds, setNearbySellerIds] = useState<Set<string>>(new Set());
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
 
@@ -217,6 +219,26 @@ function ExploreContent() {
   };
 
   useEffect(() => {
+    if (!nearbyOnly) {
+      setNearbySellerIds(new Set());
+      return;
+    }
+    const loadNearby = (lat: number, lng: number) => {
+      fetchLocalSellers(lat, lng).then((sellers) => {
+        setNearbySellerIds(new Set(sellers.map((s) => s.id)));
+      });
+    };
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => loadNearby(pos.coords.latitude, pos.coords.longitude),
+        () => loadNearby(23.8103, 90.4125)
+      );
+    } else {
+      loadNearby(23.8103, 90.4125);
+    }
+  }, [nearbyOnly]);
+
+  useEffect(() => {
     const loadProducts = async () => {
       setIsLoading(true);
       const data = await fetchExploreProducts(selectedCategory, searchQuery, sellerFilter || undefined);
@@ -230,6 +252,9 @@ function ExploreContent() {
 
   const filteredProducts = useMemo(() => {
     let list = [...products];
+    if (nearbyOnly && nearbySellerIds.size > 0) {
+      list = list.filter((p) => p.seller_id && nearbySellerIds.has(p.seller_id));
+    }
     const min = priceMin ? Number(priceMin) : null;
     const max = priceMax ? Number(priceMax) : null;
     if (min != null) list = list.filter((p) => Number(p.price) >= min);
@@ -237,7 +262,7 @@ function ExploreContent() {
     if (sortBy === 'price-asc') list.sort((a, b) => Number(a.price) - Number(b.price));
     if (sortBy === 'price-desc') list.sort((a, b) => Number(b.price) - Number(a.price));
     return list;
-  }, [products, priceMin, priceMax, sortBy]);
+  }, [products, priceMin, priceMax, sortBy, nearbyOnly, nearbySellerIds]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

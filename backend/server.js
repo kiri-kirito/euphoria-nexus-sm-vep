@@ -7,19 +7,35 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
-// Production CORS — allow frontend URL from env, plus localhost for dev
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-  'http://localhost:3000',
-];
+// Production CORS — FRONTEND_URL can be comma-separated; *.vercel.app allowed
+function parseOrigins() {
+  const fromEnv = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [...new Set([...fromEnv, 'http://localhost:3000'])];
+}
+
+const allowedOrigins = parseOrigins();
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    const host = new URL(origin).hostname;
+    if (host.endsWith('.vercel.app')) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
 
 app.use(cors({
   origin: (origin, callback) => {
-    // allow requests with no origin (e.g. mobile apps, curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
+      console.warn('[CORS] Blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -32,7 +48,10 @@ app.use(express.json());
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, cb) => {
+      if (isAllowedOrigin(origin)) cb(null, true);
+      else cb(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },

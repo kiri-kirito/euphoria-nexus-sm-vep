@@ -113,7 +113,7 @@ export async function fetchLocalSellers(
     return fetchLocalSellersFallback();
   }
 
-  if (!data || data.length === 0) return fetchLocalSellersFallback();
+  if (!data || data.length === 0) return [];
 
   return data.map((row: Record<string, unknown>) => ({
     id: row.id as string,

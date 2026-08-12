@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { io } from 'socket.io-client';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getBackendSocketUrl } from '@/utils/backendUrl';
 
 interface BulkDealModalProps {
   isOpen: boolean;
@@ -65,8 +66,10 @@ export default function BulkDealModal({
     }
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-      const socket = io(`${baseUrl}/negotiations`, { transports: ['websocket', 'polling'] });
+      const socket = io(getBackendSocketUrl('/negotiations'), {
+        transports: ['websocket', 'polling'],
+        timeout: 10000,
+      });
       socket.emit('new_negotiation', {
         productId,
         productName,

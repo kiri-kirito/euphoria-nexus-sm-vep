@@ -1,33 +1,52 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getBackendSocketUrl } from '@/utils/backendUrl';
 
-export const useSocket = (namespace: string = '') => {
-  const socketRef = useRef<Socket | null>(null);
+const SOCKET_OPTIONS = {
+  transports: ['websocket', 'polling'] as ('websocket' | 'polling')[],
+  withCredentials: true,
+  reconnectionAttempts: 5,
+  timeout: 10000,
+};
+
+export function useSocket(namespace: string = '') {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SOCKET_URL ||
-      process.env.NEXT_PUBLIC_BACKEND_URL ||
-      'http://localhost:5000';
-    const url = `${baseUrl}${namespace}`;
-    socketRef.current = io(url, {
-      withCredentials: true,
-    });
+    const url = getBackendSocketUrl(namespace);
+    const client = io(url, SOCKET_OPTIONS);
 
-    socketRef.current.on('connect', () => {
-      console.log(`Connected to socket ${url}`);
-    });
+    const onConnect = () => {
+      setConnected(true);
+      setError(null);
+    };
+    const onDisconnect = () => setConnected(false);
+    const onConnectError = (err: Error) => {
+      setConnected(false);
+      setError(err.message);
+    };
 
-    socketRef.current.on('disconnect', () => {
-      console.log(`Disconnected from socket ${url}`);
-    });
+    client.on('connect', onConnect);
+    client.on('disconnect', onDisconnect);
+    client.on('connect_error', onConnectError);
+
+    setSocket(client);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      client.off('connect', onConnect);
+      client.off('disconnect', onDisconnect);
+      client.off('connect_error', onConnectError);
+      client.disconnect();
     };
   }, [namespace]);
 
-  return socketRef.current;
-};
+  return { socket, connected, error };
+}
+
+/** @deprecated Use useSocket().socket — kept for minimal migration */
+export function useSocketLegacy(namespace: string = '') {
+  const { socket } = useSocket(namespace);
+  return socket;
+}

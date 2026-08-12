@@ -14,8 +14,8 @@ interface ChatMessage {
 }
 
 export default function GlobalChatWidget() {
-  const { user } = useAuthStore();
-  const socket = useSocket('/chat');
+  const { user, profile } = useAuthStore();
+  const { socket, connected, error: socketError } = useSocket('/chat');
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -69,8 +69,8 @@ export default function GlobalChatWidget() {
           {/* Header */}
           <div className="bg-primary text-white p-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              <h3 className="font-bold text-sm">Messages</h3>
+              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`}></div>
+              <h3 className="font-bold text-sm">{connected ? 'Messages' : 'Connecting...'}</h3>
             </div>
             <button 
               onClick={() => setIsOpen(false)}
@@ -82,7 +82,11 @@ export default function GlobalChatWidget() {
             </button>
           </div>
           
-          {/* Recipient Selector (Simplified for mockup purposes) */}
+          {socketError && (
+            <p className="text-[10px] text-amber-600 bg-amber-50 px-3 py-1 border-b border-amber-100">
+              Chat offline — check NEXT_PUBLIC_BACKEND_URL on Vercel
+            </p>
+          )}
           <div className="bg-slate-50 border-b border-slate-200 p-2 text-xs">
             <span className="text-slate-500 mr-2">To:</span>
             <select 
@@ -91,8 +95,8 @@ export default function GlobalChatWidget() {
               className="bg-transparent border-none font-semibold text-slate-700 outline-none w-48"
             >
               <option value="system_support">Support Agent</option>
-              {user.role === 'buyer' && <option value="seller_123">Seller (Demo)</option>}
-              {user.role === 'seller' && <option value="buyer_123">Buyer (Demo)</option>}
+              {(profile?.role === 'buyer' || !profile?.role) && <option value="seller_123">Seller (Demo)</option>}
+              {profile?.role === 'seller' && <option value="buyer_123">Buyer (Demo)</option>}
             </select>
           </div>
 
