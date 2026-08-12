@@ -30,7 +30,8 @@ export default function BulkDealModal({ isOpen, onClose, productName = 'Product'
     }
 
     // Connect to Socket.io backend (Express server on port 5000)
-    const socket = io('http://localhost:5000/negotiations');
+    const baseUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+    const socket = io(`${baseUrl}/negotiations`);
     
     // Emit the new_negotiation event
     socket.emit('new_negotiation', {

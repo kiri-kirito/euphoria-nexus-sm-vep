@@ -848,3 +848,50 @@ Error: You cannot have two parallel pages that resolve to the same path. Please 
  GET /admin/users 200 in 1080ms (next.js: 271ms, proxy.ts: 270ms, application-code: 539ms)
  GET / 200 in 997ms (next.js: 26ms, proxy.ts: 266ms, application-code: 705ms)
 ✓ Finished writing to filesystem cache in 13.8s
+ GET / 200 in 694ms (next.js: 20ms, proxy.ts: 6ms, application-code: 669ms)
+ HEAD / 200 in 421ms (next.js: 3ms, proxy.ts: 4ms, application-code: 414ms)
+ GET / 200 in 497ms (next.js: 4ms, proxy.ts: 7ms, application-code: 486ms)
+ GET /explore 200 in 94ms (next.js: 26ms, proxy.ts: 7ms, application-code: 61ms)
+ GET /orders 200 in 52ms (next.js: 10ms, proxy.ts: 6ms, application-code: 36ms)
+ GET / 200 in 290ms (next.js: 4ms, proxy.ts: 5ms, application-code: 281ms)
+ GET / 200 in 221ms (next.js: 3ms, proxy.ts: 6ms, application-code: 212ms)
+ GET / 200 in 263ms (next.js: 4ms, proxy.ts: 5ms, application-code: 254ms)
+ GET / 200 in 228ms (next.js: 4ms, proxy.ts: 4ms, application-code: 221ms)
+ GET / 200 in 278ms (next.js: 3ms, proxy.ts: 6ms, application-code: 269ms)
+ GET /explore 200 in 54ms (next.js: 3ms, proxy.ts: 6ms, application-code: 45ms)
+ GET /orders 200 in 55ms (next.js: 4ms, proxy.ts: 7ms, application-code: 44ms)
+ GET / 200 in 241ms (next.js: 3ms, proxy.ts: 4ms, application-code: 235ms)
+ GET / 200 in 214ms (next.js: 4ms, proxy.ts: 5ms, application-code: 205ms)
+ GET / 200 in 239ms (next.js: 8ms, proxy.ts: 4ms, application-code: 227ms)
+ GET / 200 in 213ms (next.js: 4ms, proxy.ts: 4ms, application-code: 205ms)
+Error [AuthApiError]: Invalid Refresh Token: Refresh Token Not Found
+    at ignore-listed frames {
+  __isAuthError: true,
+  status: 400,
+  code: 'refresh_token_not_found'
+}
+Error [AuthApiError]: Invalid Refresh Token: Refresh Token Not Found
+    at ignore-listed frames {
+  __isAuthError: true,
+  status: 400,
+  code: 'refresh_token_not_found'
+}
+ GET / 200 in 1093ms (next.js: 7ms, proxy.ts: 591ms, application-code: 495ms)
+ GET /product/189e23ad-5b81-478f-859c-020a032fc9ca 200 in 299ms (next.js: 54ms, proxy.ts: 9ms, application-code: 236ms)
+ GET / 200 in 253ms (next.js: 7ms, proxy.ts: 5ms, application-code: 241ms)
+ GET /admin/dashboard 200 in 1529ms (next.js: 23ms, proxy.ts: 281ms, application-code: 1224ms)
+ GET / 200 in 473ms (next.js: 11ms, proxy.ts: 185ms, application-code: 277ms)
+ GET /admin/dashboard 200 in 1396ms (next.js: 9ms, proxy.ts: 255ms, application-code: 1132ms)
+ GET /admin/dashboard 200 in 1349ms (next.js: 12ms, proxy.ts: 226ms, application-code: 1111ms)
+ GET /explore?category=Electronics+&+Gadgets= 200 in 302ms (next.js: 10ms, proxy.ts: 243ms, application-code: 49ms)
+ GET /admin/dashboard 200 in 1294ms (next.js: 11ms, proxy.ts: 218ms, application-code: 1065ms)
+ GET / 200 in 395ms (next.js: 6ms, proxy.ts: 11ms, application-code: 379ms)
+ GET /seller/dashboard 200 in 295ms (next.js: 44ms, proxy.ts: 212ms, application-code: 39ms)
+ GET / 200 in 598ms (next.js: 7ms, proxy.ts: 222ms, application-code: 369ms)
+ GET / 200 in 468ms (next.js: 7ms, proxy.ts: 9ms, application-code: 452ms)
+ GET /support/dashboard 200 in 342ms (next.js: 48ms, proxy.ts: 247ms, application-code: 47ms)
+ GET / 200 in 694ms (next.js: 6ms, proxy.ts: 189ms, application-code: 499ms)
+ GET / 200 in 432ms (next.js: 8ms, proxy.ts: 12ms, application-code: 412ms)
+ GET /agent/dashboard 404 in 276ms (next.js: 41ms, proxy.ts: 196ms, application-code: 39ms)
+ GET /agent/dashboard 404 in 269ms (next.js: 16ms, proxy.ts: 182ms, application-code: 70ms)
+ GET /agent/dashboard 404 in 356ms (next.js: 20ms, proxy.ts: 272ms, application-code: 64ms)

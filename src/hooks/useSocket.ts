@@ -5,7 +5,8 @@ export const useSocket = (namespace: string = '') => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const url = `http://localhost:5000${namespace}`;
+    const baseUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+    const url = `${baseUrl}${namespace}`;
     socketRef.current = io(url, {
       withCredentials: true,
     });
