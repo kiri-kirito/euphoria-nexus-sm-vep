@@ -14,8 +14,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/delivery',
-        destination: '/delivery/dashboard',
+        source: '/local',
+        destination: '/explore?nearby=1',
+        permanent: false,
+      },
+      {
+        source: '/agent/apply',
+        destination: '/register',
         permanent: false,
       },
     ];

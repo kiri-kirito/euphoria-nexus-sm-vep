@@ -42,6 +42,7 @@ export default function NegotiationsPage() {
   const [activeNegotiations, setActiveNegotiations] = useState<NegotiationView[]>([]);
   const [closedNegotiations, setClosedNegotiations] = useState<NegotiationView[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const supabase = createClient();
   const { user } = useAuthStore();
 
@@ -70,8 +71,8 @@ export default function NegotiationsPage() {
       }
 
       const mapped = data.map((row) => mapRow(row as Record<string, unknown>));
-      setActiveNegotiations(mapped.filter((n) => n.status !== 'accepted'));
-      setClosedNegotiations(mapped.filter((n) => n.status === 'accepted'));
+      setActiveNegotiations(mapped.filter((n) => n.status !== 'accepted' && n.status !== 'ordered'));
+      setClosedNegotiations(mapped.filter((n) => n.status === 'accepted' || n.status === 'ordered'));
       setLoading(false);
     }
     fetchNegotiations();
@@ -85,6 +86,14 @@ export default function NegotiationsPage() {
     setActiveNegotiations((prev) =>
       prev.map((n) => (n.id === id ? { ...n, status: 'countered', offeredPrice: counterPrice } : n))
     );
+  };
+
+  const copyCheckoutLink = (id: string) => {
+    const url = `${window.location.origin}/checkout?negotiation=${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2500);
+    });
   };
 
   const handleAccept = async (item: NegotiationView) => {
@@ -157,6 +166,18 @@ export default function NegotiationsPage() {
                   <h3 className="font-semibold">{item.product}</h3>
                   <p className="text-xs text-slate-500">{item.buyer} · {item.qty} units</p>
                   <p className="text-sm font-medium mt-1">Settled at ৳{item.finalPrice?.toLocaleString()}</p>
+                  {item.status === 'accepted' && (
+                    <button
+                      type="button"
+                      onClick={() => copyCheckoutLink(item.id)}
+                      className="mt-2 text-xs font-bold text-primary hover:underline"
+                    >
+                      {copiedId === item.id ? 'Link copied!' : 'Copy buyer checkout link'}
+                    </button>
+                  )}
+                  {item.status === 'ordered' && (
+                    <p className="text-xs text-emerald-600 font-semibold mt-1">Buyer completed checkout</p>
+                  )}
                 </div>
               </div>
             ))}

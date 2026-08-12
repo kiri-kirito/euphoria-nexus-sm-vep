@@ -172,6 +172,7 @@ function ExploreContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [nearbySellerIds, setNearbySellerIds] = useState<Set<string>>(new Set());
+  const [sellerStoreName, setSellerStoreName] = useState<string | null>(null);
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
 
@@ -180,6 +181,22 @@ function ExploreContent() {
     setNearbyOnly(urlNearby);
     setSellerFilter(urlSeller);
   }, [urlSearch, urlNearby, urlSeller]);
+
+  useEffect(() => {
+    if (!sellerFilter) {
+      setSellerStoreName(null);
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .from('stores')
+      .select('store_name')
+      .eq('user_id', sellerFilter)
+      .maybeSingle()
+      .then(({ data }) => {
+        setSellerStoreName(data?.store_name || 'Selected Seller');
+      });
+  }, [sellerFilter]);
 
   const fetchExploreProducts = async (category?: string, search?: string, sellerId?: string) => {
     const supabase = createClient();
@@ -298,6 +315,23 @@ function ExploreContent() {
 
       {/* Main Content Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {sellerFilter && sellerStoreName && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+            <p className="text-sm font-semibold text-slate-800">
+              Showing products from <span className="text-primary">{sellerStoreName}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSellerFilter('');
+                router.push('/explore');
+              }}
+              className="text-xs font-bold text-primary hover:underline"
+            >
+              Clear seller filter ×
+            </button>
+          </div>
+        )}
         <div className="flex flex-col lg:flex-row gap-8">
           
           {/* Filter Sidebar */}

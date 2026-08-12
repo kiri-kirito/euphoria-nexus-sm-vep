@@ -17,7 +17,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm">
             <li><Link href="/explore" className="hover:text-primary transition-colors">Explore Products</Link></li>
             <li><Link href="/bundles" className="hover:text-primary transition-colors">Cross-Seller Bundles</Link></li>
-            <li><Link href="/local" className="hover:text-primary transition-colors">Local Sellers</Link></li>
+            <li><Link href="/explore?nearby=1" className="hover:text-primary transition-colors">Local Sellers</Link></li>
           </ul>
         </div>
 
@@ -25,7 +25,7 @@ export default function Footer() {
           <h4 className="text-white font-semibold mb-4">Make Money</h4>
           <ul className="space-y-2 text-sm">
             <li><Link href="/seller/apply" className="hover:text-primary transition-colors">Become a Seller</Link></li>
-            <li><Link href="/agent/apply" className="hover:text-primary transition-colors">Become a Delivery Agent</Link></li>
+            <li><Link href="/register" className="hover:text-primary transition-colors">Become a Delivery Agent</Link></li>
           </ul>
         </div>
 

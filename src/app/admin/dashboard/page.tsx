@@ -43,6 +43,40 @@ export default async function AdminDashboard() {
   const deliveredPct = Math.round((deliveredCount / totalOrd) * 100);
   const pendingPct = Math.round((pendingCount / totalOrd) * 100);
 
+  const [{ data: deliveryRows }, { data: complaintRows }] = await Promise.all([
+    supabase
+      .from('deliveries')
+      .select('agent_id, users!agent_id(name)')
+      .eq('status', 'delivered')
+      .not('agent_id', 'is', null),
+    supabase
+      .from('complaints')
+      .select('assigned_to, users!assigned_to(name)')
+      .eq('status', 'resolved')
+      .not('assigned_to', 'is', null),
+  ]);
+
+  type AgentStat = { id: string; name: string; count: number };
+  const deliveryAgentMap = new Map<string, AgentStat>();
+  for (const row of deliveryRows || []) {
+    const id = row.agent_id as string;
+    const name = (row.users as { name?: string } | null)?.name || 'Agent';
+    const existing = deliveryAgentMap.get(id);
+    if (existing) existing.count += 1;
+    else deliveryAgentMap.set(id, { id, name, count: 1 });
+  }
+  const deliveryAgents = [...deliveryAgentMap.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+
+  const supportAgentMap = new Map<string, AgentStat>();
+  for (const row of complaintRows || []) {
+    const id = row.assigned_to as string;
+    const name = (row.users as { name?: string } | null)?.name || 'Support';
+    const existing = supportAgentMap.get(id);
+    if (existing) existing.count += 1;
+    else supportAgentMap.set(id, { id, name, count: 1 });
+  }
+  const supportAgents = [...supportAgentMap.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+
   const stats = [
     { title: 'Total GMV (Sales)', value: `৳ ${gmv.toLocaleString()}`, change: 'Real-time', isUp: true, icon: '💰' },
     { title: 'Active Sellers', value: `${safeSellerCount} Verified`, change: 'Total', isUp: true, icon: '🏪' },
@@ -152,6 +186,57 @@ export default async function AdminDashboard() {
 
           <div className="mt-6 pt-4 border-t border-slate-800 text-center">
             <span className="text-xs text-slate-400">System Health: <strong className="text-emerald-400">100% Operational</strong></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Agent performance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-slate-950 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+          <div className="p-6 border-b border-slate-800">
+            <h3 className="font-bold text-white text-base">Top Delivery Agents</h3>
+            <p className="text-xs text-slate-400 mt-1">Completed deliveries by agent</p>
+          </div>
+          <div className="p-4">
+            {deliveryAgents.length === 0 ? (
+              <p className="text-slate-500 text-sm p-4 text-center">No completed deliveries yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {deliveryAgents.map((agent, idx) => (
+                  <li key={agent.id} className="flex items-center justify-between bg-slate-900/50 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-blue-400 w-6">#{idx + 1}</span>
+                      <span className="text-sm font-semibold text-white">{agent.name}</span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-400">{agent.count} delivered</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-slate-950 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+          <div className="p-6 border-b border-slate-800">
+            <h3 className="font-bold text-white text-base">Top Support Agents</h3>
+            <p className="text-xs text-slate-400 mt-1">Resolved tickets by agent</p>
+          </div>
+          <div className="p-4">
+            {supportAgents.length === 0 ? (
+              <p className="text-slate-500 text-sm p-4 text-center">No resolved tickets yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {supportAgents.map((agent, idx) => (
+                  <li key={agent.id} className="flex items-center justify-between bg-slate-900/50 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-purple-400 w-6">#{idx + 1}</span>
+                      <span className="text-sm font-semibold text-white">{agent.name}</span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-400">{agent.count} resolved</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

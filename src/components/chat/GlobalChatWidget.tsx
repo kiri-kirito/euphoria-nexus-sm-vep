@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSocket } from '@/hooks/useSocket';
+import { createClient } from '@/utils/supabase/client';
 
 interface ChatMessage {
   id: string;
@@ -15,6 +16,7 @@ interface ChatMessage {
 
 export default function GlobalChatWidget() {
   const { user, profile } = useAuthStore();
+  const supabase = createClient();
   const { socket, connected, error: socketError } = useSocket('/chat');
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -23,13 +25,42 @@ export default function GlobalChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!user?.id) return;
+
+    async function loadHistory() {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('id, sender_id, sender_name, receiver_id, text, created_at')
+        .or(
+          `and(sender_id.eq.${user!.id},receiver_id.eq.${receiverId}),and(sender_id.eq.${receiverId},receiver_id.eq.${user!.id})`
+        )
+        .order('created_at', { ascending: true })
+        .limit(50);
+
+      if (error || !data) return;
+
+      setMessages(
+        data.map((row) => ({
+          id: row.id,
+          senderId: row.sender_id,
+          senderName: row.sender_name || 'User',
+          receiverId: row.receiver_id,
+          text: row.text,
+          timestamp: row.created_at,
+        }))
+      );
+    }
+
+    loadHistory();
+  }, [user?.id, receiverId, supabase]);
+
+  useEffect(() => {
     if (!socket || !user) return;
 
-    // Register user in their personal room to receive messages
     socket.emit('register_user', user.id);
 
     const handleReceiveMessage = (msg: ChatMessage) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
     };
 
     socket.on('receive_message', handleReceiveMessage);
@@ -44,9 +75,9 @@ export default function GlobalChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !socket || !user) return;
+    if (!newMessage.trim() || !user) return;
 
     const messagePayload = {
       senderId: user.id,
@@ -55,7 +86,25 @@ export default function GlobalChatWidget() {
       text: newMessage.trim(),
     };
 
-    socket.emit('send_message', messagePayload);
+    if (socket) {
+      socket.emit('send_message', messagePayload);
+    } else {
+      await supabase.from('chat_messages').insert({
+        sender_id: user.id,
+        receiver_id: receiverId,
+        sender_name: messagePayload.senderName,
+        text: messagePayload.text,
+      });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          ...messagePayload,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    }
+
     setNewMessage('');
   };
 

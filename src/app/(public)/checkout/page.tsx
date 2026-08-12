@@ -1,21 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { createClient } from '@/utils/supabase/client';
-import { isValidUuid } from '@/utils/productImages';
+import { isValidUuid, resolveProductImage } from '@/utils/productImages';
 import { calcShippingFee, countDeliveryUnits, shippingLabel } from '@/utils/deliveryFee';
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
-  const { items, getTotal, clearCart } = useCartStore();
+  const searchParams = useSearchParams();
+  const negotiationId = searchParams.get('negotiation');
+
+  const { items, getTotal, clearCart, addItem } = useCartStore();
   const { user, profile } = useAuthStore();
   const supabase = createClient();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [negotiationLoading, setNegotiationLoading] = useState(!!negotiationId);
+  const [activeNegotiationId, setActiveNegotiationId] = useState<string | null>(null);
+  const [dealLabel, setDealLabel] = useState<string | null>(null);
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,6 +36,95 @@ export default function CheckoutPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!negotiationId || !user?.id) {
+      if (negotiationId && mounted && !user) {
+        setNegotiationLoading(false);
+        setError('Please log in to complete your bulk deal checkout.');
+      }
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadNegotiationCheckout() {
+      setNegotiationLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('negotiations')
+        .select(`
+          id, buyer_id, seller_id, product_id, current_price, final_price, quantity, status,
+          products (id, name, price, images, seller_id)
+        `)
+        .eq('id', negotiationId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (fetchError || !data) {
+        setError('This bulk deal link is invalid or has expired.');
+        setNegotiationLoading(false);
+        return;
+      }
+
+      if (data.buyer_id !== user!.id) {
+        setError('This checkout link belongs to another account.');
+        setNegotiationLoading(false);
+        return;
+      }
+
+      if (data.status === 'ordered') {
+        setError('This bulk deal has already been checked out.');
+        setNegotiationLoading(false);
+        return;
+      }
+
+      if (data.status !== 'accepted') {
+        setError('This deal is not ready for checkout yet. Wait for the seller to accept your offer.');
+        setNegotiationLoading(false);
+        return;
+      }
+
+      const rawProduct = data.products;
+      const product = (Array.isArray(rawProduct) ? rawProduct[0] : rawProduct) as {
+        id: string;
+        name: string;
+        images?: unknown;
+        seller_id?: string;
+      } | null;
+
+      if (!product?.id) {
+        setError('Product for this deal could not be found.');
+        setNegotiationLoading(false);
+        return;
+      }
+
+      const unitPrice = Number(data.final_price ?? data.current_price);
+      const qty = Number(data.quantity) || 1;
+
+      clearCart();
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: unitPrice,
+        quantity: qty,
+        image: resolveProductImage(product),
+        sellerId: data.seller_id || product.seller_id,
+      });
+
+      setActiveNegotiationId(data.id);
+      setDealLabel(`${product.name} · ${qty} unit${qty > 1 ? 's' : ''} @ ৳${unitPrice.toLocaleString()}`);
+      setNegotiationLoading(false);
+    }
+
+    loadNegotiationCheckout();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [negotiationId, user?.id, mounted, supabase, clearCart, addItem]);
 
   useEffect(() => {
     if (!user) return;
@@ -56,9 +152,34 @@ export default function CheckoutPage() {
 
   if (!mounted) return null;
 
-  if (items.length === 0) {
+  if (negotiationLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500 animate-pulse">Loading your bulk deal checkout...</p>
+      </div>
+    );
+  }
+
+  if (items.length === 0 && !negotiationId) {
     router.push('/cart');
     return null;
+  }
+
+  if (items.length === 0 && error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            type="button"
+            onClick={() => router.push('/profile')}
+            className="text-primary font-bold hover:underline"
+          >
+            Go to Profile →
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const subtotal = getTotal();
@@ -104,7 +225,6 @@ export default function CheckoutPage() {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
       if (itemsError) throw itemsError;
 
-      // Decrement stock for each product
       for (const item of items) {
         if (!isValidUuid(item.id)) continue;
         const { data: prod } = await supabase.from('products').select('quantity').eq('id', item.id).maybeSingle();
@@ -131,6 +251,13 @@ export default function CheckoutPage() {
         status: 'pending',
       });
 
+      if (activeNegotiationId) {
+        await supabase
+          .from('negotiations')
+          .update({ status: 'ordered' })
+          .eq('id', activeNegotiationId);
+      }
+
       clearCart();
       router.push(`/checkout/success?orderId=${order.id}&total=${total}`);
     } catch (err: unknown) {
@@ -143,7 +270,12 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <form onSubmit={handlePlaceOrder} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Checkout</h1>
+        {dealLabel && (
+          <p className="mb-6 text-sm font-semibold text-purple-700 bg-purple-50 border border-purple-100 rounded-xl px-4 py-3">
+            Bulk deal checkout — {dealLabel}
+          </p>
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">{error}</div>
@@ -270,5 +402,19 @@ export default function CheckoutPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <p className="text-slate-500 animate-pulse">Loading checkout...</p>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

@@ -101,6 +101,13 @@ export default async function BundleDealPage({ params }: { params: Promise<{ ids
           <p className="text-xs text-slate-500 text-center mt-3">
             Cross-seller bundles ship together — you pay one delivery fee for this combo.
           </p>
+          <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-900">
+            <p className="font-bold mb-1">Bundle return policy</p>
+            <p>
+              If you return only part of this bundle, the 15% bundle discount is voided. Refunds are
+              calculated at each item&apos;s regular price, not the bundled rate.
+            </p>
+          </div>
         </div>
       </div>
     </div>

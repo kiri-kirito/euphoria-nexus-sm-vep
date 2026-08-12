@@ -56,7 +56,7 @@ export default function ProfilePage() {
       supabase
         .from('negotiations')
         .select(`
-          id, current_price, status, quantity, created_at,
+          id, current_price, final_price, status, quantity, created_at,
           products (name),
           seller:users!negotiations_seller_id_fkey (name)
         `)
@@ -287,8 +287,45 @@ export default function ProfilePage() {
                   </div>
                   <div className="text-left md:text-right">
                     <p className="text-sm font-extrabold text-slate-900">
-                      Offer: ৳{Number(neg.current_price).toLocaleString()}
+                      {neg.status === 'accepted' || neg.status === 'ordered'
+                        ? `Agreed: ৳${Number(neg.final_price ?? neg.current_price).toLocaleString()}`
+                        : `Offer: ৳${Number(neg.current_price).toLocaleString()}`}
                     </p>
+                    {neg.status === 'accepted' && (
+                      <Link
+                        href={`/checkout?negotiation=${neg.id}`}
+                        className="mt-2 inline-block text-xs font-bold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-full transition-colors"
+                      >
+                        Checkout Now →
+                      </Link>
+                    )}
+                    {neg.status === 'countered' && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await supabase
+                            .from('negotiations')
+                            .update({
+                              status: 'accepted',
+                              final_price: neg.current_price,
+                            })
+                            .eq('id', neg.id);
+                          setNegotiations((prev) =>
+                            prev.map((n) =>
+                              n.id === neg.id
+                                ? { ...n, status: 'accepted', final_price: neg.current_price }
+                                : n
+                            )
+                          );
+                        }}
+                        className="mt-2 inline-block text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full transition-colors"
+                      >
+                        Accept Counter →
+                      </button>
+                    )}
+                    {neg.status === 'ordered' && (
+                      <span className="mt-2 inline-block text-xs font-bold text-emerald-700">Order placed</span>
+                    )}
                   </div>
                 </div>
               ))

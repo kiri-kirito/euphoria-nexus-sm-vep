@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 require('dotenv').config();
+const { getSupabaseAdmin } = require('./lib/supabase');
 
 const app = express();
 const server = http.createServer(app);
@@ -140,30 +141,110 @@ biddingNamespace.on('connection', (socket) => {
   console.log(`[Bidding] Connected: ${socket.id}`);
 
   // Seller posts a stock request
-  socket.on('post_request', (data) => {
+  socket.on('post_request', async (data) => {
     console.log(`[Bidding] post_request:`, data);
-    // Broadcast to all sellers in the bidding room
-    socket.broadcast.emit('new_stock_request', data);
+    const supabase = getSupabaseAdmin();
+    let payload = { ...data };
+
+    if (supabase && data.requestingSellerId && data.productId) {
+      const { data: row, error } = await supabase
+        .from('stock_requests')
+        .insert({
+          requesting_seller_id: data.requestingSellerId,
+          product_id: data.productId,
+          quantity: Number(data.quantity) || 1,
+          target_price: Number(data.targetPrice) || 0,
+          status: 'open',
+        })
+        .select('id')
+        .single();
+
+      if (!error && row) {
+        payload = { ...data, id: row.id };
+      } else if (error) {
+        console.warn('[Bidding] post_request DB failed:', error.message);
+      }
+    }
+
+    socket.broadcast.emit('new_stock_request', payload);
   });
 
   // Another seller submits an anonymous blind bid
-  socket.on('submit_bid', (data) => {
+  socket.on('submit_bid', async (data) => {
     console.log(`[Bidding] submit_bid:`, data);
-    // Notify the requesting seller (in their room)
+    let bidId = `bid_${Date.now()}`;
+    const supabase = getSupabaseAdmin();
+
+    if (supabase && data.requestId && data.biddingSellerId && data.amount) {
+      const { data: row, error } = await supabase
+        .from('stock_bids')
+        .insert({
+          request_id: data.requestId,
+          bidding_seller_id: data.biddingSellerId,
+          bid_price: Number(data.amount),
+          status: 'pending',
+        })
+        .select('id')
+        .single();
+
+      if (!error && row) {
+        bidId = row.id;
+      } else if (error) {
+        console.warn('[Bidding] submit_bid DB failed:', error.message);
+      }
+    }
+
     socket.to(data.requesterId).emit('bid_received', {
-      bidId: `bid_${Date.now()}`,
+      bidId,
+      requestId: data.requestId,
       amount: data.amount,
       quantity: data.quantity,
-      // anonymized — no seller info sent
     });
   });
 
   // Requesting seller accepts a bid — triggers escrow
-  socket.on('accept_bid', (data) => {
+  socket.on('accept_bid', async (data) => {
     console.log(`[Bidding] accept_bid:`, data);
+    const supabase = getSupabaseAdmin();
+    let escrowState = 'PENDING_TRANSFER';
+
+    if (supabase && data.bidId && data.requestId) {
+      const [{ data: bid }, { data: request }] = await Promise.all([
+        supabase
+          .from('stock_bids')
+          .select('bid_price, bidding_seller_id')
+          .eq('id', data.bidId)
+          .maybeSingle(),
+        supabase
+          .from('stock_requests')
+          .select('requesting_seller_id')
+          .eq('id', data.requestId)
+          .maybeSingle(),
+      ]);
+
+      await supabase.from('stock_bids').update({ status: 'accepted' }).eq('id', data.bidId);
+      await supabase.from('stock_requests').update({ status: 'closed' }).eq('id', data.requestId);
+
+      if (bid && request) {
+        const { error: escrowError } = await supabase.from('escrow').insert({
+          stock_request_id: data.requestId,
+          from_seller_id: bid.bidding_seller_id,
+          to_seller_id: request.requesting_seller_id,
+          amount: bid.bid_price,
+          status: 'held',
+          description: 'Stock exchange escrow — awaiting transfer confirmation',
+        });
+        if (escrowError) {
+          console.warn('[Bidding] escrow insert failed:', escrowError.message);
+        } else {
+          escrowState = 'HELD';
+        }
+      }
+    }
+
     biddingNamespace.emit('bid_accepted', {
       ...data,
-      escrowState: 'PENDING_TRANSFER',
+      escrowState,
       message: 'Escrow initiated. Awaiting physical stock confirmation.',
     });
   });
@@ -185,28 +266,46 @@ chatNamespace.on('connection', (socket) => {
   });
 
   // Handle sending a direct message
-  socket.on('send_message', (data) => {
+  socket.on('send_message', async (data) => {
     console.log(`[Chat] Message from ${data.senderId} to ${data.receiverId}: ${data.text}`);
-    
-    // Broadcast to the receiver's personal room
-    chatNamespace.to(data.receiverId).emit('receive_message', {
-      id: Date.now().toString(),
+
+    const timestamp = new Date().toISOString();
+    let messageId = Date.now().toString();
+
+    const supabase = getSupabaseAdmin();
+    if (supabase && data.senderId && data.text) {
+      const { data: row, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          sender_id: data.senderId,
+          receiver_id: String(data.receiverId),
+          sender_name: data.senderName || 'User',
+          text: data.text,
+        })
+        .select('id, created_at')
+        .single();
+
+      if (!error && row) {
+        messageId = row.id;
+        if (row.created_at) {
+          /* use DB timestamp */
+        }
+      } else if (error) {
+        console.warn('[Chat] DB persist failed:', error.message);
+      }
+    }
+
+    const payload = {
+      id: messageId,
       senderId: data.senderId,
       senderName: data.senderName,
       receiverId: data.receiverId,
       text: data.text,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Also echo back to the sender so they can see their own message if they have multiple tabs open
-    chatNamespace.to(data.senderId).emit('receive_message', {
-      id: Date.now().toString(),
-      senderId: data.senderId,
-      senderName: data.senderName,
-      receiverId: data.receiverId,
-      text: data.text,
-      timestamp: new Date().toISOString()
-    });
+      timestamp,
+    };
+
+    chatNamespace.to(data.receiverId).emit('receive_message', payload);
+    chatNamespace.to(data.senderId).emit('receive_message', payload);
   });
 
   socket.on('disconnect', () => {
