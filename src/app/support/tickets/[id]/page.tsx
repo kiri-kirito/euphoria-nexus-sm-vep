@@ -1,169 +1,224 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { resolveProductImage } from "@/utils/productImages";
+
+interface ChatMessage {
+  id: number;
+  sender: "User" | "Support";
+  text: string;
+  time: string;
+}
+
+function parseMessages(description: string, resolution: string | null): ChatMessage[] {
+  const initial: ChatMessage[] = [
+    {
+      id: 1,
+      sender: "User",
+      text: description,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    },
+  ];
+  if (!resolution) return initial;
+  try {
+    const parsed = JSON.parse(resolution);
+    if (Array.isArray(parsed)) return [...initial, ...parsed];
+  } catch {
+    if (resolution.trim()) {
+      initial.push({
+        id: 2,
+        sender: "Support",
+        text: resolution,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      });
+    }
+  }
+  return initial;
+}
 
 export default function TicketDetails() {
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'User', text: 'Assalamu Alaikum, I received my order #ORD-84392 today, but the Mechanical Keyboard Keycaps set is missing from the package!', time: '10:14 AM' },
-    { id: 2, sender: 'Support', text: 'Walaikum Assalam Nusrat. I am very sorry for the inconvenience. Let me inspect the seller dispatch video for order #ORD-84392.', time: '10:16 AM' },
-    { id: 3, sender: 'User', text: 'Thank you! The box was sealed, but only the headphones were inside.', time: '10:20 AM' },
-  ]);
-
-  const [inputMsg, setInputMsg] = useState('');
+  const params = useParams();
+  const ticketId = params?.id as string;
+  const [complaint, setComplaint] = useState<any>(null);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMsg, setInputMsg] = useState("");
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!ticketId) return;
+    loadTicket(ticketId);
+  }, [ticketId]);
+
+  async function loadTicket(id: string) {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("complaints")
+      .select(`
+        *,
+        users!buyer_id (name, email),
+        orders (id, total_amount, status, payments (method, status))
+      `)
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !data) {
+      setLoading(false);
+      return;
+    }
+
+    setComplaint(data);
+    setMessages(parseMessages(data.description, data.resolution));
+
+    const { data: items } = await supabase
+      .from("order_items")
+      .select("quantity, price, products (id, name, images, seller_id)")
+      .eq("order_id", data.order_id);
+
+    setOrderItems(items || []);
+    setLoading(false);
+  }
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMsg.trim()) return;
+    if (!inputMsg.trim() || !complaint) return;
 
-    const newMsg = {
+    const newMsg: ChatMessage = {
       id: messages.length + 1,
-      sender: 'Support',
+      sender: "Support",
       text: inputMsg,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
+    const updated = [...messages, newMsg];
+    setMessages(updated);
+    setInputMsg("");
 
-    setMessages(prev => [...prev, newMsg]);
-    setInputMsg('');
+    const supportMsgs = updated.filter((m) => m.sender === "Support");
+    await supabase
+      .from("complaints")
+      .update({ resolution: JSON.stringify(supportMsgs), status: "in_progress" })
+      .eq("id", complaint.id);
   };
 
-  const handleProcessRefund = () => {
-    setToast('Refund of ৳2,500 approved & queued for bKash disbursement!');
+  const handleProcessRefund = async () => {
+    if (!complaint) return;
+    const amount = complaint.orders?.total_amount || 0;
+    await supabase.from("complaints").update({ status: "resolved", resolution: JSON.stringify([...messages, { id: 999, sender: "Support", text: `Refund of ৳${amount} approved.`, time: new Date().toLocaleTimeString() }]) }).eq("id", complaint.id);
+    setToast(`Refund of ৳${Number(amount).toLocaleString()} approved & queued!`);
     setTimeout(() => setToast(null), 3500);
   };
+
+  const handleResolve = async () => {
+    if (!complaint) return;
+    await supabase.from("complaints").update({ status: "resolved" }).eq("id", complaint.id);
+    setToast("Ticket marked as resolved.");
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  if (loading) return <div className="p-8 text-slate-400">Loading ticket...</div>;
+  if (!complaint) return <div className="p-8 text-red-400">Ticket not found.</div>;
+
+  const buyerName = complaint.users?.name || "Buyer";
+  const paymentMethod = complaint.orders?.payments?.[0]?.method || "N/A";
 
   return (
     <div className="flex h-full bg-slate-900 text-slate-100 overflow-hidden relative">
       {toast && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl z-50 animate-bounce">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl z-50">
           {toast}
         </div>
       )}
 
-      {/* Main Chat Pane */}
       <div className="flex-1 flex flex-col border-r border-slate-800">
-        {/* Chat Header */}
         <div className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-teal-500/20 text-teal-400 border border-teal-500/30 rounded-xl flex items-center justify-center font-bold text-xs">
-              TCK
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white">Ticket #TCK-101 — Missing Item Claim</h2>
-              <p className="text-xs text-slate-400">Customer: <span className="text-slate-200 font-semibold">Nusrat Jahan</span> (Dhaka)</p>
-            </div>
+          <div>
+            <h2 className="text-base font-bold text-white">Ticket #{complaint.id.substring(0, 8)}</h2>
+            <p className="text-xs text-slate-400">
+              Customer: <span className="text-slate-200 font-semibold">{buyerName}</span> ({complaint.users?.email})
+            </p>
           </div>
-          <span className="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
-            Active Ticket
+          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+            complaint.status === "resolved"
+              ? "bg-slate-500/20 text-slate-400 border-slate-500/30"
+              : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+          }`}>
+            {complaint.status}
           </span>
         </div>
 
-        {/* Message Thread */}
         <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-900">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex flex-col ${msg.sender === 'Support' ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[75%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-md ${
-                msg.sender === 'Support' 
-                  ? 'bg-teal-600 text-white rounded-tr-none' 
-                  : 'bg-slate-950 text-slate-200 border border-slate-800 rounded-tl-none'
+            <div key={msg.id} className={`flex flex-col ${msg.sender === "Support" ? "items-end" : "items-start"}`}>
+              <div className={`max-w-[75%] rounded-2xl p-4 text-sm ${
+                msg.sender === "Support" ? "bg-teal-600 text-white rounded-tr-none" : "bg-slate-950 text-slate-200 border border-slate-800 rounded-tl-none"
               }`}>
-                <p>{msg.text}</p>
+                {msg.text}
               </div>
-              <span className="text-[10px] text-slate-500 mt-1 font-semibold">
-                {msg.sender === 'Support' ? 'Sabrina (Agent)' : 'Nusrat Jahan'} • {msg.time}
+              <span className="text-[10px] text-slate-500 mt-1">
+                {msg.sender === "Support" ? "Support Agent" : buyerName} • {msg.time}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Input Bar */}
         <div className="p-4 bg-slate-950 border-t border-slate-800">
           <form onSubmit={handleSendMessage} className="flex gap-3">
-            <input 
-              type="text"
+            <input
               value={inputMsg}
               onChange={(e) => setInputMsg(e.target.value)}
-              placeholder="Type your response to the customer..." 
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-teal-500 placeholder:text-slate-500"
+              placeholder="Type your response..."
+              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-teal-500"
             />
-            <button 
-              type="submit"
-              className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-teal-600/30"
-            >
+            <button type="submit" className="bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-6 py-3 rounded-xl">
               Send Reply
             </button>
           </form>
         </div>
       </div>
 
-      {/* Right Sidebar - Order Details */}
       <div className="w-80 bg-slate-950 p-6 overflow-y-auto border-l border-slate-800 flex-shrink-0 flex flex-col justify-between">
         <div>
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-            <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z" />
-            </svg>
-            Associated Order
-          </h3>
-
+          <h3 className="text-sm font-bold text-white uppercase mb-4">Associated Order</h3>
           <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs space-y-2 mb-6">
             <div className="flex justify-between">
               <span className="text-slate-400">Order ID:</span>
-              <span className="font-bold text-white">#ORD-84392</span>
+              <span className="font-bold text-white">#{complaint.order_id?.substring(0, 8)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Total Amount:</span>
-              <span className="font-bold text-emerald-400">৳34,500</span>
+              <span className="text-slate-400">Total:</span>
+              <span className="font-bold text-emerald-400">৳{Number(complaint.orders?.total_amount || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Payment:</span>
-              <span className="font-bold text-purple-400">bKash Paid</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Seller:</span>
-              <span className="font-semibold text-slate-200">AudioWorld BD</span>
+              <span className="font-bold text-purple-400">{paymentMethod}</span>
             </div>
           </div>
 
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Order Items</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Order Items</h4>
           <div className="space-y-3">
-            <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
-              <img 
-                src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100&h=100&fit=crop&q=80" 
-                alt="Sony WH-1000XM5" 
-                className="w-10 h-10 object-cover rounded-lg"
-              />
-              <div>
-                <p className="text-xs font-bold text-white line-clamp-1">Sony WH-1000XM5</p>
-                <p className="text-[10px] text-slate-400">৳32,000 • Delivered ✓</p>
+            {orderItems.map((item, i) => (
+              <div key={i} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
+                <img src={resolveProductImage(item.products)} alt="" className="w-10 h-10 object-cover rounded-lg" />
+                <div>
+                  <p className="text-xs font-bold text-white line-clamp-1">{item.products?.name}</p>
+                  <p className="text-[10px] text-slate-400">৳{Number(item.price).toLocaleString()} × {item.quantity}</p>
+                </div>
               </div>
-            </div>
-
-            <div className="bg-slate-900 p-3 rounded-xl border border-red-500/30 flex items-center gap-3 bg-red-500/5">
-              <img 
-                src="https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=100&h=100&fit=crop&q=80" 
-                alt="Keycaps" 
-                className="w-10 h-10 object-cover rounded-lg"
-              />
-              <div>
-                <p className="text-xs font-bold text-white line-clamp-1">Mechanical Keycaps</p>
-                <p className="text-[10px] text-red-400 font-semibold">৳2,500 • Missing Item ⚠️</p>
-              </div>
-            </div>
+            ))}
+            {orderItems.length === 0 && <p className="text-xs text-slate-500">No items found for this order.</p>}
           </div>
         </div>
 
         <div className="pt-6 border-t border-slate-800 space-y-2">
-          <button 
-            onClick={handleProcessRefund}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/30"
-          >
-            Process Partial Refund (৳2,500)
+          <button onClick={handleProcessRefund} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl">
+            Process Refund
           </button>
-          <button 
-            className="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold py-2.5 rounded-xl border border-slate-800 transition"
-          >
-            Escalate to Manager
+          <button onClick={handleResolve} className="w-full bg-slate-900 text-slate-300 text-xs font-bold py-2.5 rounded-xl border border-slate-800">
+            Mark Resolved
           </button>
         </div>
       </div>
