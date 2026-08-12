@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { io } from "socket.io-client";
 import { getBackendSocketUrl } from "@/utils/backendUrl";
+import { buildSocketAuthOptions } from "@/utils/socketAuth";
 
 interface StockRequestView {
   id: string;
@@ -128,7 +129,8 @@ export default function BlindBiddingPage() {
     }
 
     try {
-      const socket = io(getBackendSocketUrl("/bidding"), { transports: ["websocket", "polling"], timeout: 8000 });
+      const socketOpts = await buildSocketAuthOptions();
+      const socket = io(getBackendSocketUrl("/bidding"), socketOpts);
       socket.emit("submit_bid", {
         requestId,
         requesterId,
@@ -170,7 +172,8 @@ export default function BlindBiddingPage() {
     }
 
     try {
-      const socket = io(getBackendSocketUrl("/bidding"), { transports: ["websocket", "polling"], timeout: 8000 });
+      const socketOpts = await buildSocketAuthOptions();
+      const socket = io(getBackendSocketUrl("/bidding"), socketOpts);
       socket.emit("accept_bid", { requestId, bidId, requesterId: user.id });
       setTimeout(() => socket.disconnect(), 500);
     } catch {
@@ -208,7 +211,8 @@ export default function BlindBiddingPage() {
     }
 
     try {
-      const socket = io(getBackendSocketUrl("/bidding"), { transports: ["websocket", "polling"], timeout: 8000 });
+      const socketOpts = await buildSocketAuthOptions();
+      const socket = io(getBackendSocketUrl("/bidding"), socketOpts);
       socket.emit("post_request", {
         id: row?.id,
         requestingSellerId: user.id,

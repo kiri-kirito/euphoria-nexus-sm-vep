@@ -4,10 +4,10 @@ import React, { useState, Suspense, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import BulkDealModal from '@/components/products/BulkDealModal';
 import { createClient } from '@/utils/supabase/client';
-import { resolveProductImage } from '@/utils/productImages';
 import ProductImage from '@/components/products/ProductImage';
 import DbErrorBanner from '@/components/ui/DbErrorBanner';
 import { fetchLocalSellers } from '@/utils/api';
+import { useExploreProducts } from '@/hooks/useExploreProducts';
 import { useCartStore } from '@/store/useCartStore';
 import Link from 'next/link';
 
@@ -40,6 +40,7 @@ function ExploreContent() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>(matchedCategory);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(urlSearch);
   const [nearbyOnly, setNearbyOnly] = useState(urlNearby);
   const [sellerFilter, setSellerFilter] = useState(urlSeller);
   const [sortBy, setSortBy] = useState('popular');
@@ -48,9 +49,6 @@ function ExploreContent() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isNegotiateOpen, setIsNegotiateOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [nearbySellerIds, setNearbySellerIds] = useState<Set<string>>(new Set());
   const [sellerStoreName, setSellerStoreName] = useState<string | null>(null);
   const router = useRouter();
@@ -58,9 +56,29 @@ function ExploreContent() {
 
   useEffect(() => {
     setSearchQuery(urlSearch);
+    setDebouncedSearch(urlSearch);
     setNearbyOnly(urlNearby);
     setSellerFilter(urlSeller);
   }, [urlSearch, urlNearby, urlSeller]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => setDebouncedSearch(searchQuery), searchQuery ? 400 : 0);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
+  const {
+    data: products = [],
+    isLoading,
+    isError,
+  } = useExploreProducts({
+    category: selectedCategory,
+    search: debouncedSearch,
+    sellerId: sellerFilter || undefined,
+  });
+
+  const fetchError = isError
+    ? 'Product catalog could not be loaded from the database. Please refresh or try again later.'
+    : null;
 
   useEffect(() => {
     if (!sellerFilter) {
@@ -77,45 +95,6 @@ function ExploreContent() {
         setSellerStoreName(data?.store_name || 'Selected Seller');
       });
   }, [sellerFilter]);
-
-  const fetchExploreProducts = async (category?: string, search?: string, sellerId?: string) => {
-    const supabase = createClient();
-    try {
-      let query = supabase
-        .from('products')
-        .select('*, users!seller_id(name, id)')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(80);
-
-      if (category && category !== 'All') {
-        query = query.ilike('category', `%${category}%`);
-      }
-      if (search) {
-        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-      }
-      if (sellerId) {
-        query = query.eq('seller_id', sellerId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      if (!data) return [];
-
-      return data.map((p: Record<string, unknown>) => ({
-        ...p,
-        seller: (p.users as { name?: string })?.name || 'Unknown Seller',
-        store: (p.users as { name?: string })?.name || 'Unknown Seller',
-        image: resolveProductImage(p as { name?: string; category?: string; images?: unknown }),
-        minOrder: `${(p.moq as number) || 1} units`,
-        unit: 'unit',
-        inStock: (p.quantity as number) > 0,
-      }));
-    } catch (err) {
-      console.error('fetchExploreProducts:', err);
-      throw err;
-    }
-  };
 
   useEffect(() => {
     if (!nearbyOnly) {
@@ -136,24 +115,6 @@ function ExploreContent() {
       loadNearby(23.8103, 90.4125);
     }
   }, [nearbyOnly]);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      setIsLoading(true);
-      setFetchError(null);
-      try {
-        const data = await fetchExploreProducts(selectedCategory, searchQuery, sellerFilter || undefined);
-        setProducts(data);
-      } catch {
-        setProducts([]);
-        setFetchError('Product catalog could not be loaded from the database. Please refresh or try again later.');
-      }
-      setIsLoading(false);
-    };
-
-    const debounceTimer = setTimeout(loadProducts, searchQuery ? 400 : 0);
-    return () => clearTimeout(debounceTimer);
-  }, [selectedCategory, searchQuery, sellerFilter]);
 
   const filteredProducts = useMemo(() => {
     let list = [...products];

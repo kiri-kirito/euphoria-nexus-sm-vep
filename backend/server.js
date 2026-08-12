@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 require('dotenv').config();
 const { getSupabaseAdmin } = require('./lib/supabase');
+const { attachNamespaceAuth } = require('./lib/socketAuth');
 
 const app = express();
 const server = http.createServer(app);
@@ -79,6 +80,7 @@ io.on('connection', (socket) => {
 
 // /negotiations namespace — Bulk deal negotiations between Buyers and Sellers
 const negotiationsNamespace = io.of('/negotiations');
+attachNamespaceAuth(negotiationsNamespace, '/negotiations');
 negotiationsNamespace.on('connection', (socket) => {
   console.log(`[Negotiations] Connected: ${socket.id}`);
 
@@ -137,6 +139,7 @@ negotiationsNamespace.on('connection', (socket) => {
 
 // /bidding namespace — Inter-Seller Blind Bidding (Stock Exchange)
 const biddingNamespace = io.of('/bidding');
+attachNamespaceAuth(biddingNamespace, '/bidding');
 biddingNamespace.on('connection', (socket) => {
   console.log(`[Bidding] Connected: ${socket.id}`);
 
@@ -256,6 +259,7 @@ biddingNamespace.on('connection', (socket) => {
 
 // /chat namespace — Global Chat Widget
 const chatNamespace = io.of('/chat');
+attachNamespaceAuth(chatNamespace, '/chat');
 chatNamespace.on('connection', (socket) => {
   console.log(`[Chat] Connected: ${socket.id}`);
 

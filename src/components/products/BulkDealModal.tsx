@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getBackendSocketUrl } from '@/utils/backendUrl';
+import { buildSocketAuthOptions } from '@/utils/socketAuth';
 
 interface BulkDealModalProps {
   isOpen: boolean;
@@ -66,10 +67,8 @@ export default function BulkDealModal({
     }
 
     try {
-      const socket = io(getBackendSocketUrl('/negotiations'), {
-        transports: ['websocket', 'polling'],
-        timeout: 10000,
-      });
+      const socketOpts = await buildSocketAuthOptions();
+      const socket = io(getBackendSocketUrl('/negotiations'), socketOpts);
       socket.emit('new_negotiation', {
         productId,
         productName,
