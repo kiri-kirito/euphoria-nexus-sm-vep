@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { ReactNode, useState } from 'react';
+import { signOutAndRedirect } from '@/utils/logout';
 
 export default function SupportLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -177,7 +178,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
                   🏪 View Marketplace
                 </Link>
                 <button 
-                  onClick={() => { localStorage.removeItem('mockUserRole'); window.location.href = '/'; }}
+                  onClick={() => signOutAndRedirect()}
                   className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition font-bold"
                 >
                   🚪 End Shift & Sign Out

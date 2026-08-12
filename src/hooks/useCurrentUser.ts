@@ -6,19 +6,22 @@ export function useCurrentUser() {
   const [userId, setUserId] = useState<string | null>(null);
   const [role, setRole] = useState<string>('buyer');
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (data.session?.user) {
         setUserId(data.session.user.id);
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .maybeSingle();
+        if (profile?.role) setRole(profile.role);
       }
-      // Also check mockUserRole cookie for dev purposes
-      const cookieMatch = document.cookie.match(new RegExp('(^| )mockUserRole=([^;]+)'));
-      if (cookieMatch && cookieMatch[2]) setRole(cookieMatch[2]);
       setLoading(false);
     });
   }, []);
-  
+
   return { userId, role, loading };
 }

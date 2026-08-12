@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { ReactNode, useState } from 'react';
+import { signOutAndRedirect } from '@/utils/logout';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
@@ -242,7 +243,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                     🏪 View Marketplace
                   </Link>
                   <button 
-                    onClick={() => { setProfileOpen(false); localStorage.removeItem('mockUserRole'); window.location.href = '/'; }}
+                    onClick={() => { setProfileOpen(false); signOutAndRedirect(); }}
                     className="w-full text-left flex items-center gap-2 p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition font-bold"
                   >
                     🚪 Sign Out

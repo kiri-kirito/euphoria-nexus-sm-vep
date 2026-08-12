@@ -12,11 +12,13 @@ export default function ProfilePage() {
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [negotiations, setNegotiations] = useState<any[]>([]);
+  const [tabLoading, setTabLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    company: '',
     phone: '',
     address: ''
   });
@@ -30,7 +32,6 @@ export default function ProfilePage() {
       setFormData({
         fullName: profile.name || '',
         email: profile.email || '',
-        company: profile.company || '',
         phone: profile.phone || '',
         address: profile.address || ''
       });
@@ -39,15 +40,35 @@ export default function ProfilePage() {
     }
   }, [profile, user]);
 
-  const orders = [
-    { id: 'ORD-84392', date: 'Aug 04, 2026', total: '৳41,060', status: 'Delivered', items: 'Sony WH-1000XM5 Headphones (1x), Mechanical Keycaps (2x)' },
-    { id: 'ORD-78421', date: 'Jul 28, 2026', total: '৳2,25,000', status: 'In Transit', items: 'Industrial High-Purity Copper Wire (500 kg)' },
-  ];
-
-  const negotiations = [
-    { id: 'NEG-102', product: 'Monocrystalline Solar Panels (550W)', targetPrice: '৳16,500/panel', qty: '50 panels', status: 'Counter Offer Received', seller: 'GreenTech Energy' },
-    { id: 'NEG-098', product: 'Structural Steel Beams', targetPrice: '৳88,000/ton', qty: '20 tons', status: 'Accepted', seller: 'SteelCo Bangladesh' },
-  ];
+  useEffect(() => {
+    if (!user?.id) return;
+    setTabLoading(true);
+    Promise.all([
+      supabase
+        .from('orders')
+        .select(`
+          id, total_amount, status, created_at,
+          order_items (quantity, unit_price, products (name))
+        `)
+        .eq('buyer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      supabase
+        .from('negotiations')
+        .select(`
+          id, current_price, status, quantity, created_at,
+          products (name),
+          seller:users!negotiations_seller_id_fkey (name)
+        `)
+        .eq('buyer_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(20),
+    ]).then(([ordersRes, negRes]) => {
+      setOrders(ordersRes.data || []);
+      setNegotiations(negRes.data || []);
+      setTabLoading(false);
+    });
+  }, [user?.id, supabase]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +77,6 @@ export default function ProfilePage() {
 
     const updates = {
       name: formData.fullName,
-      company: formData.company,
       phone: formData.phone,
       address: formData.address,
     };
@@ -122,7 +142,7 @@ export default function ProfilePage() {
                 {profile?.role || 'Buyer'} Account
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">{formData.email} • {formData.company}</p>
+            <p className="text-xs text-slate-500 mt-1">{formData.email}</p>
           </div>
         </div>
 
@@ -130,8 +150,8 @@ export default function ProfilePage() {
         <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
           {[
             { id: 'info', label: 'Personal Information' },
-            { id: 'orders', label: 'Order History (2)' },
-            { id: 'negotiations', label: 'Bulk Deal Offers (2)' },
+            { id: 'orders', label: `Order History (${orders.length})` },
+            { id: 'negotiations', label: `Bulk Deal Offers (${negotiations.length})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -174,16 +194,6 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">Company / Business Name</label>
-                <input 
-                  type="text" 
-                  value={formData.company} 
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-primary focus:bg-white" 
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2">Phone Number</label>
                 <input 
                   type="tel" 
@@ -216,57 +226,73 @@ export default function ProfilePage() {
         {activeTab === 'orders' && (
           <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-lg font-bold text-slate-900 mb-4">Past Orders</h2>
-            {orders.map((order) => (
-              <div key={order.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="font-extrabold text-slate-900 text-sm">{order.id}</span>
-                    <span className={`px-2.5 py-0.5 text-[10px] rounded-full font-bold ${
-                      order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {order.status}
-                    </span>
+            {tabLoading ? (
+              <p className="text-slate-500 animate-pulse">Loading orders...</p>
+            ) : orders.length === 0 ? (
+              <p className="text-slate-500">No orders yet. <Link href="/explore" className="text-primary font-bold">Start shopping</Link></p>
+            ) : (
+              orders.map((order) => {
+                const itemsSummary = (order.order_items || [])
+                  .map((oi: any) => `${oi.products?.name || 'Item'} (${oi.quantity}x)`)
+                  .join(', ');
+                return (
+                  <div key={order.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-extrabold text-slate-900 text-sm">#{order.id.substring(0, 8)}</span>
+                        <span className="px-2.5 py-0.5 text-[10px] rounded-full font-bold bg-blue-100 text-blue-800 capitalize">
+                          {order.status || 'pending'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Placed on {new Date(order.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-slate-700 font-medium mt-2">{itemsSummary || '—'}</p>
+                    </div>
+                    <div className="text-left md:text-right">
+                      <p className="text-xl font-extrabold text-slate-900">৳{Number(order.total_amount).toLocaleString()}</p>
+                      <Link href="/orders" className="text-xs font-bold text-primary hover:underline mt-1 inline-block">
+                        View All Orders →
+                      </Link>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500">Placed on {order.date}</p>
-                  <p className="text-xs text-slate-700 font-medium mt-2">{order.items}</p>
-                </div>
-
-                <div className="text-left md:text-right">
-                  <p className="text-xl font-extrabold text-slate-900">{order.total}</p>
-                  <button className="text-xs font-bold text-primary hover:underline mt-1">View Order Details →</button>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </section>
         )}
 
-        {/* Tab 3: Bulk Deals */}
         {activeTab === 'negotiations' && (
           <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-lg font-bold text-slate-900 mb-4">Submitted Bulk Deal Offers</h2>
-            {negotiations.map((neg) => (
-              <div key={neg.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="font-extrabold text-purple-600 text-xs">{neg.id}</span>
-                    <span className={`px-2.5 py-0.5 text-[10px] rounded-full font-bold ${
-                      neg.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {neg.status}
-                    </span>
+            {tabLoading ? (
+              <p className="text-slate-500 animate-pulse">Loading negotiations...</p>
+            ) : negotiations.length === 0 ? (
+              <p className="text-slate-500">No bulk deal offers yet.</p>
+            ) : (
+              negotiations.map((neg) => (
+                <div key={neg.id} className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="font-extrabold text-purple-600 text-xs">#{neg.id.substring(0, 8)}</span>
+                      <span className="px-2.5 py-0.5 text-[10px] rounded-full font-bold bg-amber-100 text-amber-800 capitalize">
+                        {neg.status}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-sm">{neg.products?.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Seller: <strong>{neg.seller?.name}</strong>
+                      {neg.quantity ? ` • Qty: ${neg.quantity}` : ''}
+                    </p>
                   </div>
-                  <h3 className="font-bold text-slate-900 text-sm">{neg.product}</h3>
-                  <p className="text-xs text-slate-500 mt-1">Seller: <strong>{neg.seller}</strong> • Qty: <strong>{neg.qty}</strong></p>
+                  <div className="text-left md:text-right">
+                    <p className="text-sm font-extrabold text-slate-900">
+                      Offer: ৳{Number(neg.current_price).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-
-                <div className="text-left md:text-right">
-                  <p className="text-sm font-extrabold text-slate-900">Target: {neg.targetPrice}</p>
-                  <button className="bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl mt-2 hover:bg-slate-800 transition">
-                    View Seller Response
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </section>
         )}
       </div>
