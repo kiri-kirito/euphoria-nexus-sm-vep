@@ -1,10 +1,103 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function BecomeSellerPage() {
+  const { user, profile } = useAuthStore();
+  const supabase = createClient();
+  const [storeName, setStoreName] = useState("");
+  const [ownerName, setOwnerName] = useState(profile?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState("");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.id) {
+      window.location.href = "/register";
+      return;
+    }
+    if (!storeName.trim() || !phone.trim() || !category) {
+      setError("Please fill all required fields.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    const settings = {
+      application: {
+        owner_name: ownerName,
+        email,
+        category,
+        location,
+        submitted_at: new Date().toISOString(),
+      },
+      categories: [category],
+      address: location,
+    };
+
+    const { data: existing } = await supabase.from("stores").select("user_id").eq("user_id", user.id).maybeSingle();
+
+    let dbError;
+    if (existing) {
+      ({ error: dbError } = await supabase
+        .from("stores")
+        .update({
+          store_name: storeName,
+          description,
+          phone,
+          settings,
+          is_approved: false,
+        })
+        .eq("user_id", user.id));
+    } else {
+      ({ error: dbError } = await supabase.from("stores").insert({
+        user_id: user.id,
+        store_name: storeName,
+        description,
+        phone,
+        settings,
+        is_approved: false,
+      }));
+    }
+
+    setSubmitting(false);
+    if (dbError) {
+      setError(dbError.message);
+      return;
+    }
+    setDone(true);
+  };
+
+  if (done) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl border p-10 max-w-md text-center shadow-sm">
+          <div className="text-4xl mb-4">✅</div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Application Submitted</h1>
+          <p className="text-slate-600 mb-6">
+            Our team will review your store application. You will be notified once approved.
+          </p>
+          <Link href="/" className="text-primary font-bold hover:underline">
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-2xl">
-        {/* Header */}
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-2 mb-8">
             <img src="/logo-brand.png" alt="Euphoria Nexus" className="h-16 w-auto" />
@@ -12,89 +105,103 @@ export default function BecomeSellerPage() {
           </Link>
           <h1 className="text-4xl font-extrabold text-slate-900 mb-3">Become a Seller</h1>
           <p className="text-slate-500 text-lg max-w-md mx-auto">
-            Join 500+ local sellers. Reach more buyers, negotiate bulk deals, and grow your business.
+            Join local sellers. Reach more buyers, negotiate bulk deals, and grow your business.
           </p>
         </div>
 
-        {/* Benefits */}
-        <div className="grid grid-cols-3 gap-4 mb-10">
-          {[
-            { icon: "📦", title: "List Products", desc: "No listing fees" },
-            { icon: "💬", title: "Bulk Deals", desc: "Negotiate directly" },
-            { icon: "📊", title: "Analytics", desc: "Track your growth" },
-          ].map(b => (
-            <div key={b.title} className="bg-white rounded-2xl p-4 text-center border border-slate-200 shadow-sm">
-              <div className="text-2xl mb-2">{b.icon}</div>
-              <p className="font-bold text-slate-900 text-sm">{b.title}</p>
-              <p className="text-xs text-slate-500">{b.desc}</p>
-            </div>
-          ))}
-        </div>
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-5">
+          <h2 className="text-lg font-bold text-slate-900">Store Information</h2>
+          {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>}
 
-        {/* Application Form */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">Store Information</h2>
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Store Name *</label>
-                <input type="text" placeholder="e.g. Tech Haven BD" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Your Name *</label>
-                <input type="text" placeholder="Full name" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Business Email *</label>
-              <input type="email" placeholder="you@store.com" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Store Name *</label>
+              <input
+                required
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm"
+              />
             </div>
-
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number *</label>
-              <input type="tel" placeholder="+880 1XXX-XXXXXX" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Your Name *</label>
+              <input
+                required
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm"
+              />
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Product Category *</label>
-              <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-slate-700 bg-white">
-                <option value="">Select a category</option>
-                <option>Electronics & Gadgets</option>
-                <option>Fashion & Clothing</option>
-                <option>Furniture & Home</option>
-                <option>Food & Groceries</option>
-                <option>Sports & Fitness</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Store Location *</label>
-              <input type="text" placeholder="e.g. Mirpur, Dhaka" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Briefly describe your business</label>
-              <textarea rows={3} placeholder="What do you sell? How long have you been in business?" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none" />
-            </div>
-
-            <Link
-              href="/seller/dashboard"
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-bold text-base shadow-lg shadow-primary/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Submit Application
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-            </Link>
-
-            <p className="text-center text-xs text-slate-400">
-              By submitting, you agree to our{" "}
-              <span className="text-primary underline cursor-pointer">Terms of Service</span>
-              {" "}and{" "}
-              <span className="text-primary underline cursor-pointer">Seller Policy</span>.
-            </p>
           </div>
-        </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Business Email *</label>
+            <input
+              required
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number *</label>
+            <input
+              required
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Product Category *</label>
+            <select
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white"
+            >
+              <option value="">Select a category</option>
+              <option>Electronics</option>
+              <option>Fashion</option>
+              <option>Home</option>
+              <option>Sports</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Store Location *</label>
+            <input
+              required
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Mirpur, Dhaka"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Describe your business</label>
+            <textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm resize-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-bold disabled:opacity-50"
+          >
+            {submitting ? "Submitting..." : user ? "Submit Application" : "Sign in to Apply"}
+          </button>
+        </form>
       </div>
     </div>
   );

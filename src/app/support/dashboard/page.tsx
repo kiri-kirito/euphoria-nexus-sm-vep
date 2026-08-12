@@ -4,17 +4,6 @@ import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
-const MOCK_SUPPORT_DATA = {
-  openTickets: [
-    { id: 'c1', users: { name: 'Rahim Molla', email: 'rahim@test.com' }, orders: { total_amount: 4500, status: 'delivered' }, description: 'Product received was damaged. Need immediate replacement.', status: 'open', created_at: new Date(Date.now() - 3600000).toISOString() },
-    { id: 'c2', users: { name: 'Sumaiya Akter', email: 'sumaiya@test.com' }, orders: { total_amount: 12000, status: 'delivered' }, description: 'Wrong item was delivered. Expected electronics but received clothing.', status: 'open', created_at: new Date(Date.now() - 7200000).toISOString() },
-    { id: 'c3', users: { name: 'Karim Uddin', email: 'karim@test.com' }, orders: { total_amount: 2200, status: 'shipped' }, description: 'Order has been marked shipped for 7 days but still not received.', status: 'open', created_at: new Date(Date.now() - 86400000).toISOString() },
-  ],
-  resolvedCount: 47,
-  avgResponseTime: '2.4h',
-  satisfaction: 94,
-};
-
 export default function SupportDashboard() {
   const [filter, setFilter] = useState('All');
   const [data, setData] = useState<any>(null);
@@ -51,8 +40,8 @@ export default function SupportDashboard() {
         satisfaction: 94,
       });
     } catch (e) {
-      console.log("Using mock data", e);
-      setData(MOCK_SUPPORT_DATA);
+      console.error("Support dashboard fetch error", e);
+      setData({ openTickets: [], resolvedCount: 0, avgResponseTime: '—', satisfaction: 0 });
     } finally {
       setLoading(false);
     }

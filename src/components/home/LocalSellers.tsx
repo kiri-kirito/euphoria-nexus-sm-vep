@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchLocalSellers, type LocalSeller } from "@/utils/api";
 
 const DEFAULT_LAT = 23.8103;
@@ -10,31 +10,35 @@ const DEFAULT_LNG = 90.4125;
 export default function LocalSellers() {
   const [sellers, setSellers] = useState<LocalSeller[]>([]);
   const [loading, setLoading] = useState(true);
+  const [coords, setCoords] = useState({ lat: DEFAULT_LAT, lng: DEFAULT_LNG });
+
+  const loadSellers = useCallback(async (lat: number, lng: number) => {
+    setLoading(true);
+    setCoords({ lat, lng });
+    const data = await fetchLocalSellers(lat, lng);
+    setSellers(data);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      if (typeof navigator !== 'undefined' && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const data = await fetchLocalSellers(pos.coords.latitude, pos.coords.longitude);
-            setSellers(data);
-            setLoading(false);
-          },
-          async () => {
-            const data = await fetchLocalSellers(DEFAULT_LAT, DEFAULT_LNG);
-            setSellers(data);
-            setLoading(false);
-          }
-        );
-      } else {
-        const data = await fetchLocalSellers(DEFAULT_LAT, DEFAULT_LNG);
-        setSellers(data);
-        setLoading(false);
-      }
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => loadSellers(pos.coords.latitude, pos.coords.longitude),
+        () => loadSellers(DEFAULT_LAT, DEFAULT_LNG)
+      );
+    } else {
+      loadSellers(DEFAULT_LAT, DEFAULT_LNG);
     }
-    load();
-  }, []);
+  }, [loadSellers]);
+
+  const refreshLocation = () => {
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => loadSellers(pos.coords.latitude, pos.coords.longitude),
+        () => alert("Could not get your location. Using Dhaka as default.")
+      );
+    }
+  };
 
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-12">
@@ -48,14 +52,23 @@ export default function LocalSellers() {
               </svg>
               <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Sellers Near You</h2>
             </div>
-            <p className="text-slate-500">Discover local stores and get your items delivered within hours.</p>
+            <p className="text-slate-500">Discover local stores near {coords.lat.toFixed(2)}, {coords.lng.toFixed(2)}.</p>
           </div>
-          <Link
-            href="/explore?nearby=1"
-            className="px-6 py-2 bg-white border border-slate-300 rounded-full text-slate-700 font-medium hover:bg-slate-50 transition-colors shadow-sm"
-          >
-            Browse Nearby Products
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/explore?nearby=1"
+              className="px-6 py-2 bg-white border border-slate-300 rounded-full text-slate-700 font-medium hover:bg-slate-50 transition-colors shadow-sm"
+            >
+              Browse Nearby Products
+            </Link>
+            <button
+              type="button"
+              onClick={refreshLocation}
+              className="px-6 py-2 bg-primary text-white rounded-full font-medium hover:bg-primary-dark transition-colors shadow-sm"
+            >
+              Update Location
+            </button>
+          </div>
         </div>
 
         {loading ? (

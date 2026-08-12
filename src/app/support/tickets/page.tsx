@@ -23,12 +23,8 @@ export default function ComplaintsPage() {
       if (error) throw error;
       setComplaints(data || []);
     } catch (e) {
-      console.log('Using fallback for complaints');
-      setComplaints([
-        { id: 'c1', users: { name: 'Alice M.', email: 'alice@test.com' }, orders: { total_amount: 1500 }, description: 'Item damaged during delivery', status: 'open', created_at: '2026-08-08' },
-        { id: 'c2', users: { name: 'Bob S.', email: 'bob@test.com' }, orders: { total_amount: 8000 }, description: 'Wrong item received', status: 'open', created_at: '2026-08-07' },
-        { id: 'c3', users: { name: 'Charlie D.', email: 'charlie@test.com' }, orders: { total_amount: 300 }, description: 'Delivery delayed by 2 days', status: 'resolved', created_at: '2026-08-05' },
-      ]);
+      console.error('fetchComplaints error:', e);
+      setComplaints([]);
     } finally {
       setLoading(false);
     }
