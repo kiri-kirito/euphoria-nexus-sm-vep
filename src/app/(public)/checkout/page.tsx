@@ -220,27 +220,45 @@ function CheckoutContent() {
 
       if (orderError) throw orderError;
 
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: isValidUuid(item.id) ? item.id : null,
-        seller_id: isValidUuid(item.sellerId) ? item.sellerId : null,
-        quantity: item.quantity,
-        unit_price: item.price,
-      }));
+      // Resolve exact seller_id and deduct stock strictly for the ordered product row
+      const resolvedOrderItems = await Promise.all(
+        items.map(async (item) => {
+          let sellerId = item.sellerId;
+          const prodId = isValidUuid(item.id) ? item.id : null;
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+          if (prodId) {
+            const { data: prod } = await supabase
+              .from('products')
+              .select('id, seller_id, quantity')
+              .eq('id', prodId)
+              .maybeSingle();
+
+            if (prod) {
+              if (prod.seller_id) sellerId = prod.seller_id;
+              const currentQty = Number(prod.quantity ?? 0);
+              const newQty = Math.max(0, currentQty - Number(item.quantity || 1));
+              await supabase
+                .from('products')
+                .update({
+                  quantity: newQty,
+                  status: newQty === 0 ? 'out of stock' : 'active',
+                })
+                .eq('id', prod.id);
+            }
+          }
+
+          return {
+            order_id: order.id,
+            product_id: prodId,
+            seller_id: isValidUuid(sellerId) ? sellerId : null,
+            quantity: item.quantity,
+            unit_price: item.price,
+          };
+        })
+      );
+
+      const { error: itemsError } = await supabase.from('order_items').insert(resolvedOrderItems);
       if (itemsError) throw itemsError;
-
-      for (const item of items) {
-        if (!isValidUuid(item.id)) continue;
-        const { data: prod } = await supabase.from('products').select('quantity').eq('id', item.id).maybeSingle();
-        if (prod) {
-          await supabase
-            .from('products')
-            .update({ quantity: Math.max(0, (prod.quantity || 0) - item.quantity) })
-            .eq('id', item.id);
-        }
-      }
 
       await supabase.from('payments').insert({
         order_id: order.id,
