@@ -244,6 +244,14 @@ export default function SellerDashboardPage() {
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               Respond to negotiations
             </Link>
+            <Link href="/seller/bidding" className="flex items-center gap-2 text-sm text-slate-700 hover:text-primary transition-colors py-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/></svg>
+              Inter-Seller Stock Exchange
+            </Link>
+            <Link href="/seller/bundling" className="flex items-center gap-2 text-sm text-slate-700 hover:text-primary transition-colors py-1">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.5 9.4 7.55 4.24a1.78 1.78 0 0 0-2.5 1.55v12.42a1.78 1.78 0 0 0 2.5 1.55L16.5 14.6a1.78 1.78 0 0 0 0-3.2z"/><path d="M21 12h-3"/></svg>
+              Cross-Seller Bundles
+            </Link>
           </div>
         </div>
       </div>

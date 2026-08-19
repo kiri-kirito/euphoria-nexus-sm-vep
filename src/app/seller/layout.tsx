@@ -46,6 +46,24 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/seller/bidding",
+    label: "Inter-Seller Exchange",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16"/>
+      </svg>
+    ),
+  },
+  {
+    href: "/seller/bundling",
+    label: "Cross-Seller Bundles",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16.5 9.4 7.55 4.24a1.78 1.78 0 0 0-2.5 1.55v12.42a1.78 1.78 0 0 0 2.5 1.55L16.5 14.6a1.78 1.78 0 0 0 0-3.2z"/><path d="M21 12h-3"/>
+      </svg>
+    ),
+  },
+  {
     href: "/seller/analytics",
     label: "Analytics",
     icon: (
@@ -71,6 +89,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [negotiationCount, setNegotiationCount] = useState<number>(0);
+  const [openRequestsCount, setOpenRequestsCount] = useState<number>(0);
   const [storeName, setStoreName] = useState<string>('My Store');
   const [sellerEmail, setSellerEmail] = useState<string>('seller@euphoria.com');
   const [sellerDisplayName, setSellerDisplayName] = useState<string>('Seller');
@@ -112,13 +131,22 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
       }
 
       // Load real pending negotiations count
-      const { count } = await supabase
+      const { count: negCount } = await supabase
         .from('negotiations')
         .select('id', { count: 'exact', head: true })
         .eq('seller_id', sellerId)
         .in('status', ['open', 'pending', 'countered']);
 
-      setNegotiationCount(count || 0);
+      setNegotiationCount(negCount || 0);
+
+      // Load open stock exchange requests from other sellers
+      const { count: reqCount } = await supabase
+        .from('stock_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'open')
+        .neq('requesting_seller_id', sellerId);
+
+      setOpenRequestsCount(reqCount || 0);
     }
     loadSellerInfo();
   }, [user?.id, profile]);
@@ -170,6 +198,11 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                 {item.href === '/seller/negotiations' && negotiationCount > 0 && (
                   <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {negotiationCount}
+                  </span>
+                )}
+                {item.href === '/seller/bidding' && openRequestsCount > 0 && (
+                  <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {openRequestsCount}
                   </span>
                 )}
               </Link>
