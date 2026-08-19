@@ -149,7 +149,7 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 relative">
-      <Navbar />
+      {/* Navbar is handled by layout.tsx */}
 
       {toast && (
         <div className="fixed bottom-6 right-6 bg-slate-900 text-white text-sm font-bold px-6 py-4 rounded-2xl shadow-2xl z-50 animate-bounce">

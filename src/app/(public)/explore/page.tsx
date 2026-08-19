@@ -43,6 +43,7 @@ function ExploreContent() {
   const [debouncedSearch, setDebouncedSearch] = useState<string>(urlSearch);
   const [nearbyOnly, setNearbyOnly] = useState(urlNearby);
   const [sellerFilter, setSellerFilter] = useState(urlSeller);
+  const [regionFilter, setRegionFilter] = useState('All Bangladesh');
   const [sortBy, setSortBy] = useState('popular');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -74,6 +75,7 @@ function ExploreContent() {
     category: selectedCategory,
     search: debouncedSearch,
     sellerId: sellerFilter || undefined,
+    region: regionFilter,
   });
 
   const fetchError = isError
@@ -251,7 +253,7 @@ function ExploreContent() {
               {/* Location Filter */}
               <div className="border-t border-slate-100 pt-5">
                 <h4 className="font-semibold text-slate-800 text-sm mb-3">Supplier Zone</h4>
-                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 outline-none focus:border-primary">
+                <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 outline-none focus:border-primary">
                   <option>All Bangladesh</option>
                   <option>Dhaka Division</option>
                   <option>Chittagong Division</option>

@@ -25,9 +25,17 @@ export async function fetchWishlistProducts(userId: string) {
 
 export async function addToWishlist(userId: string, productId: string) {
   const supabase = createClient();
-  const { error } = await supabase.from('wishlists').upsert(
-    { user_id: userId, product_id: productId },
-    { onConflict: 'user_id,product_id' }
+  const { data } = await supabase
+    .from('wishlists')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .maybeSingle();
+    
+  if (data) return true; // Already exists
+  
+  const { error } = await supabase.from('wishlists').insert(
+    { user_id: userId, product_id: productId }
   );
   return !error;
 }

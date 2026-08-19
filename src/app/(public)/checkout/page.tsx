@@ -22,6 +22,7 @@ function CheckoutContent() {
   const supabase = createClient();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [negotiationLoading, setNegotiationLoading] = useState(!!negotiationId);
@@ -164,7 +165,8 @@ function CheckoutContent() {
     );
   }
 
-  if (items.length === 0 && !negotiationId) {
+  if (items.length === 0 && !negotiationId && !isSuccess) {
+    // Only redirect if we haven't placed an order yet
     router.push('/cart');
     return null;
   }
@@ -280,6 +282,7 @@ function CheckoutContent() {
           .eq('id', activeNegotiationId);
       }
 
+      setIsSuccess(true);
       clearCart();
       router.push(`/checkout/success?orderId=${order.id}&total=${total}`);
     } catch (err: unknown) {
@@ -325,18 +328,11 @@ function CheckoutContent() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">City</label>
-                  <input required type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900/20" />
+                  <input required type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="e.g. Dhaka" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Zone</label>
-                  <select required value={zone} onChange={(e) => setZone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/20">
-                    <option value="">Select Zone</option>
-                    <option value="Gulshan">Gulshan</option>
-                    <option value="Banani">Banani</option>
-                    <option value="Dhanmondi">Dhanmondi</option>
-                    <option value="Mirpur">Mirpur</option>
-                    <option value="Uttara">Uttara</option>
-                  </select>
+                  <label className="text-sm font-medium text-slate-700">Zone / Area</label>
+                  <input required type="text" value={zone} onChange={(e) => setZone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/20" placeholder="e.g. Gulshan, Agrabad" />
                 </div>
               </div>
             </div>

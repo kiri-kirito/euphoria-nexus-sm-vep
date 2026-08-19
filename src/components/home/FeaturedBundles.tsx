@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { bundleDetailPath } from "@/utils/bundles";
 import { fetchBundles } from "@/utils/api";
+import BundleWishlistButton from "@/components/bundles/BundleWishlistButton";
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -28,8 +29,11 @@ export default async function FeaturedBundles() {
         {bundles.map((bundle) => (
           <div
             key={bundle.id}
-            className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
+            className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative"
           >
+            <div className="absolute top-3 left-3 z-10">
+              <BundleWishlistButton productIds={bundle.productIds} className="shadow-md" />
+            </div>
             <div className="relative h-48 bg-slate-100 grid grid-cols-2 gap-0.5 p-0.5">
               <img src={bundle.item1.image} alt={bundle.item1.name} className="object-cover w-full h-full" />
               <img src={bundle.item2.image} alt={bundle.item2.name} className="object-cover w-full h-full" />

@@ -14,6 +14,9 @@ export default function Navbar() {
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMessage, setForgotMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -102,6 +105,21 @@ export default function Navbar() {
     setShowProfileDropdown(false);
     await supabase.auth.signOut();
     window.location.href = '/';
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setForgotMessage(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) {
+      setForgotMessage({ type: 'error', text: error.message });
+    } else {
+      setForgotMessage({ type: 'success', text: 'Password reset instructions sent to your email.' });
+    }
   };
 
   return (
@@ -317,7 +335,12 @@ export default function Navbar() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Password</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-700">Password</label>
+                  <button type="button" onClick={() => { setShowLoginModal(false); setShowForgotModal(true); setForgotMessage(null); }} className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline">
+                    Forgot password?
+                  </button>
+                </div>
                 <input
                   type="password"
                   required
@@ -373,6 +396,62 @@ export default function Navbar() {
                     🎧 Support
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-slate-800">
+                  Reset Password
+                </h2>
+              </div>
+              <button onClick={() => setShowForgotModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <p className="text-sm text-slate-600 mb-4">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+              {forgotMessage && (
+                <div className={`rounded-md p-3 border text-sm font-medium ${forgotMessage.type === 'error' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}>
+                  {forgotMessage.text}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark py-3.5 text-white font-bold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-70 mt-2"
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+              
+              <div className="flex justify-center items-center text-sm mt-5">
+                <button
+                  type="button"
+                  onClick={() => { setShowForgotModal(false); setShowLoginModal(true); setForgotMessage(null); }}
+                  className="font-bold text-primary hover:text-primary-dark hover:underline transition-colors"
+                >
+                  Back to Login
+                </button>
               </div>
             </form>
           </div>

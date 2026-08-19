@@ -27,18 +27,20 @@ export interface ExploreProductsParams {
   category?: string;
   search?: string;
   sellerId?: string;
+  region?: string;
 }
 
 export async function fetchExploreProducts({
   category,
   search,
   sellerId,
+  region,
 }: ExploreProductsParams): Promise<ExploreProduct[]> {
   const supabase = createClient();
 
   let query = supabase
     .from('products')
-    .select('*, users!seller_id(name, id)')
+    .select('*, users!seller_id(name, id, address)')
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(80);
@@ -56,8 +58,17 @@ export async function fetchExploreProducts({
   const { data, error } = await query;
   if (error) throw error;
   if (!data) return [];
+  
+  let results = data;
+  if (region && region !== 'All Bangladesh') {
+    const regionFilter = region.replace(' Division', '');
+    results = results.filter((p: any) => {
+      const address = p.users?.address || '';
+      return address.toLowerCase().includes(regionFilter.toLowerCase());
+    });
+  }
 
-  return data.map((p: Record<string, unknown>) => ({
+  return results.map((p: Record<string, unknown>) => ({
     id: String(p.id),
     name: String(p.name || 'Product'),
     category: String(p.category || 'General'),

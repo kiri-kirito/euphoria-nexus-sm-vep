@@ -49,12 +49,21 @@ export default function RegisterPage() {
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      if (signUpError.message.toLowerCase().includes('rate limit')) {
+        setError('Email rate limit exceeded. Please use the Quick Login test accounts or try again later.');
+      } else {
+        setError(signUpError.message);
+      }
       setLoading(false);
       return;
     }
 
     if (data.user) {
+      if (!data.session && data.user.identities?.length === 0) {
+         setError('This email is already registered. Please sign in instead.');
+         setLoading(false);
+         return;
+      }
       // Insert into public.users table
       const userData = {
         id: data.user.id,
@@ -69,13 +78,22 @@ export default function RegisterPage() {
       if (insertError) {
         setError(insertError.message);
       } else {
-        // Manually update the global auth state to prevent race conditions with AuthProvider
-        useAuthStore.getState().setSession(data.user, role, userData);
-        
-        setSuccess(true);
-        setTimeout(() => {
-          router.push('/');
-        }, 2000);
+        if (!data.session) {
+          // Email confirmation is required
+          setSuccess(true);
+          setError("Account created! Please check your email to confirm your account before logging in.");
+          setTimeout(() => {
+            router.push('/');
+          }, 5000);
+        } else {
+          // Manually update the global auth state to prevent race conditions with AuthProvider
+          useAuthStore.getState().setSession(data.user, role, userData);
+          
+          setSuccess(true);
+          setTimeout(() => {
+            router.push('/');
+          }, 2000);
+        }
       }
     }
 
@@ -87,7 +105,9 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full text-center space-y-4">
           <h2 className="text-3xl font-extrabold text-emerald-600">Registration Successful!</h2>
-          <p className="text-slate-600">Welcome to Euphoria Nexus. Redirecting you to the homepage...</p>
+          <p className="text-slate-600">
+            {error ? error : "Welcome to Euphoria Nexus. Redirecting you to the homepage..."}
+          </p>
         </div>
       </div>
     );
