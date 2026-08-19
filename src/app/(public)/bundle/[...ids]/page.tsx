@@ -141,62 +141,30 @@ export default async function BundleDealPage({ params }: { params: Promise<{ ids
       </div>
 
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 flex flex-col lg:flex-row">
-        {/* Left Side: 50/50 Product Showcase with Uncropped Images */}
-        <div className="w-full lg:w-1/2 relative bg-slate-100/70 p-5 sm:p-7 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-200">
-          {/* Top Discount Badge */}
-          <div className="absolute top-4 left-4 bg-red-600 text-white font-black text-xs px-3.5 py-1.5 rounded-full shadow-lg z-20 flex items-center gap-1.5 tracking-wider uppercase">
-            <span>🔥</span> Combo Deal: {customDiscountPercent}% OFF
-          </div>
-
-          {/* 50/50 Side-by-Side Product Cards */}
-          <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 pt-8 sm:pt-6">
-            {/* Card 1: Item 1 */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:shadow-md">
-              <div>
-                <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center p-3 mb-3 border border-slate-100">
-                  <img
-                    src={item1.image}
-                    alt={item1.name}
-                    className="w-full h-full object-contain drop-shadow-sm transition-transform duration-300 hover:scale-105"
-                  />
-                  <span className="absolute top-2 left-2 text-[10px] font-extrabold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-md">
-                    Item 1
-                  </span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug">{item1.name}</h4>
-              </div>
-
-              <div className="pt-2 mt-2 border-t border-slate-100 flex items-baseline justify-between">
-                <span className="text-xs font-black text-slate-900">৳{item1.price.toLocaleString()}</span>
-                <span className="text-[10px] text-slate-400 truncate max-w-[100px]">by {item1.seller}</span>
-              </div>
+        {/* Left Side: Pure 50/50 Product Images */}
+        <div className="w-full lg:w-1/2 relative bg-slate-50 p-6 sm:p-8 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-200">
+          <div className="relative w-full grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-center">
+            {/* Image 1 */}
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-200 p-4 flex items-center justify-center">
+              <img
+                src={item1.image}
+                alt={item1.name}
+                className="w-full h-full object-contain"
+              />
             </div>
 
-            {/* Card 2: Item 2 */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between transition-all hover:shadow-md">
-              <div>
-                <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center p-3 mb-3 border border-slate-100">
-                  <img
-                    src={item2.image}
-                    alt={item2.name}
-                    className="w-full h-full object-contain drop-shadow-sm transition-transform duration-300 hover:scale-105"
-                  />
-                  <span className="absolute top-2 left-2 text-[10px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md">
-                    Item 2
-                  </span>
-                </div>
-                <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug">{item2.name}</h4>
-              </div>
-
-              <div className="pt-2 mt-2 border-t border-slate-100 flex items-baseline justify-between">
-                <span className="text-xs font-black text-slate-900">৳{item2.price.toLocaleString()}</span>
-                <span className="text-[10px] text-slate-400 truncate max-w-[100px]">by {item2.seller}</span>
-              </div>
-            </div>
-
-            {/* Center Plus Connector Badge (visible on 2-col screen) */}
-            <div className="hidden sm:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary text-white shadow-xl font-black text-lg items-center justify-center border-2 border-white z-10 pointer-events-none">
+            {/* Center Plus */}
+            <div className="hidden sm:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900 text-white font-black text-base items-center justify-center shadow-md border-2 border-white z-10 pointer-events-none">
               +
+            </div>
+
+            {/* Image 2 */}
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-200 p-4 flex items-center justify-center">
+              <img
+                src={item2.image}
+                alt={item2.name}
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
         </div>
