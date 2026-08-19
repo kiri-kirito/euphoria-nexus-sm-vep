@@ -3,16 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
-export default function TaskDetails({ params }: { params: { id: string } }) {
+export default function TaskDetails() {
   const router = useRouter();
+  const params = useParams();
+  const taskId = params?.id as string;
   const supabase = createClient();
   const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!taskId) return;
     const fetchTask = async () => {
       try {
         const { data, error } = await supabase
@@ -24,7 +27,7 @@ export default function TaskDetails({ params }: { params: { id: string } }) {
               total_amount
             )
           `)
-          .eq('id', params.id)
+          .eq('id', taskId)
           .single();
 
         if (error) {
@@ -39,7 +42,7 @@ export default function TaskDetails({ params }: { params: { id: string } }) {
     };
 
     fetchTask();
-  }, [params.id, supabase]);
+  }, [taskId, supabase]);
 
   const updateStatus = async (newStatus: 'assigned' | 'picked_up' | 'in_transit' | 'delivered') => {
     if (!task) return;

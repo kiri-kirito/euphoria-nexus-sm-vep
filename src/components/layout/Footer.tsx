@@ -25,7 +25,7 @@ export default function Footer() {
           <h4 className="text-white font-semibold mb-4">Make Money</h4>
           <ul className="space-y-2 text-sm">
             <li><Link href="/seller/apply" className="hover:text-primary transition-colors">Become a Seller</Link></li>
-            <li><Link href="/register" className="hover:text-primary transition-colors">Become a Delivery Agent</Link></li>
+            <li><Link href="/register?role=agent" className="hover:text-primary transition-colors">Become a Delivery Agent</Link></li>
           </ul>
         </div>
 

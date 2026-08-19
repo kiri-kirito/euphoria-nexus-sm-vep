@@ -1,21 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
 
-export default function RegisterPage() {
+function RegisterContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlRole = searchParams.get('role');
+  const initialRole = urlRole === 'delivery' || urlRole === 'agent' ? 'agent' : urlRole === 'seller' ? 'seller' : 'buyer';
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('buyer');
+  const [role, setRole] = useState(initialRole);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +32,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!['buyer', 'seller'].includes(role)) {
-      setError('Delivery agents, support staff, and admins are created internally by platform admin.');
+    if (!['buyer', 'seller', 'agent'].includes(role)) {
+      setError('Support staff and admins are created internally by platform admin.');
       setLoading(false);
       return;
     }
@@ -176,18 +180,19 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
-              >
-                <option value="buyer">Buyer</option>
-                <option value="seller">Seller (requires admin approval)</option>
-              </select>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Delivery, support, and admin accounts are created internally — not via public registration.
-              </p>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
+                >
+                  <option value="buyer">Buyer</option>
+                  <option value="seller">Seller (requires admin approval)</option>
+                  <option value="agent">Delivery Agent</option>
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Support and admin accounts are created internally by administrators.
+                </p>
             </div>
           </div>
 
@@ -210,5 +215,13 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }
