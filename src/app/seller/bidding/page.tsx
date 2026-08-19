@@ -70,6 +70,7 @@ export default function BlindBiddingPage() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [posting, setPosting] = useState(false);
   const [submittingBidId, setSubmittingBidId] = useState<string | null>(null);
+  const [escrowStatusMap, setEscrowStatusMap] = useState<Map<string, { amount: number; status: string }>>(new Map());
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -198,6 +199,19 @@ export default function BlindBiddingPage() {
         })),
       }));
       setMyRequests(parsedMyRequests);
+
+      // 5. Fetch Escrow Records for requests & bids
+      const { data: escrowList } = await supabase
+        .from("escrow")
+        .select("stock_request_id, amount, status");
+      
+      const eMap = new Map<string, { amount: number; status: string }>();
+      (escrowList || []).forEach((e: any) => {
+        if (e.stock_request_id) {
+          eMap.set(e.stock_request_id, { amount: Number(e.amount), status: e.status });
+        }
+      });
+      setEscrowStatusMap(eMap);
     } catch (err) {
       console.error("Error loading bidding board:", err);
     } finally {
@@ -305,14 +319,17 @@ export default function BlindBiddingPage() {
       // 3. Mark the stock request as fulfilled/closed so it is removed from the board for all sellers
       await supabase.from("stock_requests").update({ status: "fulfilled" }).eq("id", requestId);
 
+      const req = myRequests.find((r) => r.id === requestId);
+      const totalAmount = bid.bidPrice * (req?.quantity || 1);
+
       // 4. Create escrow record
       await supabase.from("escrow").insert({
         stock_request_id: requestId,
         from_seller_id: bid.bidderId,
         to_seller_id: sellerId,
-        amount: bid.bidPrice,
+        amount: totalAmount,
         status: "held",
-        description: "Stock exchange escrow — held until transfer confirmation",
+        description: `Stock exchange escrow for ${req?.product || 'Inventory'} (${req?.quantity || 1} units)`,
       });
 
       // 5. Open private Stock Exchange Chat between both sellers
@@ -710,8 +727,14 @@ export default function BlindBiddingPage() {
                       </div>
 
                       {isAccepted && (
-                        <span className="bg-emerald-50 text-emerald-800 font-bold text-[11px] px-3 py-1.5 rounded-xl border border-emerald-200">
-                          🔒 Escrow Initiated
+                        <span className={`font-bold text-[11px] px-3 py-1.5 rounded-xl border ${
+                          escrowStatusMap.get(b.requestId)?.status === 'released'
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                        }`}>
+                          {escrowStatusMap.get(b.requestId)?.status === 'released'
+                            ? `💰 Escrow Released: ৳${(escrowStatusMap.get(b.requestId)?.amount || (b.myBidPrice * b.quantity)).toLocaleString()}`
+                            : '🔒 Escrow Held (Pending Verification)'}
                         </span>
                       )}
                       {isRejected && (
@@ -817,8 +840,12 @@ export default function BlindBiddingPage() {
                                 </button>
                               )}
                               {isBidAccepted && (
-                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-300">
-                                  Accepted 🟢
+                                <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${
+                                  escrowStatusMap.get(req.id)?.status === 'released'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : 'bg-amber-100 text-amber-800 border-amber-200'
+                                }`}>
+                                  {escrowStatusMap.get(req.id)?.status === 'released' ? 'Funds Released 🟢' : 'Accepted (Escrow Held) 🔒'}
                                 </span>
                               )}
                               {isBidRejected && (

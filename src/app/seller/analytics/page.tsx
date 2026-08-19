@@ -63,14 +63,41 @@ export default function AnalyticsPage() {
           return;
         }
 
-        const { data, error } = await supabase
-          .from("order_items")
-          .select("id, order_id, quantity, unit_price, products(name, category), orders!inner(id, status, created_at, users!inner(name))")
-          .eq("seller_id", sellerId);
+        const [{ data: orderData, error: orderErr }, { data: escrowData, error: escrowErr }] = await Promise.all([
+          supabase
+            .from("order_items")
+            .select("id, order_id, quantity, unit_price, products(name, category), orders!inner(id, status, created_at, users!inner(name))")
+            .eq("seller_id", sellerId),
+          supabase
+            .from("escrow")
+            .select("id, amount, status, description, created_at, from_seller:users!from_seller_id(name)")
+            .eq("to_seller_id", sellerId)
+            .eq("status", "released")
+        ]);
 
-        if (error) throw error;
+        if (orderErr) throw orderErr;
 
-        const sortedItems = ((data as any[]) || []).sort((a, b) => {
+        const orderItems: OrderItemRecord[] = (orderData as any[]) || [];
+        const escrowItems: OrderItemRecord[] = (escrowData || []).map((e: any) => ({
+          id: e.id,
+          order_id: `ESC-${e.id.slice(0, 8)}`,
+          quantity: 1,
+          unit_price: Number(e.amount),
+          products: {
+            name: e.description || "Stock Exchange Escrow",
+            category: "Stock Exchange",
+          },
+          orders: {
+            id: e.id,
+            status: "Released",
+            created_at: e.created_at,
+            users: {
+              name: (e.from_seller as any)?.name || "Partner Seller",
+            },
+          },
+        }));
+
+        const sortedItems = [...orderItems, ...escrowItems].sort((a, b) => {
           const timeA = new Date(a.orders?.created_at || 0).getTime();
           const timeB = new Date(b.orders?.created_at || 0).getTime();
           return timeB - timeA;

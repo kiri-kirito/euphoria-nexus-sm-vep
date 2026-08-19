@@ -8,6 +8,7 @@ const STATUS_STYLES: Record<string, string> = {
   Processing: "bg-amber-100 text-amber-700 border-amber-200",
   Shipped: "bg-blue-100 text-blue-700 border-blue-200",
   Delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  Released: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
   Cancelled: "bg-red-100 text-red-700 border-red-200",
 };
 
@@ -15,6 +16,7 @@ const STATUS_ACTIONS: Record<string, string> = {
   Processing: "Mark as Shipped",
   Shipped: "Mark as Delivered",
   Delivered: "",
+  Released: "",
   Cancelled: "",
 };
 
@@ -37,52 +39,70 @@ export default function SellerOrdersPage() {
         }
         if (!sellerId) return;
 
-        const { data, error } = await supabase.from('order_items')
-          .select('*, orders!inner(id, status, created_at, shipping_address, users!inner(name, email)), products(name)')
-          .eq('seller_id', sellerId);
+        const [{ data: orderItems, error }, { data: escrowData }] = await Promise.all([
+          supabase.from('order_items')
+            .select('*, orders!inner(id, status, created_at, shipping_address, users!inner(name, email)), products(name)')
+            .eq('seller_id', sellerId),
+          supabase.from('escrow')
+            .select('id, amount, status, description, created_at, from_seller:users!from_seller_id(name, address)')
+            .eq('to_seller_id', sellerId)
+            .eq('status', 'released')
+        ]);
 
         if (error) throw error;
         
-        if (data) {
-          const sortedData = [...data].sort((a: any, b: any) => {
-            const timeA = new Date(a.orders?.created_at || 0).getTime();
-            const timeB = new Date(b.orders?.created_at || 0).getTime();
-            return timeB - timeA;
-          });
-
-          const formatted = sortedData.map(r => {
-            let loc = 'Dhaka';
-            if (r.orders?.shipping_address) {
-              const raw = r.orders.shipping_address;
-              if (raw.startsWith('{')) {
-                try { loc = JSON.parse(raw).city || 'Dhaka'; } catch { loc = raw; }
-              } else {
-                const parts = raw.split(',');
-                loc = parts.length > 1 ? parts[1].trim() : raw;
-              }
+        const formattedOrders = (orderItems || []).map(r => {
+          let loc = 'Dhaka';
+          if (r.orders?.shipping_address) {
+            const raw = r.orders.shipping_address;
+            if (raw.startsWith('{')) {
+              try { loc = JSON.parse(raw).city || 'Dhaka'; } catch { loc = raw; }
+            } else {
+              const parts = raw.split(',');
+              loc = parts.length > 1 ? parts[1].trim() : raw;
             }
-            return {
-              id: `#ORD-${r.order_id}`,
-              product: r.products?.name || 'Unknown Product',
-              buyer: r.orders?.users?.name || 'Guest',
-              buyerLocation: loc,
-              qty: r.quantity,
-              total: r.quantity * r.unit_price,
-              status: r.orders?.status || 'Processing',
-              date: new Date(r.orders.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }),
-              negotiated: false
-            };
-          });
-          
-          setOrders(formatted);
-          
-          setSummary({
-            all: formatted.length,
-            processing: formatted.filter(o => ['processing', 'pending', 'placed'].includes(String(o.status).toLowerCase())).length,
-            shipped: formatted.filter(o => String(o.status).toLowerCase() === 'shipped').length,
-            delivered: formatted.filter(o => String(o.status).toLowerCase() === 'delivered').length,
-          });
-        }
+          }
+          return {
+            id: `#ORD-${r.order_id}`,
+            product: r.products?.name || 'Unknown Product',
+            buyer: r.orders?.users?.name || 'Guest',
+            buyerLocation: loc,
+            qty: r.quantity,
+            total: r.quantity * r.unit_price,
+            status: r.orders?.status || 'Processing',
+            date: new Date(r.orders?.created_at || r.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }),
+            createdAt: r.orders?.created_at || r.created_at,
+            negotiated: false
+          };
+        });
+
+        const formattedEscrows = (escrowData || []).map(e => ({
+          id: `#ESC-${e.id.slice(0, 8).toUpperCase()}`,
+          product: e.description || 'Stock Exchange Escrow Settlement',
+          buyer: (e.from_seller as any)?.name || 'Partner Seller',
+          buyerLocation: (e.from_seller as any)?.address || 'Exchange Hub',
+          qty: 1,
+          total: Number(e.amount),
+          status: 'Released',
+          date: new Date(e.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }),
+          createdAt: e.created_at,
+          negotiated: true,
+        }));
+
+        const combined = [...formattedOrders, ...formattedEscrows].sort((a: any, b: any) => {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
+
+        setOrders(combined);
+        
+        setSummary({
+          all: combined.length,
+          processing: combined.filter(o => ['processing', 'pending', 'placed'].includes(String(o.status).toLowerCase())).length,
+          shipped: combined.filter(o => String(o.status).toLowerCase() === 'shipped').length,
+          delivered: combined.filter(o => ['delivered', 'released'].includes(String(o.status).toLowerCase())).length,
+        });
       } catch (err) {
         console.error("Orders fetch error:", err);
       } finally {

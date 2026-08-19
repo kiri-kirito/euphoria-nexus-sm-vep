@@ -13,6 +13,8 @@ const STATUS_STYLES: Record<string, string> = {
   shipped: "bg-blue-100 text-blue-700",
   Delivered: "bg-emerald-100 text-emerald-700",
   delivered: "bg-emerald-100 text-emerald-700",
+  Released: "bg-emerald-100 text-emerald-800 font-bold border border-emerald-300",
+  released: "bg-emerald-100 text-emerald-800 font-bold border border-emerald-300",
   Cancelled: "bg-red-100 text-red-700",
   cancelled: "bg-red-100 text-red-700",
 };
@@ -57,13 +59,22 @@ export default function SellerDashboardPage() {
           .eq('seller_id', sellerId)
           .in('status', ['open', 'pending', 'countered']);
         
-        // 3. Orders and Revenue
-        const { data: orderData } = await supabase
-          .from('order_items')
-          .select('product_id, quantity, unit_price, orders!inner(id, status, created_at)')
-          .eq('seller_id', sellerId);
+        // 3. Orders and Released Escrow Revenue
+        const [{ data: orderData }, { data: releasedEscrows }] = await Promise.all([
+          supabase
+            .from('order_items')
+            .select('product_id, quantity, unit_price, orders!inner(id, status, created_at)')
+            .eq('seller_id', sellerId),
+          supabase
+            .from('escrow')
+            .select('id, amount, status, description, created_at, from_seller:users!from_seller_id(name)')
+            .eq('to_seller_id', sellerId)
+            .eq('status', 'released')
+        ]);
           
-        const revenue = orderData?.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0) || 0;
+        const ordersRevenue = orderData?.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0) || 0;
+        const escrowRevenue = (releasedEscrows || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        const totalRevenue = ordersRevenue + escrowRevenue;
         
         const activeOrders = orderData?.filter(o => {
           const st = String((o.orders as any)?.status || '').toLowerCase();
@@ -71,34 +82,51 @@ export default function SellerDashboardPage() {
         }).length || 0;
 
         setStats([
-          { label: "Total Revenue", value: `৳${revenue.toLocaleString()}`, change: "Sales total", up: true, icon: "💰" },
+          { 
+            label: "Total Revenue", 
+            value: `৳${totalRevenue.toLocaleString()}`, 
+            change: escrowRevenue > 0 ? `Incl. ৳${escrowRevenue.toLocaleString()} escrow` : "Sales total", 
+            up: true, 
+            icon: "💰" 
+          },
           { label: "Total Products", value: `${productCount || 0}`, change: "Active catalog", up: true, icon: "📦" },
           { label: "Active Orders", value: `${activeOrders}`, change: "In fulfillment", up: activeOrders > 0, icon: "🕐" },
           { label: "Pending Negotiations", value: `${pendingNegotiationsCount || 0}`, change: "Awaiting reply", up: null, icon: "💬" },
         ]);
 
-        // 4. Recent Orders (sorted by orders.created_at descending)
+        // 4. Recent Orders & Stock Exchange Escrow (sorted by created_at descending)
         const { data: recent } = await supabase
           .from('order_items')
           .select('*, products(name), orders!inner(id, status, created_at, users!inner(name))')
           .eq('seller_id', sellerId);
           
-        if (recent) {
-          const sortedRecent = [...recent].sort((a: any, b: any) => {
-            const timeA = new Date(a.orders?.created_at || 0).getTime();
-            const timeB = new Date(b.orders?.created_at || 0).getTime();
-            return timeB - timeA;
-          });
+        const orderList = (recent || []).map((r: any) => ({
+          id: `#ORD-${String(r.order_id).substring(0, 8).toUpperCase()}`,
+          product: r.products?.name || 'Wholesale Product',
+          buyer: r.orders?.users?.name || 'Customer',
+          qty: r.quantity,
+          total: r.quantity * r.unit_price,
+          status: r.orders?.status || 'Processing',
+          createdAt: r.orders?.created_at || r.created_at,
+        }));
 
-          setRecentOrders(sortedRecent.slice(0, 5).map(r => ({
-            id: `#ORD-${String(r.order_id).substring(0, 8).toUpperCase()}`,
-            product: r.products?.name || 'Wholesale Product',
-            buyer: r.orders?.users?.name || 'Customer',
-            qty: r.quantity,
-            total: r.quantity * r.unit_price,
-            status: r.orders?.status || 'Processing'
-          })));
-        }
+        const escrowList = (releasedEscrows || []).map((e: any) => ({
+          id: `#ESC-${String(e.id).substring(0, 8).toUpperCase()}`,
+          product: e.description || 'Stock Exchange Escrow',
+          buyer: (e.from_seller as any)?.name || 'Partner Seller',
+          qty: 1,
+          total: Number(e.amount),
+          status: 'Released',
+          createdAt: e.created_at,
+        }));
+
+        const combinedRecent = [...orderList, ...escrowList].sort((a, b) => {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
+
+        setRecentOrders(combinedRecent.slice(0, 6));
 
         // 5. Top Products with real sales aggregation
         const productSalesMap = new Map<string, { qty: number; revenue: number }>();
