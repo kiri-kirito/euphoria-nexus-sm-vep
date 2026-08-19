@@ -2,14 +2,40 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { signOutAndRedirect } from '@/utils/logout';
+import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function SupportLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { user } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isActiveDuty, setIsActiveDuty] = useState(true);
+  const [agentName, setAgentName] = useState<string>('Support Agent');
+  const [agentEmail, setAgentEmail] = useState<string>('support1@euphoria.com');
+
+  useEffect(() => {
+    async function loadSupportInfo() {
+      const supabase = createClient();
+      let agentId = user?.id;
+      if (!agentId) {
+        const { data: agents } = await supabase.from('users').select('id, name, email').eq('role', 'support').limit(1);
+        if (agents?.[0]) {
+          setAgentName(agents[0].name || 'Support Agent');
+          setAgentEmail(agents[0].email || 'support1@euphoria.com');
+        }
+      } else {
+        const { data: profile } = await supabase.from('users').select('name, email').eq('id', agentId).maybeSingle();
+        if (profile) {
+          setAgentName(profile.name || 'Support Agent');
+          setAgentEmail(profile.email || user?.email || 'support1@euphoria.com');
+        }
+      }
+    }
+    loadSupportInfo();
+  }, [user?.id]);
 
   const toggleDuty = () => {
     const nextState = !isActiveDuty;
@@ -58,10 +84,12 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
     },
   ];
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  const agentInitials = agentName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'SA';
 
   return (
     <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative">
@@ -73,7 +101,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0">
-        {/* Brand Header with OFFICIAL LOGO */}
+        {/* Brand Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <Link href="/support/dashboard" className="flex items-center gap-3">
             <img 
@@ -98,16 +126,16 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
                 href={link.href}
                 className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${
                   isActive
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className={isActive ? 'text-white' : 'text-slate-400'}>{link.icon}</span>
+                  {link.icon}
                   <span>{link.name}</span>
                 </div>
                 {link.badge && (
-                  <span className="bg-teal-500/20 text-teal-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-500/30 animate-pulse">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
                     {link.badge}
                   </span>
                 )}
@@ -115,16 +143,6 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60">
-          <Link href="/" className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition">
-            <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Marketplace
-          </Link>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -135,7 +153,6 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
               <span className={`w-2.5 h-2.5 rounded-full ${isActiveDuty ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}`}></span>
               <span className="text-xs font-bold text-slate-300">Agent Status: <strong className={isActiveDuty ? 'text-emerald-400' : 'text-slate-500'}>{isActiveDuty ? 'Online' : 'Offline'}</strong></span>
             </div>
-            {/* Active Toggle Switch */}
             <button 
               onClick={toggleDuty}
               className={`w-10 h-5 rounded-full p-1 transition-colors duration-300 flex items-center ${
@@ -153,11 +170,11 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-3 p-1.5 hover:bg-slate-900 rounded-xl transition border border-slate-800"
             >
               <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center font-bold text-white text-xs shadow-md">
-                SI
+                {agentInitials}
               </div>
               <div className="text-left hidden sm:block">
-                <p className="text-xs font-bold text-white">Sabrina Islam</p>
-                <p className="text-[10px] text-slate-400">Support Agent #24</p>
+                <p className="text-xs font-bold text-white">{agentName}</p>
+                <p className="text-[10px] text-slate-400">{agentEmail}</p>
               </div>
               <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -165,10 +182,10 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 mt-2 w-52 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-xs animate-fade-in space-y-1">
+              <div className="absolute right-0 mt-2 w-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-xs animate-fade-in space-y-1">
                 <div className="p-3 border-b border-slate-800">
-                  <p className="font-bold text-white">Sabrina Islam</p>
-                  <p className="text-[10px] text-teal-400 font-semibold">Tier 2 Escalation Agent</p>
+                  <p className="font-bold text-white truncate">{agentName}</p>
+                  <p className="text-[10px] text-teal-400 font-semibold truncate">{agentEmail}</p>
                 </div>
                 <Link 
                   href="/"

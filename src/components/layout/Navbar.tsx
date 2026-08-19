@@ -10,7 +10,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { getDashboardPath, getRoleLabel } from "@/utils/roleRoutes";
 
 export default function Navbar() {
-  const { isLoggedIn, role: userRole, profile } = useAuthStore();
+  const { isLoggedIn, role: userRole, profile, user } = useAuthStore();
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -224,6 +224,15 @@ export default function Navbar() {
                       <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 z-50 transform origin-top-right transition-all">
                         <div className="p-3 flex flex-col gap-1">
                           
+                          {/* User Details Header */}
+                          <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                            <p className="font-bold text-slate-900 text-sm truncate">{profile?.name || user?.email?.split('@')[0] || 'My Account'}</p>
+                            <p className="text-xs text-slate-500 truncate">{user?.email || ''}</p>
+                            <span className="inline-block mt-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
+                              {userRole} Account
+                            </span>
+                          </div>
+
                           {/* Role Switching Section */}
                           {userRole && userRole !== "buyer" && (
                             <>

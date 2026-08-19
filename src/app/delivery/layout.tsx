@@ -18,18 +18,32 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   const [activeTaskHref, setActiveTaskHref] = useState('/delivery/tasks');
 
   const loadAgentData = useCallback(async () => {
-    if (!user?.id) return;
+    let agentId = user?.id;
+    if (!agentId) {
+      const { data: authUser } = await supabase.auth.getUser();
+      agentId = authUser.user?.id;
+    }
+    if (!agentId) {
+      const { data: agents } = await supabase.from('users').select('id, name, phone, is_online').eq('role', 'agent').limit(1);
+      if (agents?.[0]) {
+        agentId = agents[0].id;
+        if (agents[0].name) setAgentName(agents[0].name);
+        if (agents[0].phone) setAgentPhone(agents[0].phone);
+        if (typeof agents[0].is_online === 'boolean') setIsActiveDuty(agents[0].is_online);
+      }
+    }
+    if (!agentId) return;
 
     const [{ data: profile }, { data: activeDelivery }] = await Promise.all([
       supabase
         .from('users')
         .select('name, phone, is_online, address')
-        .eq('id', user.id)
+        .eq('id', agentId)
         .maybeSingle(),
       supabase
         .from('deliveries')
         .select('id')
-        .eq('agent_id', user.id)
+        .eq('agent_id', agentId)
         .not('status', 'eq', 'delivered')
         .order('created_at', { ascending: false })
         .limit(1)

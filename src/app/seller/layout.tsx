@@ -5,6 +5,8 @@ import { ReactNode, useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { signOutAndRedirect } from "@/utils/logout";
 import { useNotifications } from "@/hooks/useNotifications";
+import { createClient } from "@/utils/supabase/client";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const NAV_ITEMS = [
   {
@@ -57,35 +59,59 @@ const NAV_ITEMS = [
     label: "Store Settings",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     ),
   },
 ];
 
-import { createClient } from "@/utils/supabase/client";
-import { useAuthStore } from "@/store/useAuthStore";
-
 export default function SellerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [negotiationCount, setNegotiationCount] = useState<number>(0);
+  const [storeName, setStoreName] = useState<string>('My Store');
+  const [sellerEmail, setSellerEmail] = useState<string>('seller@euphoria.com');
+  const [sellerDisplayName, setSellerDisplayName] = useState<string>('Seller');
+  
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAllRead } = useNotifications();
 
   useEffect(() => {
-    async function loadNegCount() {
+    async function loadSellerInfo() {
       const supabase = createClient();
       let sellerId = user?.id;
+      
       if (!sellerId) {
-        const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
-        sellerId = sellers?.[0]?.id;
+        const { data: sellers } = await supabase.from('users').select('id, name, email').eq('role', 'seller').limit(1);
+        if (sellers?.[0]) {
+          sellerId = sellers[0].id;
+          setSellerDisplayName(sellers[0].name || 'Seller');
+          setSellerEmail(sellers[0].email || 'seller@euphoria.com');
+        }
+      } else {
+        const { data: usr } = await supabase.from('users').select('name, email').eq('id', sellerId).maybeSingle();
+        if (usr) {
+          setSellerDisplayName(usr.name || 'Seller');
+          setSellerEmail(usr.email || user?.email || 'seller@euphoria.com');
+        }
       }
+      
       if (!sellerId) return;
 
+      // Load real Store Name
+      const { data: st } = await supabase.from('stores').select('store_name').eq('user_id', sellerId).maybeSingle();
+      if (st?.store_name) {
+        setStoreName(st.store_name);
+      } else if (profile?.store_name) {
+        setStoreName(profile.store_name);
+      } else {
+        setStoreName('Official Seller Store');
+      }
+
+      // Load real pending negotiations count
       const { count } = await supabase
         .from('negotiations')
         .select('id', { count: 'exact', head: true })
@@ -94,8 +120,8 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
 
       setNegotiationCount(count || 0);
     }
-    loadNegCount();
-  }, [user?.id]);
+    loadSellerInfo();
+  }, [user?.id, profile]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -106,6 +132,8 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const storeInitial = storeName.charAt(0).toUpperCase() || 'S';
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -119,7 +147,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
           </Link>
           <div className="bg-primary/20 border border-primary/30 rounded-xl px-3 py-2.5">
             <p className="text-[10px] text-primary font-bold uppercase tracking-wider">Seller Panel</p>
-            <p className="text-white text-sm font-semibold truncate mt-0.5">Tech Haven BD</p>
+            <p className="text-white text-sm font-semibold truncate mt-0.5">{storeName}</p>
           </div>
         </div>
 
@@ -166,7 +194,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
         <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-20">
           <div>
             <p className="text-xs text-slate-500">Welcome back,</p>
-            <h2 className="text-slate-900 font-bold text-lg leading-tight">Tech Haven BD</h2>
+            <h2 className="text-slate-900 font-bold text-lg leading-tight">{storeName}</h2>
           </div>
 
           <div className="flex items-center gap-3">
@@ -234,31 +262,35 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                 onClick={() => { setProfileOpen(!profileOpen); setNotifOpen(false); }}
                 className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-slate-100 transition-all"
               >
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">T</div>
-                <span className="text-sm font-semibold text-slate-700 hidden sm:block">Tech Haven</span>
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
+                  {storeInitial}
+                </div>
+                <span className="text-sm font-semibold text-slate-700 hidden sm:block max-w-[120px] truncate">
+                  {storeName}
+                </span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </button>
 
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-fade-in">
                   <div className="px-4 py-3 border-b border-slate-100">
-                    <p className="font-bold text-slate-900 text-sm">Tech Haven BD</p>
-                    <p className="text-xs text-slate-500">contact@techhaven.bd</p>
+                    <p className="font-bold text-slate-900 text-sm truncate">{storeName}</p>
+                    <p className="text-xs text-slate-500 truncate">{sellerEmail}</p>
                   </div>
                   <div className="py-1">
-                    <Link href="/seller/settings" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <Link href="/seller/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                       Store Settings
                     </Link>
-                    <Link href="/seller/analytics" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                    <Link href="/seller/analytics" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                       View Analytics
                     </Link>
-                    <Link href="/" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                    <Link href="/" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                      View Store
+                      View Marketplace
                     </Link>
                   </div>
                   <div className="border-t border-slate-100 py-1">

@@ -2,16 +2,42 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { signOutAndRedirect } from '@/utils/logout';
+import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
+  const { user } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [adminName, setAdminName] = useState<string>('Super Admin');
+  const [adminEmail, setAdminEmail] = useState<string>('admin1@euphoria.com');
 
-  const navLinks = [
+  useEffect(() => {
+    async function loadAdminInfo() {
+      const supabase = createClient();
+      let adminId = user?.id;
+      if (!adminId) {
+        const { data: admins } = await supabase.from('users').select('id, name, email').eq('role', 'admin').limit(1);
+        if (admins?.[0]) {
+          setAdminName(admins[0].name || 'Super Admin');
+          setAdminEmail(admins[0].email || 'admin1@euphoria.com');
+        }
+      } else {
+        const { data: profile } = await supabase.from('users').select('name, email').eq('id', adminId).maybeSingle();
+        if (profile) {
+          setAdminName(profile.name || 'Super Admin');
+          setAdminEmail(profile.email || user?.email || 'admin1@euphoria.com');
+        }
+      }
+    }
+    loadAdminInfo();
+  }, [user?.id]);
+
+  const navLinks: { name: string; href: string; icon: React.ReactNode; badge?: string }[] = [
     { 
       name: 'Overview', 
       href: '/admin/dashboard',
@@ -38,7 +64,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
-      badge: '3 Pending'
     },
     { 
       name: 'Seller Payouts', 
@@ -59,6 +84,15 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       )
     },
     { 
+      name: 'Audit Trail Logs', 
+      href: '/admin/logs',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      )
+    },
+    { 
       name: 'Platform Settings', 
       href: '/admin/settings',
       icon: (
@@ -68,68 +102,61 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </svg>
       )
     },
-    { 
-      name: 'System Audit Logs', 
-      href: '/admin/logs',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      )
-    },
   ];
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  const adminInitials = adminName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'AD';
 
   return (
     <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative">
-      {/* Toast */}
+      {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl animate-bounce">
           {toast}
         </div>
       )}
 
       {/* Sidebar */}
       <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0">
-        {/* Brand Header with OFFICIAL LOGO */}
+        {/* Brand Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
             <img 
               src="/logo-brand.png" 
-              alt="Euphoria Nexus Logo" 
+              alt="Euphoria Logo" 
               className="h-14 w-auto object-contain drop-shadow-md"
             />
             <div>
               <h2 className="text-sm font-bold text-white tracking-tight leading-tight">Euphoria Nexus</h2>
-              <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Superadmin Panel</p>
+              <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Super Admin</p>
             </div>
           </Link>
         </div>
 
-        {/* Navigation Links */}
+        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
-                key={link.href}
+                key={link.name}
                 href={link.href}
                 className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className={isActive ? 'text-white' : 'text-slate-400'}>{link.icon}</span>
+                  {link.icon}
                   <span>{link.name}</span>
                 </div>
                 {link.badge && (
-                  <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     {link.badge}
                   </span>
                 )}
@@ -138,65 +165,30 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           })}
         </nav>
 
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800/80 bg-slate-950/60">
-          <Link href="/" className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition">
-            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Marketplace
-          </Link>
+        {/* System Status Footer */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Platform Live</span>
+            </div>
+            <span className="text-slate-500">v1.2.0</span>
+          </div>
         </div>
       </aside>
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-900">
-        {/* Topbar Header */}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-900">
+        {/* Top Navbar */}
         <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-20">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-md border border-slate-800">
-              Admin Portal
-            </span>
-            <span className="text-slate-600">/</span>
-            <span className="text-sm font-semibold text-slate-200">
-              {navLinks.find(l => l.href === pathname)?.name || 'Control Center'}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+              <span className="text-xs font-medium text-slate-300">Environment: <strong className="text-white">Production (BD)</strong></span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Notification Bell Dropdown */}
-            <div className="relative">
-              <button 
-                onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}
-                className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-900 rounded-xl transition"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full animate-ping"></span>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full"></span>
-              </button>
-
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-4 z-50 text-xs animate-fade-in">
-                  <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
-                    <h4 className="font-bold text-white">System Alerts</h4>
-                    <span className="text-[10px] text-blue-400 font-semibold cursor-pointer">Mark all read</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="p-2.5 bg-slate-900 rounded-xl border border-slate-800">
-                      <p className="font-semibold text-amber-300">New Seller Pending</p>
-                      <p className="text-slate-400 text-[11px]">"Grand Electro BD" submitted NID for review.</p>
-                    </div>
-                    <div className="p-2.5 bg-slate-900 rounded-xl border border-slate-800">
-                      <p className="font-semibold text-blue-400">Payout Requested</p>
-                      <p className="text-slate-400 text-[11px]">৳45,000 bKash payout queued.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Functional Profile Dropdown */}
             <div className="relative">
               <button 
@@ -204,11 +196,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 className="flex items-center gap-3 p-1.5 hover:bg-slate-900 rounded-xl transition border border-slate-800"
               >
                 <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-xs shadow-md">
-                  SA
+                  {adminInitials}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-xs font-bold text-white">Super Admin</p>
-                  <p className="text-[10px] text-slate-400">admin@euphorianexus.com</p>
+                  <p className="text-xs font-bold text-white">{adminName}</p>
+                  <p className="text-[10px] text-slate-400">{adminEmail}</p>
                 </div>
                 <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -218,8 +210,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-xs animate-fade-in space-y-1">
                   <div className="p-3 border-b border-slate-800">
-                    <p className="font-bold text-white">Super Admin User</p>
-                    <p className="text-[10px] text-emerald-400 font-semibold">Root Privilege Granted</p>
+                    <p className="font-bold text-white truncate">{adminName}</p>
+                    <p className="text-[10px] text-emerald-400 font-semibold truncate">{adminEmail}</p>
                   </div>
                   <Link 
                     href="/admin/settings"
