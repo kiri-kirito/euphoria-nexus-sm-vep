@@ -45,17 +45,29 @@ export default function SellerOrdersPage() {
         if (error) throw error;
         
         if (data) {
-          const formatted = data.map(r => ({
-            id: `#ORD-${r.order_id}`,
-            product: r.products?.name || 'Unknown Product',
-            buyer: r.orders?.users?.name || 'Guest',
-            buyerLocation: r.orders?.shipping_address ? JSON.parse(r.orders.shipping_address).city : 'Unknown',
-            qty: r.quantity,
-            total: r.quantity * r.unit_price,
-            status: r.orders?.status || 'Processing',
-            date: new Date(r.orders.created_at).toLocaleDateString(),
-            negotiated: false // Mock for now, would join with negotiations to check
-          }));
+          const formatted = data.map(r => {
+            let loc = 'Dhaka';
+            if (r.orders?.shipping_address) {
+              const raw = r.orders.shipping_address;
+              if (raw.startsWith('{')) {
+                try { loc = JSON.parse(raw).city || 'Dhaka'; } catch { loc = raw; }
+              } else {
+                const parts = raw.split(',');
+                loc = parts.length > 1 ? parts[1].trim() : raw;
+              }
+            }
+            return {
+              id: `#ORD-${r.order_id}`,
+              product: r.products?.name || 'Unknown Product',
+              buyer: r.orders?.users?.name || 'Guest',
+              buyerLocation: loc,
+              qty: r.quantity,
+              total: r.quantity * r.unit_price,
+              status: r.orders?.status || 'Processing',
+              date: new Date(r.orders.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }),
+              negotiated: false
+            };
+          });
           
           setOrders(formatted);
           

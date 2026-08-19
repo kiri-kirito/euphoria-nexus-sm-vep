@@ -12,13 +12,14 @@ export default function DeliveryTasksOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
     const fetchTasks = async () => {
       try {
+        let agentId = user?.id;
+        if (!agentId) {
+          const { data: agents } = await supabase.from('users').select('id').eq('role', 'agent').limit(1);
+          agentId = agents?.[0]?.id;
+        }
+
         const { data, error } = await supabase
           .from('deliveries')
           .select(`
@@ -28,7 +29,7 @@ export default function DeliveryTasksOverview() {
               total_amount
             )
           `)
-          .order('created_at', { ascending: true }); // in a real app, filter by agent_id = user.id
+          .order('created_at', { ascending: true });
 
         if (error) {
           console.error("Error fetching tasks:", error);

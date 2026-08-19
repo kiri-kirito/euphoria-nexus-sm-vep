@@ -57,31 +57,37 @@ export default function TicketDetails() {
 
   async function loadTicket(id: string) {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("complaints")
-      .select(`
-        *,
-        users!buyer_id (name, email),
-        orders (id, total_amount, status, payments (method, status))
-      `)
-      .eq("id", id)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("complaints")
+        .select(`
+          *,
+          users!buyer_id (name, email),
+          orders (id, total_amount, status, payments (id, amount, status, transaction_id))
+        `)
+        .eq("id", id)
+        .maybeSingle();
 
-    if (error || !data) {
+      if (error || !data) {
+        console.error("Ticket query error:", error);
+        setLoading(false);
+        return;
+      }
+
+      setComplaint(data);
+      setMessages(parseMessages(data.description, data.resolution));
+
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("quantity, unit_price, products (id, name, images, seller_id)")
+        .eq("order_id", data.order_id);
+
+      setOrderItems(items || []);
+    } catch (err) {
+      console.error("loadTicket catch:", err);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setComplaint(data);
-    setMessages(parseMessages(data.description, data.resolution));
-
-    const { data: items } = await supabase
-      .from("order_items")
-      .select("quantity, unit_price, products (id, name, images, seller_id)")
-      .eq("order_id", data.order_id);
-
-    setOrderItems(items || []);
-    setLoading(false);
   }
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -162,7 +168,8 @@ export default function TicketDetails() {
   if (!complaint) return <div className="p-8 text-red-400">Ticket not found.</div>;
 
   const buyerName = complaint.users?.name || "Buyer";
-  const paymentMethod = complaint.orders?.payments?.[0]?.method || "N/A";
+  const rawPayment = complaint.orders?.payments?.[0];
+  const paymentMethod = rawPayment?.transaction_id?.startsWith('COD') ? 'Cash on Delivery' : rawPayment?.transaction_id ? `bKash (${rawPayment.transaction_id})` : "Cash on Delivery";
 
   return (
     <div className="flex h-full bg-slate-900 text-slate-100 overflow-hidden relative">
@@ -244,7 +251,7 @@ export default function TicketDetails() {
                 <img src={resolveProductImage(item.products)} alt="" className="w-10 h-10 object-cover rounded-lg" />
                 <div>
                   <p className="text-xs font-bold text-white line-clamp-1">{item.products?.name}</p>
-                  <p className="text-[10px] text-slate-400">৳{Number(item.price).toLocaleString()} × {item.quantity}</p>
+                  <p className="text-[10px] text-slate-400">৳{Number(item.unit_price || 0).toLocaleString()} × {item.quantity}</p>
                 </div>
               </div>
             ))}

@@ -7,33 +7,33 @@ import { useState, useEffect } from "react";
 const SHOWCASE_IMAGES = [
   {
     src: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=800&h=900&fit=crop&q=85",
-    label: "Gaming Setup",
-    category: "Electronics & Gadgets"
+    label: "Gaming & Tech",
+    category: "Electronics"
   },
   {
     src: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&h=900&fit=crop&q=85",
-    label: "Fashion",
+    label: "Fashion & Apparel",
     category: "Fashion"
   },
   {
     src: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=900&fit=crop&q=85",
-    label: "Footwear",
-    category: "Footwear"
+    label: "Sports & Footwear",
+    category: "Sports"
   },
   {
     src: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=900&fit=crop&q=85",
-    label: "Audio",
-    category: "Electronics & Gadgets"
+    label: "Audio & Gadgets",
+    category: "Electronics"
   },
   {
     src: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&h=900&fit=crop&q=85",
     label: "Tech & Office",
-    category: "Electronics & Gadgets"
+    category: "Electronics"
   },
   {
     src: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=900&fit=crop&q=85",
-    label: "Accessories",
-    category: "Accessories"
+    label: "Home & Lifestyle",
+    category: "Home"
   },
 ];
 

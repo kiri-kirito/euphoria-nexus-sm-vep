@@ -61,11 +61,16 @@ export default function EscrowManagementPage() {
                   </td>
                   <td className="px-6 py-4 font-bold text-teal-400">৳{Number(e.amount).toLocaleString()}</td>
                   <td className="px-6 py-4 capitalize">{e.status}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right space-x-2">
                     {e.status === 'held' && (
-                      <button onClick={() => handleAction(e.id, 'released')} className="text-emerald-400 text-xs bg-emerald-500/10 px-3 py-1.5 rounded-lg">
-                        Release Funds
-                      </button>
+                      <>
+                        <button onClick={() => handleAction(e.id, 'released')} className="text-emerald-400 text-xs bg-emerald-500/10 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition font-semibold">
+                          Release Funds
+                        </button>
+                        <button onClick={() => handleAction(e.id, 'refunded')} className="text-rose-400 text-xs bg-rose-500/10 px-3 py-1.5 rounded-lg hover:bg-rose-500/20 transition font-semibold">
+                          Reverse / Refund
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

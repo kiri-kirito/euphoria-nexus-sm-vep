@@ -53,7 +53,7 @@ export default async function AdminPayouts() {
                       {p.status || 'pending'}
                     </span>
                   </td>
-                  <td className="p-4 text-slate-500">{new Date(p.created_at).toLocaleString()}</td>
+                  <td className="p-4 text-slate-500">{new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })} (BST)</td>
                 </tr>
               )})}
               {(payments || []).length === 0 && (
@@ -79,7 +79,7 @@ export default async function AdminPayouts() {
                 <th className="p-4">Order Total</th>
                 <th className="p-4">Commission</th>
                 <th className="p-4">Rate</th>
-                <th className="p-4">Date</th>
+                <th className="p-4">Date (BST)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300 font-medium">
@@ -92,7 +92,7 @@ export default async function AdminPayouts() {
                     <td className="p-4">৳ {log.gross_amount}</td>
                     <td className="p-4 font-extrabold text-emerald-400">৳ {log.commission_amount}</td>
                     <td className="p-4">{log.commission_rate}%</td>
-                    <td className="p-4 text-slate-500">{new Date(log.created_at).toLocaleString()}</td>
+                    <td className="p-4 text-slate-500">{new Date(log.created_at).toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })}</td>
                   </tr>
                 );
               })}

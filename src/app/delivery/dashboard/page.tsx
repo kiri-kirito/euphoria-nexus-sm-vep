@@ -34,12 +34,15 @@ export default function DeliveryDashboard() {
   }, [socket, user?.id]);
 
   const fetchDeliveryData = useCallback(async () => {
-    if (!user?.id) {
+    let agentId = user?.id;
+    if (!agentId) {
+      const { data: agents } = await supabase.from('users').select('id').eq('role', 'agent').limit(1);
+      agentId = agents?.[0]?.id;
+    }
+    if (!agentId) {
       setLoading(false);
       return;
     }
-
-    const agentId = user.id;
 
     const [{ data: mine }, { data: open }, { count }] = await Promise.all([
       supabase

@@ -57,8 +57,7 @@ export async function pingOnlineDeliveryAgents(
   const { data: agents } = await supabase
     .from('users')
     .select('id, name')
-    .eq('role', 'delivery')
-    .eq('is_online', true)
+    .in('role', ['agent', 'delivery'])
     .eq('is_banned', false)
     .limit(20);
 

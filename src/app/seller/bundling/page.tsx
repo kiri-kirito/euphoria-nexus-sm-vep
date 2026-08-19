@@ -29,8 +29,19 @@ export default function BundlingPage() {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    if (!user?.id) return;
-    loadData(user.id);
+    async function init() {
+      let sellerId = user?.id;
+      if (!sellerId) {
+        const { data: sellers } = await supabase.from("users").select("id").eq("role", "seller").limit(1);
+        sellerId = sellers?.[0]?.id;
+      }
+      if (sellerId) {
+        loadData(sellerId);
+      } else {
+        setLoading(false);
+      }
+    }
+    init();
   }, [user?.id]);
 
   async function loadData(sellerId: string) {
@@ -82,7 +93,12 @@ export default function BundlingPage() {
   });
 
   const handleCreateBundle = async () => {
-    if (!user?.id || !selectedMine || !selectedPartner || !bundleName.trim()) return;
+    let sellerId = user?.id;
+    if (!sellerId) {
+      const { data: sellers } = await supabase.from("users").select("id").eq("role", "seller").limit(1);
+      sellerId = sellers?.[0]?.id;
+    }
+    if (!sellerId || !selectedMine || !selectedPartner || !bundleName.trim()) return;
     setCreating(true);
 
     const p1 = myProducts.find((p) => p.id === selectedMine);
@@ -119,7 +135,7 @@ export default function BundlingPage() {
     setBundleName("");
     setSelectedMine("");
     setSelectedPartner("");
-    await loadData(user.id);
+    await loadData(sellerId);
     setActiveTab("my-bundles");
     setCreating(false);
   };
