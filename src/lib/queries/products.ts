@@ -41,7 +41,7 @@ export async function fetchExploreProducts({
   let query = supabase
     .from('products')
     .select('*, users!seller_id(name, id, address)')
-    .eq('status', 'active')
+    .in('status', ['active', 'Active', 'ACTIVE'])
     .order('created_at', { ascending: false })
     .limit(120);
 

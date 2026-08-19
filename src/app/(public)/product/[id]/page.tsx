@@ -41,7 +41,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   const sellerName = product.users?.name || 'Unknown Seller';
   const cartImage = resolveProductImage(product);
-  const storeName = sellerName; // Fallback to user name since store is in a different table without direct FK
+  
+  const supabase = createClient();
+  let storeName = sellerName;
+  if (product.seller_id) {
+    const { data: st } = await supabase.from('stores').select('store_name').eq('user_id', product.seller_id).maybeSingle();
+    if (st?.store_name) storeName = st.store_name;
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
