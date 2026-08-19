@@ -301,36 +301,75 @@ export default function ProfilePage() {
                       </Link>
                     )}
                     {neg.status === 'countered' && (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await supabase
-                            .from('negotiations')
-                            .update({
-                              status: 'accepted',
-                              final_price: neg.current_price,
-                            })
-                            .eq('id', neg.id);
-                          if (neg.seller_id && user?.id) {
-                            await sendCheckoutLinkInChat(supabase, {
-                              negotiationId: neg.id,
-                              sellerId: neg.seller_id,
-                              buyerId: user.id,
-                              sellerName: neg.seller?.name || 'Seller',
-                            });
-                          }
-                          setNegotiations((prev) =>
-                            prev.map((n) =>
-                              n.id === neg.id
-                                ? { ...n, status: 'accepted', final_price: neg.current_price }
-                                : n
-                            )
-                          );
-                        }}
-                        className="mt-2 inline-block text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full transition-colors"
-                      >
-                        Accept Counter →
-                      </button>
+                      <div className="flex flex-wrap gap-2 justify-end mt-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await supabase
+                              .from('negotiations')
+                              .update({
+                                status: 'accepted',
+                                final_price: neg.current_price,
+                              })
+                              .eq('id', neg.id);
+                            if (neg.seller_id && user?.id) {
+                              await sendCheckoutLinkInChat(supabase, {
+                                negotiationId: neg.id,
+                                sellerId: neg.seller_id,
+                                buyerId: user.id,
+                                sellerName: neg.seller?.name || 'Seller',
+                              });
+                            }
+                            setNegotiations((prev) =>
+                              prev.map((n) =>
+                                n.id === neg.id
+                                  ? { ...n, status: 'accepted', final_price: neg.current_price }
+                                  : n
+                              )
+                            );
+                          }}
+                          className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-xl transition-colors shadow-sm"
+                        >
+                          ✓ Accept Counter
+                        </button>
+                        <Link
+                          href="/orders"
+                          className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors"
+                        >
+                          💬 Counter Offer
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm('Cancel this negotiation?')) return;
+                            await supabase.from('negotiations').update({ status: 'rejected' }).eq('id', neg.id);
+                            setNegotiations((prev) =>
+                              prev.map((n) => (n.id === neg.id ? { ...n, status: 'rejected' } : n))
+                            );
+                          }}
+                          className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors"
+                        >
+                          ✕ Cancel
+                        </button>
+                      </div>
+                    )}
+                    {neg.status === 'open' && (
+                      <div className="flex items-center gap-2 mt-2 justify-end">
+                        <span className="text-[11px] text-slate-500 font-medium">Waiting for seller</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm('Withdraw this negotiation?')) return;
+                            await supabase.from('negotiations').update({ status: 'rejected' }).eq('id', neg.id);
+                            setNegotiations((prev) =>
+                              prev.map((n) => (n.id === neg.id ? { ...n, status: 'rejected' } : n))
+                            );
+                          }}
+                          className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-xl"
+                        >
+                          ✕ Cancel
+                        </button>
+                      </div>
                     )}
                     {neg.status === 'ordered' && (
                       <span className="mt-2 inline-block text-xs font-bold text-emerald-700">Order placed</span>

@@ -236,6 +236,9 @@ export default function OrdersPage() {
     }
   };
 
+  const [buyerCounterInputs, setBuyerCounterInputs] = useState<Record<string, number>>({});
+  const [activeBuyerCounterId, setActiveBuyerCounterId] = useState<string | null>(null);
+
   const handleAcceptCounterOffer = async (negId: string, finalPrice: number) => {
     await supabase
       .from('negotiations')
@@ -244,6 +247,36 @@ export default function OrdersPage() {
 
     setNegotiations(prev => prev.map(n => n.id === negId ? { ...n, status: 'accepted', final_price: finalPrice } : n));
     setToast('Counter-offer accepted! You can now proceed to checkout.');
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCancelNegotiation = async (negId: string) => {
+    if (!confirm('Are you sure you want to cancel / withdraw this negotiation?')) return;
+    await supabase
+      .from('negotiations')
+      .update({ status: 'rejected' })
+      .eq('id', negId);
+
+    setNegotiations(prev => prev.map(n => n.id === negId ? { ...n, status: 'rejected' } : n));
+    setToast('Negotiation cancelled.');
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSendBuyerCounter = async (negId: string) => {
+    const newPrice = buyerCounterInputs[negId];
+    if (!newPrice || newPrice <= 0) {
+      alert('Please enter a valid price offer.');
+      return;
+    }
+
+    await supabase
+      .from('negotiations')
+      .update({ status: 'open', current_price: newPrice, updated_at: new Date().toISOString() })
+      .eq('id', negId);
+
+    setNegotiations(prev => prev.map(n => n.id === negId ? { ...n, status: 'open', current_price: newPrice } : n));
+    setActiveBuyerCounterId(null);
+    setToast(`Counter-offer of ৳${newPrice.toLocaleString()} sent to seller!`);
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -480,28 +513,96 @@ export default function OrdersPage() {
 
                       <div className="flex flex-wrap gap-2 justify-end w-full">
                         {isCountered && (
-                          <button
-                            type="button"
-                            onClick={() => handleAcceptCounterOffer(neg.id, Number(neg.current_price))}
-                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
-                          >
-                            ✓ Accept Counter-Offer
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleAcceptCounterOffer(neg.id, Number(neg.current_price))}
+                              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
+                            >
+                              ✓ Accept Counter (৳{Number(neg.current_price).toLocaleString()})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveBuyerCounterId(activeBuyerCounterId === neg.id ? null : neg.id)}
+                              className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 transition"
+                            >
+                              💬 Propose New Counter
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelNegotiation(neg.id)}
+                              className="px-3.5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition"
+                            >
+                              ✕ Cancel Deal
+                            </button>
+                          </>
                         )}
-                        {(isAccepted || isCountered) && (
+                        {isAccepted && (
                           <Link
                             href={`/checkout?negotiation=${neg.id}`}
                             className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                           >
-                            <span>🛒</span> Proceed to Checkout (৳{Number(neg.current_price * neg.quantity).toLocaleString()})
+                            <span>🛒</span> Proceed to Checkout (৳{Number((neg.final_price || neg.current_price) * neg.quantity).toLocaleString()})
                           </Link>
                         )}
                         {neg.status === 'open' && (
-                          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-xl">
-                            ⏳ Waiting for Seller Response
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-xl">
+                              ⏳ Waiting for Seller Response
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelNegotiation(neg.id)}
+                              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition"
+                            >
+                              ✕ Withdraw
+                            </button>
+                          </div>
+                        )}
+                        {isRejected && (
+                          <span className="text-xs font-semibold text-red-600 bg-red-50 px-3 py-2 rounded-xl border border-red-100">
+                            ✕ Negotiation Closed
                           </span>
                         )}
                       </div>
+
+                      {/* Buyer Counter Offer Input Form */}
+                      {activeBuyerCounterId === neg.id && (
+                        <div className="w-full mt-3 p-4 bg-blue-50/70 border border-blue-200 rounded-2xl animate-fade-in flex flex-col gap-2.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-blue-950">Your New Counter-Offer Price (৳ per unit):</span>
+                            <span className="font-extrabold text-blue-800">
+                              Total: ৳{((buyerCounterInputs[neg.id] || Number(neg.current_price)) * neg.quantity).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">৳</span>
+                              <input
+                                type="number"
+                                value={buyerCounterInputs[neg.id] ?? ''}
+                                onChange={(e) => setBuyerCounterInputs(prev => ({ ...prev, [neg.id]: Number(e.target.value) }))}
+                                placeholder="Enter your target price per unit..."
+                                className="w-full bg-white border border-blue-300 rounded-xl pl-7 pr-3 py-2 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleSendBuyerCounter(neg.id)}
+                              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition shrink-0"
+                            >
+                              Submit Counter →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveBuyerCounterId(null)}
+                              className="px-3 py-2 bg-white text-slate-600 font-bold text-xs rounded-xl border border-slate-200 hover:bg-slate-50 transition"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
