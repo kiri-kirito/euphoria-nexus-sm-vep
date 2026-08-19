@@ -57,7 +57,14 @@ export default function Navbar() {
     const { data, error } = await supabase.auth.signInWithPassword({ email: emailValue, password: passwordValue });
     
     if (error) {
-      setError(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes('email not confirmed')) {
+        setError('Your email has not been confirmed yet. Please check your email inbox to confirm your account, or sign in using Quick Login.');
+      } else if (msg.includes('rate limit')) {
+        setError('Supabase email/request limit reached. Please wait a few minutes or use Quick Login.');
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
       return;
     }
@@ -116,7 +123,12 @@ export default function Navbar() {
     });
     setLoading(false);
     if (error) {
-      setForgotMessage({ type: 'error', text: error.message });
+      const msg = error.message.toLowerCase();
+      if (msg.includes('rate limit')) {
+        setForgotMessage({ type: 'error', text: 'Supabase email rate limit exceeded. Please wait a few minutes before trying again.' });
+      } else {
+        setForgotMessage({ type: 'error', text: error.message });
+      }
     } else {
       setForgotMessage({ type: 'success', text: 'Password reset instructions sent to your email.' });
     }

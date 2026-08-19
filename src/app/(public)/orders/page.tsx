@@ -2,13 +2,45 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/layout/Navbar';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import OrderTrackingMap from '@/components/maps/OrderTrackingMapLazy';
 import { deliveryMapPoints } from '@/utils/deliveryMap';
 
 type ComplaintType = 'general' | 'return' | 'refund';
+
+interface ChatMessage {
+  id: number;
+  sender: 'User' | 'Support';
+  text: string;
+  time: string;
+}
+
+function parseTicketMessages(description: string, resolution: string | null): ChatMessage[] {
+  const initial: ChatMessage[] = [
+    {
+      id: 1,
+      sender: 'User',
+      text: description,
+      time: 'Initially submitted',
+    },
+  ];
+  if (!resolution) return initial;
+  try {
+    const parsed = JSON.parse(resolution);
+    if (Array.isArray(parsed)) return [...initial, ...parsed];
+  } catch {
+    if (resolution.trim()) {
+      initial.push({
+        id: 2,
+        sender: 'Support',
+        text: resolution,
+        time: 'Support update',
+      });
+    }
+  }
+  return initial;
+}
 
 export default function OrdersPage() {
   const { user } = useAuthStore();
@@ -17,6 +49,7 @@ export default function OrdersPage() {
   const [complaintsByOrder, setComplaintsByOrder] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
+  // File Complaint Modal
   const [complaintOrder, setComplaintOrder] = useState<any | null>(null);
   const [complaintType, setComplaintType] = useState<ComplaintType>('general');
   const [complaintText, setComplaintText] = useState('');
@@ -24,6 +57,11 @@ export default function OrdersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [expandedMapOrderId, setExpandedMapOrderId] = useState<string | null>(null);
+
+  // View Ticket Conversation Modal for Buyer
+  const [activeTicket, setActiveTicket] = useState<any | null>(null);
+  const [buyerReplyText, setBuyerReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -38,14 +76,14 @@ export default function OrdersPage() {
             .from('orders')
             .select(`
               *,
-              order_items (id, quantity, unit_price, product_id),
+              order_items (id, quantity, unit_price, product_id, products(name, images)),
               deliveries (id, status, pickup_address, delivery_address, agent_id)
             `)
             .eq('buyer_id', user.id)
             .order('created_at', { ascending: false }),
           supabase
             .from('complaints')
-            .select('id, order_id, status, complaint_type, refund_amount, created_at')
+            .select('id, order_id, status, complaint_type, refund_amount, created_at, description, resolution')
             .eq('buyer_id', user.id),
         ]);
 
@@ -88,7 +126,7 @@ export default function OrdersPage() {
           complaint_type: complaintType,
           status: 'open',
         })
-        .select('id')
+        .select('id, description, resolution, status, complaint_type, order_id')
         .single();
 
       if (error) throw error;
@@ -102,12 +140,7 @@ export default function OrdersPage() {
 
       setComplaintsByOrder((prev) => ({
         ...prev,
-        [complaintOrder.id]: {
-          id: ticket?.id,
-          order_id: complaintOrder.id,
-          status: 'open',
-          complaint_type: complaintType,
-        },
+        [complaintOrder.id]: ticket,
       }));
 
       setOrders((prev) =>
@@ -147,16 +180,126 @@ export default function OrdersPage() {
     setReturnProductId(order.order_items?.[0]?.product_id || '');
   };
 
+  const handleSendBuyerReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!buyerReplyText.trim() || !activeTicket) return;
+
+    setSendingReply(true);
+    const existingMessages = parseTicketMessages(activeTicket.description, activeTicket.resolution);
+    const newMsg: ChatMessage = {
+      id: existingMessages.length + 1,
+      sender: 'User',
+      text: buyerReplyText.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    const updatedMessages = [...existingMessages, newMsg];
+    const resolutionPayload = JSON.stringify(updatedMessages.slice(1)); // Store conversation array
+
+    const { error } = await supabase
+      .from('complaints')
+      .update({
+        resolution: resolutionPayload,
+        status: activeTicket.status === 'resolved' ? 'open' : activeTicket.status,
+      })
+      .eq('id', activeTicket.id);
+
+    setSendingReply(false);
+    if (!error) {
+      const updatedTicket = {
+        ...activeTicket,
+        resolution: resolutionPayload,
+        status: activeTicket.status === 'resolved' ? 'open' : activeTicket.status,
+      };
+      setActiveTicket(updatedTicket);
+      setComplaintsByOrder((prev) => ({
+        ...prev,
+        [activeTicket.order_id]: updatedTicket,
+      }));
+      setBuyerReplyText('');
+    } else {
+      alert('Failed to send reply: ' + error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-12 relative">
-      {/* Navbar is handled by layout.tsx */}
-
+      {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 bg-slate-900 text-white text-sm font-bold px-6 py-4 rounded-2xl shadow-2xl z-50 animate-bounce">
           {toast}
         </div>
       )}
 
+      {/* Buyer Support Ticket Conversation Modal */}
+      {activeTicket && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-slate-100 flex flex-col max-h-[85vh] overflow-hidden animate-fade-in">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Support Ticket #{activeTicket.id.substring(0, 8)}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Type: <span className="font-semibold capitalize text-primary">{activeTicket.complaint_type || 'General'}</span> · Status:{' '}
+                  <span className="font-semibold uppercase text-emerald-600">{activeTicket.status}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTicket(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-200 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Conversation Messages */}
+            <div className="flex-1 p-5 overflow-y-auto space-y-3 bg-slate-50/50">
+              {parseTicketMessages(activeTicket.description, activeTicket.resolution).map((msg) => {
+                const isMe = msg.sender === 'User';
+                return (
+                  <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <span className="text-[10px] text-slate-500 font-semibold mb-1 px-1">
+                      {isMe ? 'You' : 'Euphoria Support Agent'}
+                    </span>
+                    <div
+                      className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm ${
+                        isMe
+                          ? 'bg-primary text-white rounded-br-none shadow-md shadow-primary/20'
+                          : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                    <span className="text-[9px] text-slate-400 mt-1 px-1">{msg.time}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Reply Input Form */}
+            <form onSubmit={handleSendBuyerReply} className="p-4 bg-white border-t border-slate-100 flex gap-2">
+              <input
+                type="text"
+                value={buyerReplyText}
+                onChange={(e) => setBuyerReplyText(e.target.value)}
+                placeholder="Reply to support agent..."
+                className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                disabled={sendingReply}
+              />
+              <button
+                type="submit"
+                disabled={!buyerReplyText.trim() || sendingReply}
+                className="bg-primary hover:bg-primary-dark text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+              >
+                {sendingReply ? 'Sending...' : 'Send'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* File Complaint / Return Modal */}
       {complaintOrder && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
@@ -184,9 +327,9 @@ export default function OrdersPage() {
                   onChange={(e) => setReturnProductId(e.target.value)}
                   className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2"
                 >
-                  {(complaintOrder.order_items || []).map((item: { product_id: string; quantity: number }) => (
-                    <option key={item.product_id} value={item.product_id}>
-                      Product {item.product_id.substring(0, 8)} × {item.quantity}
+                  {(complaintOrder.order_items || []).map((item: any) => (
+                    <option key={item.product_id || item.id} value={item.product_id || item.id}>
+                      {item.products?.name || `Product ${item.product_id?.substring(0, 8)}`} (৳{item.unit_price} × {item.quantity})
                     </option>
                   ))}
                 </select>
@@ -196,7 +339,7 @@ export default function OrdersPage() {
               <textarea
                 value={complaintText}
                 onChange={(e) => setComplaintText(e.target.value)}
-                placeholder="Describe the issue..."
+                placeholder="Describe why you want to return or refund this item..."
                 className="w-full h-32 p-4 border border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none text-sm text-slate-800"
                 required
               />
@@ -213,7 +356,7 @@ export default function OrdersPage() {
                   disabled={isSubmitting}
                   className="px-5 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/30 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit'}
+                  {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
             </form>
@@ -254,78 +397,84 @@ export default function OrdersPage() {
                   className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col gap-4"
                 >
                   <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <span className="font-bold text-slate-900 text-lg">
-                        Order #{order.id.substring(0, 8).toUpperCase()}
-                      </span>
-                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-100 text-slate-700">
-                        {order.status || 'Pending'}
-                      </span>
-                      {ticket && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
-                          {ticket.complaint_type || 'ticket'}: {ticket.status}
+                    <div>
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <span className="font-bold text-slate-900 text-lg">
+                          Order #{order.id.substring(0, 8).toUpperCase()}
                         </span>
-                      )}
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-100 text-slate-700">
+                          {order.status || 'Pending'}
+                        </span>
+                        {ticket && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            ticket.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {ticket.complaint_type || 'Ticket'}: {ticket.status}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500">
+                        Placed on: {new Date(order.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-slate-600 font-medium">
+                        {order.order_items?.length || 0} item(s) · {order.shipping_address || '—'}
+                      </p>
                     </div>
-                    <p className="text-sm text-slate-500">
-                      Placed on: {new Date(order.created_at).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-slate-600 font-medium">
-                      {order.order_items?.length || 0} items · {order.shipping_address || '—'}
-                    </p>
-                  </div>
 
-                  <div className="flex flex-col items-end gap-3">
-                    <span className="text-2xl font-black text-slate-900">
-                      ৳{Number(order.total_amount).toLocaleString()}
-                    </span>
-                    <div className="flex flex-wrap gap-2 justify-end">
-                      {showMap && (
-                        <button
-                          type="button"
-                          onClick={() => setExpandedMapOrderId(mapOpen ? null : order.id)}
-                          className="px-3 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100"
-                        >
-                          {mapOpen ? 'Hide Map' : 'Track Delivery'}
-                        </button>
-                      )}
-                      {!ticket && (
-                        <>
+                    <div className="flex flex-col items-end gap-3">
+                      <span className="text-2xl font-black text-slate-900">
+                        ৳{Number(order.total_amount).toLocaleString()}
+                      </span>
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {showMap && (
                           <button
                             type="button"
-                            onClick={() => openComplaintModal(order, 'general')}
-                            className="px-3 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100"
+                            onClick={() => setExpandedMapOrderId(mapOpen ? null : order.id)}
+                            className="px-3 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100"
                           >
-                            Complaint
+                            {mapOpen ? 'Hide Map' : 'Track Delivery'}
                           </button>
-                          {canReturn && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => openComplaintModal(order, 'return')}
-                                className="px-3 py-2 bg-amber-50 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-100"
-                              >
-                                Return
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => openComplaintModal(order, 'refund')}
-                                className="px-3 py-2 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-100"
-                              >
-                                Refund
-                              </button>
-                            </>
-                          )}
-                        </>
-                      )}
-                      {ticket && (
-                        <span className="px-3 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl">
-                          Ticket {ticket.status}
-                        </span>
-                      )}
+                        )}
+                        {!ticket && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openComplaintModal(order, 'general')}
+                              className="px-3 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100"
+                            >
+                              Complaint
+                            </button>
+                            {canReturn && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => openComplaintModal(order, 'return')}
+                                  className="px-3 py-2 bg-amber-50 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-100"
+                                >
+                                  Request Return
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openComplaintModal(order, 'refund')}
+                                  className="px-3 py-2 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-100"
+                                >
+                                  Request Refund
+                                </button>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {ticket && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveTicket(ticket)}
+                            className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-teal-600/20 flex items-center gap-1.5"
+                          >
+                            <span>💬</span> View Support Chat & Updates
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   </div>
                   {mapOpen && showMap && (
                     <OrderTrackingMap

@@ -32,8 +32,8 @@ function RegisterContent() {
       return;
     }
 
-    if (!['buyer', 'seller', 'agent'].includes(role)) {
-      setError('Support staff and admins are created internally by platform admin.');
+    if (!['buyer', 'seller'].includes(role)) {
+      setError('Staff accounts are created internally by administrators.');
       setLoading(false);
       return;
     }
@@ -188,10 +188,9 @@ function RegisterContent() {
                 >
                   <option value="buyer">Buyer</option>
                   <option value="seller">Seller (requires admin approval)</option>
-                  <option value="agent">Delivery Agent</option>
                 </select>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Support and admin accounts are created internally by administrators.
+                  Delivery, support, and admin accounts are created internally by administrators.
                 </p>
             </div>
           </div>
