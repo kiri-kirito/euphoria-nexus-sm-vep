@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { resolveProductImage } from "@/utils/productImages";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 const STATUS_STYLES: Record<string, string> = {
   Processing: "bg-amber-100 text-amber-700",
@@ -33,141 +34,151 @@ export default function SellerDashboardPage() {
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchDashboard = useCallback(async () => {
     if (userLoading) return;
-    
-    async function fetchDashboard() {
-      try {
-        let sellerId = userId;
-        if (!sellerId) {
-          const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
-          sellerId = sellers?.[0]?.id;
-        }
-        
-        if (!sellerId) return;
-
-        // 1. Exact active products count
-        const { count: productCount } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true })
-          .eq('seller_id', sellerId);
-
-        // 2. Exact PENDING negotiations count (only active/unresolved negotiations)
-        const { count: pendingNegotiationsCount } = await supabase
-          .from('negotiations')
-          .select('*', { count: 'exact', head: true })
-          .eq('seller_id', sellerId)
-          .in('status', ['open', 'pending', 'countered']);
-        
-        // 3. Orders and Released Escrow Revenue
-        const [{ data: orderData }, { data: releasedEscrows }] = await Promise.all([
-          supabase
-            .from('order_items')
-            .select('product_id, quantity, unit_price, orders!inner(id, status, created_at)')
-            .eq('seller_id', sellerId),
-          supabase
-            .from('escrow')
-            .select('id, amount, status, description, created_at, from_seller:users!from_seller_id(name)')
-            .eq('to_seller_id', sellerId)
-            .eq('status', 'released')
-        ]);
-          
-        const ordersRevenue = orderData?.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0) || 0;
-        const escrowRevenue = (releasedEscrows || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-        const totalRevenue = ordersRevenue + escrowRevenue;
-        
-        const activeOrders = orderData?.filter(o => {
-          const st = String((o.orders as any)?.status || '').toLowerCase();
-          return st !== 'delivered' && st !== 'cancelled' && st !== 'refunded';
-        }).length || 0;
-
-        setStats([
-          { 
-            label: "Total Revenue", 
-            value: `৳${totalRevenue.toLocaleString()}`, 
-            change: escrowRevenue > 0 ? `Incl. ৳${escrowRevenue.toLocaleString()} escrow` : "Sales total", 
-            up: true, 
-            icon: "💰" 
-          },
-          { label: "Total Products", value: `${productCount || 0}`, change: "Active catalog", up: true, icon: "📦" },
-          { label: "Active Orders", value: `${activeOrders}`, change: "In fulfillment", up: activeOrders > 0, icon: "🕐" },
-          { label: "Pending Negotiations", value: `${pendingNegotiationsCount || 0}`, change: "Awaiting reply", up: null, icon: "💬" },
-        ]);
-
-        // 4. Recent Orders & Stock Exchange Escrow (sorted by created_at descending)
-        const { data: recent } = await supabase
-          .from('order_items')
-          .select('*, products(name), orders!inner(id, status, created_at, users!inner(name))')
-          .eq('seller_id', sellerId);
-          
-        const orderList = (recent || []).map((r: any) => ({
-          id: `#ORD-${String(r.order_id).substring(0, 8).toUpperCase()}`,
-          product: r.products?.name || 'Wholesale Product',
-          buyer: r.orders?.users?.name || 'Customer',
-          qty: r.quantity,
-          total: r.quantity * r.unit_price,
-          status: r.orders?.status || 'Processing',
-          createdAt: r.orders?.created_at || r.created_at,
-        }));
-
-        const escrowList = (releasedEscrows || []).map((e: any) => ({
-          id: `#ESC-${String(e.id).substring(0, 8).toUpperCase()}`,
-          product: e.description || 'Stock Exchange Escrow',
-          buyer: (e.from_seller as any)?.name || 'Partner Seller',
-          qty: 1,
-          total: Number(e.amount),
-          status: 'Released',
-          createdAt: e.created_at,
-        }));
-
-        const combinedRecent = [...orderList, ...escrowList].sort((a, b) => {
-          const timeA = new Date(a.createdAt || 0).getTime();
-          const timeB = new Date(b.createdAt || 0).getTime();
-          return timeB - timeA;
-        });
-
-        setRecentOrders(combinedRecent.slice(0, 6));
-
-        // 5. Top Products with real sales aggregation
-        const productSalesMap = new Map<string, { qty: number; revenue: number }>();
-        (orderData || []).forEach((item: any) => {
-          if (item.product_id) {
-            const prev = productSalesMap.get(item.product_id) || { qty: 0, revenue: 0 };
-            productSalesMap.set(item.product_id, {
-              qty: prev.qty + (Number(item.quantity) || 1),
-              revenue: prev.revenue + (Number(item.quantity || 1) * Number(item.unit_price || 0)),
-            });
-          }
-        });
-
-        const { data: tops } = await supabase
-          .from('products')
-          .select('*')
-          .eq('seller_id', sellerId)
-          .limit(4);
-          
-        if (tops) {
-          setTopProducts(tops.map(t => {
-            const salesInfo = productSalesMap.get(t.id) || { qty: 0, revenue: 0 };
-            const img = resolveProductImage(t);
-            return {
-              name: t.name,
-              sales: salesInfo.qty,
-              revenue: salesInfo.revenue || (Number(t.price || 0) * salesInfo.qty),
-              img: img || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80"
-            };
-          }));
-        }
-
-      } catch (err) {
-        console.error("Dashboard error:", err);
-      } finally {
-        setLoading(false);
+    try {
+      let sellerId = userId;
+      if (!sellerId) {
+        const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
+        sellerId = sellers?.[0]?.id;
       }
+      
+      if (!sellerId) return;
+
+      // 1. Exact active products count
+      const { count: productCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('seller_id', sellerId);
+
+      // 2. Exact PENDING negotiations count (only active/unresolved negotiations)
+      const { count: pendingNegotiationsCount } = await supabase
+        .from('negotiations')
+        .select('*', { count: 'exact', head: true })
+        .eq('seller_id', sellerId)
+        .in('status', ['open', 'pending', 'countered']);
+      
+      // 3. Orders and Released Escrow Revenue
+      const [{ data: orderData }, { data: releasedEscrows }] = await Promise.all([
+        supabase
+          .from('order_items')
+          .select('product_id, quantity, unit_price, orders!inner(id, status, created_at)')
+          .eq('seller_id', sellerId),
+        supabase
+          .from('escrow')
+          .select('id, amount, status, description, created_at, from_seller:users!from_seller_id(name)')
+          .eq('to_seller_id', sellerId)
+          .eq('status', 'released')
+      ]);
+        
+      const ordersRevenue = orderData?.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0) || 0;
+      const escrowRevenue = (releasedEscrows || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const totalRevenue = ordersRevenue + escrowRevenue;
+      
+      const activeOrders = orderData?.filter(o => {
+        const st = String((o.orders as any)?.status || '').toLowerCase();
+        return st !== 'delivered' && st !== 'cancelled' && st !== 'refunded';
+      }).length || 0;
+
+      setStats([
+        { 
+          label: "Total Revenue", 
+          value: `৳${totalRevenue.toLocaleString()}`, 
+          change: escrowRevenue > 0 ? `Incl. ৳${escrowRevenue.toLocaleString()} escrow` : "Sales total", 
+          up: true, 
+          icon: "💰" 
+        },
+        { label: "Total Products", value: `${productCount || 0}`, change: "Active catalog", up: true, icon: "📦" },
+        { label: "Active Orders", value: `${activeOrders}`, change: "In fulfillment", up: activeOrders > 0, icon: "🕐" },
+        { label: "Pending Negotiations", value: `${pendingNegotiationsCount || 0}`, change: "Awaiting reply", up: null, icon: "💬" },
+      ]);
+
+      // 4. Recent Orders & Stock Exchange Escrow (sorted by created_at descending)
+      const { data: recent } = await supabase
+        .from('order_items')
+        .select('*, products(name), orders!inner(id, status, created_at, users!inner(name))')
+        .eq('seller_id', sellerId);
+        
+      const orderList = (recent || []).map((r: any) => ({
+        id: `#ORD-${String(r.order_id).substring(0, 8).toUpperCase()}`,
+        product: r.products?.name || 'Wholesale Product',
+        buyer: r.orders?.users?.name || 'Customer',
+        qty: r.quantity,
+        total: r.quantity * r.unit_price,
+        status: r.orders?.status || 'Processing',
+        createdAt: r.orders?.created_at || r.created_at,
+      }));
+
+      const escrowList = (releasedEscrows || []).map((e: any) => ({
+        id: `#ESC-${String(e.id).substring(0, 8).toUpperCase()}`,
+        product: e.description || 'Stock Exchange Escrow',
+        buyer: (e.from_seller as any)?.name || 'Partner Seller',
+        qty: 1,
+        total: Number(e.amount),
+        status: 'Released',
+        createdAt: e.created_at,
+      }));
+
+      const combinedRecent = [...orderList, ...escrowList].sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+
+      setRecentOrders(combinedRecent.slice(0, 6));
+
+      // 5. Top Products with real sales aggregation
+      const productSalesMap = new Map<string, { qty: number; revenue: number }>();
+      (orderData || []).forEach((item: any) => {
+        if (item.product_id) {
+          const prev = productSalesMap.get(item.product_id) || { qty: 0, revenue: 0 };
+          productSalesMap.set(item.product_id, {
+            qty: prev.qty + (Number(item.quantity) || 1),
+            revenue: prev.revenue + (Number(item.quantity || 1) * Number(item.unit_price || 0)),
+          });
+        }
+      });
+
+      const topProductIds = Array.from(productSalesMap.entries())
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 3)
+        .map(([id]) => id);
+
+      if (topProductIds.length > 0) {
+        const { data: topProds } = await supabase
+          .from('products')
+          .select('id, name, price, images')
+          .in('id', topProductIds);
+          
+        const formattedTop = (topProds || []).map(t => {
+          const sales = productSalesMap.get(t.id) || { qty: 0, revenue: 0 };
+          const img = resolveProductImage(t);
+          return {
+            name: t.name,
+            sales: `${sales.qty} sold`,
+            revenue: `৳${sales.revenue.toLocaleString()}`,
+            img: img || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80",
+          };
+        });
+        setTopProducts(formattedTop);
+      } else {
+        setTopProducts([]);
+      }
+
+    } catch (err) {
+      console.error("Dashboard error:", err);
+    } finally {
+      setLoading(false);
     }
-    
-    fetchDashboard();
   }, [userId, userLoading, supabase]);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  useSupabaseRealtime('escrow', fetchDashboard);
+  useSupabaseRealtime('order_items', fetchDashboard);
+  useSupabaseRealtime('products', fetchDashboard);
 
   if (loading || userLoading) {
     return <div className="p-8 text-center text-slate-500 font-medium animate-pulse">Loading dashboard overview...</div>;

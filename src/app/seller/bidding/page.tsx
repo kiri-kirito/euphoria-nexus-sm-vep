@@ -322,11 +322,11 @@ export default function BlindBiddingPage() {
       const req = myRequests.find((r) => r.id === requestId);
       const totalAmount = bid.bidPrice * (req?.quantity || 1);
 
-      // 4. Create escrow record
+      // 4. Create escrow record (Requester pays into escrow -> Fulfilling Bidder receives funds upon release)
       await supabase.from("escrow").insert({
         stock_request_id: requestId,
-        from_seller_id: bid.bidderId,
-        to_seller_id: sellerId,
+        from_seller_id: sellerId,
+        to_seller_id: bid.bidderId,
         amount: totalAmount,
         status: "held",
         description: `Stock exchange escrow for ${req?.product || 'Inventory'} (${req?.quantity || 1} units)`,
