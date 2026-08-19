@@ -169,7 +169,24 @@ export default function GlobalChatWidget() {
             (row.sender_id === user.id && row.receiver_id === receiverId) ||
             (row.sender_id === receiverId && row.receiver_id === user.id)
           ) {
-            setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]));
+            setMessages((prev) => {
+              // Check for exact ID or duplicate optimistic match
+              const existingIdx = prev.findIndex(
+                (m) =>
+                  m.id === incoming.id ||
+                  (m.senderId === incoming.senderId &&
+                    m.receiverId === incoming.receiverId &&
+                    m.text === incoming.text &&
+                    Math.abs(new Date(m.timestamp).getTime() - new Date(incoming.timestamp).getTime()) < 6000)
+              );
+
+              if (existingIdx !== -1) {
+                const next = [...prev];
+                next[existingIdx] = incoming; // replace optimistic with confirmed DB message
+                return next;
+              }
+              return [...prev, incoming];
+            });
           }
 
           // If incoming message is for me
@@ -192,7 +209,7 @@ export default function GlobalChatWidget() {
     };
   }, [user?.id, receiverId, isOpen, supabase]);
 
-  // Socket sync fallback
+  // Socket sync fallback with deduplication
   useEffect(() => {
     if (!socket || !user) return;
 
@@ -200,7 +217,17 @@ export default function GlobalChatWidget() {
 
     const handleReceiveMessage = (msg: ChatMessage) => {
       if (msg.senderId !== receiverId && msg.receiverId !== receiverId && msg.senderId !== user.id) return;
-      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+      setMessages((prev) => {
+        const isDuplicate = prev.some(
+          (m) =>
+            m.id === msg.id ||
+            (m.senderId === msg.senderId &&
+              m.receiverId === msg.receiverId &&
+              m.text === msg.text &&
+              Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 6000)
+        );
+        return isDuplicate ? prev : [...prev, msg];
+      });
     };
 
     socket.on('receive_message', handleReceiveMessage);

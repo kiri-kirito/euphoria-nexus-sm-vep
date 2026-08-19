@@ -22,6 +22,19 @@ const CATEGORIES = [
   'Health',
 ];
 
+const REGIONS = [
+  'All Bangladesh',
+  'Dhaka',
+  'Chittagong',
+  'Sylhet',
+  'Khulna',
+  'Rajshahi',
+  'Barisal',
+  'Rangpur',
+  'Mymensingh',
+  'Narayanganj',
+];
+
 function ExploreContent() {
   const searchParams = useSearchParams();
   const urlCategory = searchParams.get('category') || 'All';
@@ -45,6 +58,7 @@ function ExploreContent() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [nearbySellerIds, setNearbySellerIds] = useState<Set<string>>(new Set());
   const [sellerStoreName, setSellerStoreName] = useState<string | null>(null);
+  const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
   
   // Stores Tab State
   const [storesList, setStoresList] = useState<any[]>([]);
@@ -125,16 +139,25 @@ function ExploreContent() {
       });
   }, [sellerFilter]);
 
-  useEffect(() => {
-    if (!nearbyOnly) {
+  // Handle Nearby Geolocation
+  const toggleNearby = () => {
+    if (nearbyOnly) {
+      setNearbyOnly(false);
       setNearbySellerIds(new Set());
+      showToast('Nearby filter deactivated (showing all regions)');
       return;
     }
+
+    showToast('Locating sellers near you...');
     const loadNearby = (lat: number, lng: number) => {
       fetchLocalSellers(lat, lng).then((sellers) => {
-        setNearbySellerIds(new Set(sellers.map((s) => s.id)));
+        const idSet = new Set(sellers.map((s) => s.id));
+        setNearbySellerIds(idSet);
+        setNearbyOnly(true);
+        showToast(`Found ${sellers.length} verified sellers near your location!`);
       });
     };
+
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => loadNearby(pos.coords.latitude, pos.coords.longitude),
@@ -143,7 +166,7 @@ function ExploreContent() {
     } else {
       loadNearby(23.8103, 90.4125);
     }
-  }, [nearbyOnly]);
+  };
 
   const filteredProducts = useMemo(() => {
     let list = [...products];
@@ -164,11 +187,13 @@ function ExploreContent() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const activeFilterCount = (selectedCategory !== 'All' ? 1 : 0) + (nearbyOnly ? 1 : 0) + (priceMin || priceMax ? 1 : 0) + (regionFilter !== 'all' ? 1 : 0);
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-bounce">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-bounce">
           <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
           </svg>
@@ -190,10 +215,10 @@ function ExploreContent() {
           </div>
 
           {/* Tab Switcher: Products vs Stores */}
-          <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20">
+          <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0">
             <button
               onClick={() => setExploreTab('products')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
                 exploreTab === 'products' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -201,7 +226,7 @@ function ExploreContent() {
             </button>
             <button
               onClick={() => setExploreTab('stores')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
                 exploreTab === 'stores' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -309,12 +334,75 @@ function ExploreContent() {
           </div>
         ) : (
           /* PRODUCTS TAB VIEW */
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar Filters */}
-            <aside className="w-full lg:w-64 space-y-6 shrink-0">
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Mobile Filter Toggle Button */}
+            <div className="w-full lg:hidden flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="flex items-center gap-2 text-xs font-bold text-slate-800"
+              >
+                <span>⚙️ Filters & Categories</span>
+                {activeFilterCount > 0 && (
+                  <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-full">
+                    {activeFilterCount} active
+                  </span>
+                )}
+              </button>
+              <span className="text-xs text-slate-500">{filteredProducts.length} items</span>
+            </div>
+
+            {/* Sidebar Filters — Responsive & Smooth Sticky */}
+            <aside
+              className={`w-full lg:w-64 space-y-5 shrink-0 ${
+                showMobileFilters ? 'block' : 'hidden lg:block'
+              } lg:sticky lg:top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1 pb-4`}
+            >
+              {/* Nearby Seller Quick Filter */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                nearbyOnly
+                  ? 'bg-emerald-50 border-emerald-300 shadow-sm'
+                  : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>📍</span> Sellers Near You
+                  </span>
+                  {nearbyOnly && (
+                    <span className="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+                  Filter catalog by suppliers in your immediate local delivery radius.
+                </p>
+                <button
+                  type="button"
+                  onClick={toggleNearby}
+                  className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    nearbyOnly
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                      : 'bg-slate-900 text-white hover:bg-slate-800'
+                  }`}
+                >
+                  {nearbyOnly ? '✓ Reset to All Bangladesh' : '⚡ Find Nearby Suppliers'}
+                </button>
+              </div>
+
               {/* Category Filter */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-900 mb-3">Categories</h3>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-bold text-slate-900">Categories</h3>
+                  {selectedCategory !== 'All' && (
+                    <button
+                      onClick={() => setSelectedCategory('All')}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-1">
                   {CATEGORIES.map((cat) => (
                     <button
@@ -328,6 +416,21 @@ function ExploreContent() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Region Division Filter */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 mb-3">Division / Region</h3>
+                <select
+                  value={regionFilter}
+                  onChange={(e) => setRegionFilter(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-primary"
+                >
+                  <option value="all">All Bangladesh</option>
+                  {REGIONS.slice(1).map((r) => (
+                    <option key={r} value={r}>{r} Division</option>
+                  ))}
+                </select>
               </div>
 
               {/* Price Range Filter */}
@@ -352,24 +455,38 @@ function ExploreContent() {
               </div>
             </aside>
 
-            {/* Product Grid */}
-            <main className="flex-1">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-                <div className="w-full sm:w-80">
+            {/* Product Grid & Top Search Bar */}
+            <main className="flex-1 w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="w-full sm:w-80 relative">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products..."
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 outline-none focus:border-primary shadow-sm"
+                    placeholder="Search wholesale & retail products..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 outline-none focus:border-primary"
                   />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                  {/* Quick Nearby Button in toolbar */}
+                  <button
+                    type="button"
+                    onClick={toggleNearby}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ${
+                      nearbyOnly
+                        ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>📍</span> {nearbyOnly ? 'Nearby Active' : 'Find Nearby'}
+                  </button>
+
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-primary shadow-sm"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-primary"
                   >
                     <option value="newest">Sort by: Newest</option>
                     <option value="price-asc">Price: Low to High</option>
@@ -387,7 +504,7 @@ function ExploreContent() {
               ) : filteredProducts.length === 0 ? (
                 <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 text-slate-500">
                   <p className="font-bold text-base text-slate-800">No products found</p>
-                  <p className="text-xs mt-1">Try adjusting your filters or search keywords.</p>
+                  <p className="text-xs mt-1">Try adjusting your filters, searching other keywords, or resetting the nearby toggle.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
