@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { resolveProductImage, defaultProductImage } from '@/utils/productImages';
 
 type ProductLike = {
   name?: string;
   category?: string;
   images?: unknown;
+  image?: string;
+  img?: string;
+  [key: string]: unknown;
 };
 
 interface ProductImageProps {
@@ -19,6 +22,11 @@ export default function ProductImage({ product, alt, className = '' }: ProductIm
   const primary = resolveProductImage(product);
   const [src, setSrc] = useState(primary);
   const [usedFallback, setUsedFallback] = useState(false);
+
+  useEffect(() => {
+    setSrc(resolveProductImage(product));
+    setUsedFallback(false);
+  }, [product]);
 
   return (
     <img

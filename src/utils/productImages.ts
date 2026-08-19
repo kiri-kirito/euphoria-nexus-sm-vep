@@ -102,19 +102,40 @@ export function defaultProductImage(category?: string): string {
   return unsplashUrl(photoId);
 }
 
+export function isValidImageUrl(url: unknown): boolean {
+  if (typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.includes('placehold.co')) return false;
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/') || trimmed.startsWith('data:image');
+}
+
 export function getFirstImageFromJson(images: unknown): string {
   try {
+    if (!images) return '';
     if (Array.isArray(images)) {
-      const first = images.find((x) => typeof x === 'string' && x.startsWith('http'));
-      return (first as string) || '';
+      const first = images.find(isValidImageUrl);
+      if (first) return (first as string).trim();
+      for (const item of images) {
+        if (typeof item === 'object' && item !== null) {
+          const u = (item as any).url || (item as any).src || (item as any).image;
+          if (isValidImageUrl(u)) return u.trim();
+        }
+      }
+      return '';
     }
     if (typeof images === 'string') {
-      if (images.startsWith('http')) return images;
-      const parsed = JSON.parse(images);
-      if (Array.isArray(parsed)) {
-        const first = parsed.find((x) => typeof x === 'string' && x.startsWith('http'));
-        return (first as string) || '';
+      const trimmed = images.trim();
+      if (isValidImageUrl(trimmed)) return trimmed;
+      try {
+        const parsed = JSON.parse(trimmed);
+        return getFirstImageFromJson(parsed);
+      } catch {
+        return '';
       }
+    }
+    if (typeof images === 'object' && images !== null) {
+      const u = (images as any).url || (images as any).src || (images as any).image;
+      if (isValidImageUrl(u)) return u.trim();
     }
   } catch {
     /* ignore */
@@ -139,23 +160,41 @@ function categoryPhotoId(category?: string): string | null {
   return PHOTO_BY_CATEGORY[normalized] || null;
 }
 
-/** Resolve a display image for a product — prefers stored URL, falls back to name/category match */
-export function resolveProductImage(product: {
+export interface ProductImageSource {
   name?: string;
   category?: string;
   images?: unknown;
-}): string {
+  image?: string;
+  img?: string;
+}
+
+/** Resolve a display image for a product — prefers stored URL, falls back to name/category match */
+export function resolveProductImage(product?: ProductImageSource | null): string {
+  if (!product) return defaultProductImage();
+
+  // 1. Direct explicit image or img property (if already a valid URL and not placeholder)
+  if (isValidImageUrl(product.image)) {
+    return (product.image as string).trim();
+  }
+  if (isValidImageUrl(product.img)) {
+    return (product.img as string).trim();
+  }
+
+  // 2. Extracted from images column (array or JSON)
   const stored = getFirstImageFromJson(product.images);
-  if (stored && stored.startsWith('http') && !stored.includes('placehold.co')) {
+  if (stored) {
     return stored;
   }
 
+  // 3. Keyword matching based on product name
   const fromName = keywordFromText(product.name || '');
   if (fromName) return unsplashUrl(PHOTO_BY_KEYWORD[fromName]);
 
+  // 4. Keyword matching based on category
   const fromCategoryKey = keywordFromText(product.category || '');
   if (fromCategoryKey) return unsplashUrl(PHOTO_BY_KEYWORD[fromCategoryKey]);
 
+  // 5. Category lookup
   const catId = categoryPhotoId(product.category);
   if (catId) return unsplashUrl(catId);
 

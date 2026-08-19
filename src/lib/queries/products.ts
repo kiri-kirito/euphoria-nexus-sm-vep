@@ -14,6 +14,7 @@ export interface ExploreProduct {
   reviews: number;
   inStock: boolean;
   image: string;
+  images?: unknown;
   description: string;
   specs: Record<string, string>;
   bulkTiers: { qty: string; price: number }[];
@@ -88,6 +89,7 @@ export async function fetchExploreProducts({
       price: Number(p.price) || 0,
       seller: (p.users as { name?: string })?.name || storeName,
       store: storeName,
+      images: p.images,
       image: resolveProductImage(p as { name?: string; category?: string; images?: unknown }),
       minOrder: `${(p.moq as number) || 1} units`,
       unit: 'unit',
