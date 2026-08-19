@@ -14,10 +14,12 @@ const CATEGORIES = [
   'All',
   'Electronics',
   'Fashion',
-  'Home & Kitchen',
+  'Home',
   'Sports',
-  'Food & Groceries',
-  'Industrial & Tools',
+  'Food',
+  'Industrial',
+  'Accessories',
+  'Health',
 ];
 
 function ExploreContent() {
