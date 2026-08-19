@@ -288,28 +288,28 @@ chatNamespace.on('connection', (socket) => {
     console.log(`[Chat] Message from ${data.senderId} to ${data.receiverId}: ${data.text}`);
 
     const timestamp = new Date().toISOString();
-    let messageId = Date.now().toString();
+    let messageId = data.id || Date.now().toString();
 
-    const supabase = getSupabaseAdmin();
-    if (supabase && data.senderId && data.text) {
-      const { data: row, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          sender_id: data.senderId,
-          receiver_id: String(data.receiverId),
-          sender_name: data.senderName || 'User',
-          text: data.text,
-        })
-        .select('id, created_at')
-        .single();
+    // Only insert to DB if client has not already inserted directly
+    if (!data.alreadyPersisted) {
+      const supabase = getSupabaseAdmin();
+      if (supabase && data.senderId && data.text) {
+        const { data: row, error } = await supabase
+          .from('chat_messages')
+          .insert({
+            sender_id: data.senderId,
+            receiver_id: String(data.receiverId),
+            sender_name: data.senderName || 'User',
+            text: data.text,
+          })
+          .select('id, created_at')
+          .single();
 
-      if (!error && row) {
-        messageId = row.id;
-        if (row.created_at) {
-          /* use DB timestamp */
+        if (!error && row) {
+          messageId = row.id;
+        } else if (error) {
+          console.warn('[Chat] DB persist failed:', error.message);
         }
-      } else if (error) {
-        console.warn('[Chat] DB persist failed:', error.message);
       }
     }
 
@@ -323,7 +323,6 @@ chatNamespace.on('connection', (socket) => {
     };
 
     chatNamespace.to(data.receiverId).emit('receive_message', payload);
-    chatNamespace.to(data.senderId).emit('receive_message', payload);
   });
 
   socket.on('disconnect', () => {
