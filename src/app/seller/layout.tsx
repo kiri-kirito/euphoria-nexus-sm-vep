@@ -90,6 +90,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [negotiationCount, setNegotiationCount] = useState<number>(0);
   const [openRequestsCount, setOpenRequestsCount] = useState<number>(0);
+  const [pendingBundlesCount, setPendingBundlesCount] = useState<number>(0);
   const [storeName, setStoreName] = useState<string>('My Store');
   const [sellerEmail, setSellerEmail] = useState<string>('seller@euphoria.com');
   const [sellerDisplayName, setSellerDisplayName] = useState<string>('Seller');
@@ -147,6 +148,22 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
         .neq('requesting_seller_id', sellerId);
 
       setOpenRequestsCount(reqCount || 0);
+
+      // Load pending incoming bundle proposals
+      const { data: bundlesData } = await supabase
+        .from('product_bundles')
+        .select('revenue_split');
+
+      const incomingCount = (bundlesData || []).filter((b: any) => {
+        const split = b.revenue_split;
+        return (
+          (split?._partner_id === sellerId && split?._status === 'pending_partner') ||
+          (split?._partner_id === sellerId && split?._status === 'countered' && split?._last_action_by !== sellerId) ||
+          (split?._proposer_id === sellerId && split?._status === 'countered' && split?._last_action_by !== sellerId)
+        );
+      }).length;
+
+      setPendingBundlesCount(incomingCount);
     }
     loadSellerInfo();
   }, [user?.id, profile]);
@@ -203,6 +220,11 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
                 {item.href === '/seller/bidding' && openRequestsCount > 0 && (
                   <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {openRequestsCount}
+                  </span>
+                )}
+                {item.href === '/seller/bundling' && pendingBundlesCount > 0 && (
+                  <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                    {pendingBundlesCount}
                   </span>
                 )}
               </Link>

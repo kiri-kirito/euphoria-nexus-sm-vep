@@ -35,6 +35,10 @@ function mapProduct(raw: any): BundleProduct {
 /** Build bundle view models from DB product_bundles rows */
 export function normalizeDbBundles(rows: any[]): NormalizedBundle[] {
   return rows
+    .filter((row) => {
+      const status = row.revenue_split?._status;
+      return !status || status === 'active';
+    })
     .map((row) => {
       const items = (row.bundle_items || [])
         .map((bi: any) => bi.products)
