@@ -77,16 +77,20 @@ export default function SellerDashboardPage() {
           { label: "Pending Negotiations", value: `${pendingNegotiationsCount || 0}`, change: "Awaiting reply", up: null, icon: "💬" },
         ]);
 
-        // 4. Recent Orders
+        // 4. Recent Orders (sorted by orders.created_at descending)
         const { data: recent } = await supabase
           .from('order_items')
           .select('*, products(name), orders!inner(id, status, created_at, users!inner(name))')
-          .eq('seller_id', sellerId)
-          .order('id', { ascending: false })
-          .limit(5);
+          .eq('seller_id', sellerId);
           
         if (recent) {
-          setRecentOrders(recent.map(r => ({
+          const sortedRecent = [...recent].sort((a: any, b: any) => {
+            const timeA = new Date(a.orders?.created_at || 0).getTime();
+            const timeB = new Date(b.orders?.created_at || 0).getTime();
+            return timeB - timeA;
+          });
+
+          setRecentOrders(sortedRecent.slice(0, 5).map(r => ({
             id: `#ORD-${String(r.order_id).substring(0, 8).toUpperCase()}`,
             product: r.products?.name || 'Wholesale Product',
             buyer: r.orders?.users?.name || 'Customer',

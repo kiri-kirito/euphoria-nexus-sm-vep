@@ -39,13 +39,18 @@ export default function SellerOrdersPage() {
 
         const { data, error } = await supabase.from('order_items')
           .select('*, orders!inner(id, status, created_at, shipping_address, users!inner(name, email)), products(name)')
-          .eq('seller_id', sellerId)
-          .order('id', { ascending: false });
+          .eq('seller_id', sellerId);
 
         if (error) throw error;
         
         if (data) {
-          const formatted = data.map(r => {
+          const sortedData = [...data].sort((a: any, b: any) => {
+            const timeA = new Date(a.orders?.created_at || 0).getTime();
+            const timeB = new Date(b.orders?.created_at || 0).getTime();
+            return timeB - timeA;
+          });
+
+          const formatted = sortedData.map(r => {
             let loc = 'Dhaka';
             if (r.orders?.shipping_address) {
               const raw = r.orders.shipping_address;

@@ -66,11 +66,17 @@ export default function AnalyticsPage() {
         const { data, error } = await supabase
           .from("order_items")
           .select("id, order_id, quantity, unit_price, products(name, category), orders!inner(id, status, created_at, users!inner(name))")
-          .eq("seller_id", sellerId)
-          .order("id", { ascending: false });
+          .eq("seller_id", sellerId);
 
         if (error) throw error;
-        setAllOrderItems((data as any[]) || []);
+
+        const sortedItems = ((data as any[]) || []).sort((a, b) => {
+          const timeA = new Date(a.orders?.created_at || 0).getTime();
+          const timeB = new Date(b.orders?.created_at || 0).getTime();
+          return timeB - timeA;
+        });
+
+        setAllOrderItems(sortedItems);
       } catch (error) {
         console.error("Analytics fetch error:", error);
       } finally {
