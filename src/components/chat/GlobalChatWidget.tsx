@@ -17,8 +17,6 @@ interface ChatMessage {
 interface ChatContact {
   id: string;
   label: string;
-  lastMessage?: string;
-  lastTime?: string;
 }
 
 function playNotificationChime() {
@@ -29,8 +27,8 @@ function playNotificationChime() {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
     gain.gain.setValueAtTime(0.2, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
     osc.connect(gain);
@@ -53,23 +51,30 @@ export default function GlobalChatWidget() {
   const [receiverId, setReceiverId] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationToast, setNotificationToast] = useState<{ senderId: string; sender: string; text: string } | null>(null);
+  const [sendingLock, setSendingLock] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load Contacts prioritized by most recent chat history
+  // ── Refs to avoid stale closures in Realtime callback ──
+  const isOpenRef = useRef(isOpen);
+  const receiverIdRef = useRef(receiverId);
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+  useEffect(() => { receiverIdRef.current = receiverId; }, [receiverId]);
+
+  // ── Load Contacts prioritized by most recent chat history ──
   const loadContacts = useCallback(async () => {
     if (!user?.id) return;
 
     const list: ChatContact[] = [];
     const seen = new Set<string>();
 
-    const addContact = (id: string, label: string, lastMessage?: string, lastTime?: string) => {
+    const addContact = (id: string, label: string) => {
       if (!id || id === user.id || seen.has(id)) return;
       seen.add(id);
-      list.push({ id, label, lastMessage, lastTime });
+      list.push({ id, label });
     };
 
     try {
-      // 1. Fetch recent conversations involving this user (ordered by latest message)
+      // Recent conversations
       const { data: recentChats } = await supabase
         .from('chat_messages')
         .select('sender_id, receiver_id, sender_name, text, created_at')
@@ -85,7 +90,6 @@ export default function GlobalChatWidget() {
         }
       });
 
-      // Get user/store profiles for these recent partners
       if (recentPartnerIds.length > 0) {
         const [{ data: partnerUsers }, { data: partnerStores }] = await Promise.all([
           supabase.from('users').select('id, name, role').in('id', recentPartnerIds),
@@ -104,7 +108,7 @@ export default function GlobalChatWidget() {
         });
       }
 
-      // 2. Fetch Support Team members
+      // Support Team
       const { data: supportUsers } = await supabase
         .from('users')
         .select('id, name')
@@ -112,9 +116,8 @@ export default function GlobalChatWidget() {
         .limit(5);
       (supportUsers || []).forEach((s) => addContact(s.id, `Support: ${s.name}`));
 
-      // 3. Role-based fallback contacts
+      // Role-based fallback
       const role = profile?.role || 'buyer';
-
       if (role === 'buyer') {
         const { data: negs } = await supabase
           .from('negotiations')
@@ -125,19 +128,7 @@ export default function GlobalChatWidget() {
           const seller = n.seller as { name?: string } | null;
           addContact(n.seller_id as string, `Seller: ${seller?.name || 'Partner'}`);
         });
-
-        const { data: orders } = await supabase
-          .from('orders')
-          .select('order_items(seller_id, users!seller_id(name))')
-          .eq('buyer_id', user.id)
-          .limit(5);
-        (orders || []).forEach((o) => {
-          (o.order_items as { seller_id?: string; users?: { name?: string } }[] | null)?.forEach((oi) => {
-            if (oi.seller_id) addContact(oi.seller_id, `Seller: ${oi.users?.name || 'Store'}`);
-          });
-        });
       }
-
       if (role === 'seller') {
         const { data: negs } = await supabase
           .from('negotiations')
@@ -147,6 +138,17 @@ export default function GlobalChatWidget() {
         (negs || []).forEach((n) => {
           const buyer = n.users as { name?: string } | null;
           addContact(n.buyer_id as string, `Buyer: ${buyer?.name || 'Customer'}`);
+        });
+      }
+      if (role === 'support' || role === 'admin') {
+        const { data: recentBuyers } = await supabase
+          .from('complaints')
+          .select('buyer_id, users!buyer_id(name)')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        (recentBuyers || []).forEach((c) => {
+          const buyer = c.users as { name?: string } | null;
+          addContact(c.buyer_id as string, `Buyer: ${buyer?.name || 'Customer'}`);
         });
       }
 
@@ -161,11 +163,9 @@ export default function GlobalChatWidget() {
     }
   }, [user?.id, profile?.role, supabase]);
 
-  useEffect(() => {
-    loadContacts();
-  }, [loadContacts]);
+  useEffect(() => { loadContacts(); }, [loadContacts]);
 
-  // Load message history for active receiver
+  // ── Load message history for active receiver ──
   useEffect(() => {
     if (!user?.id || !receiverId) return;
 
@@ -196,16 +196,16 @@ export default function GlobalChatWidget() {
     loadHistory();
   }, [user?.id, receiverId, supabase]);
 
-  // Real-time message subscription with Supabase Realtime Channels
+  // ── Supabase Realtime — STABLE subscription (NO receiverId/isOpen in deps) ──
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('public:chat_messages_realtime')
+      .channel('chat_messages_global_' + user.id)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-        async (payload) => {
+        (payload) => {
           const row = payload.new as any;
           if (!row || !row.id) return;
 
@@ -218,26 +218,35 @@ export default function GlobalChatWidget() {
             timestamp: row.created_at || new Date().toISOString(),
           };
 
-          // 1. If it's my own message echoed back by the database:
+          // ─ My own message echoed back from DB ─
           if (row.sender_id === user.id) {
             setMessages((prev) => {
-              // Update optimistic message id if needed
-              const idx = prev.findIndex((m) => m.id === incoming.id || (m.senderId === user.id && m.text === incoming.text));
+              // Find any optimistic or prior matching message and replace it
+              const idx = prev.findIndex(
+                (m) =>
+                  m.id === incoming.id ||
+                  (m.senderId === user.id &&
+                    m.text === incoming.text &&
+                    m.receiverId === incoming.receiverId)
+              );
               if (idx !== -1) {
                 const next = [...prev];
                 next[idx] = incoming;
                 return next;
               }
-              return [...prev, incoming];
+              // No match = probably second DB row from backend; ignore it
+              return prev;
             });
             return;
           }
 
-          // 2. If it's an incoming message for me from another user:
+          // ─ Incoming message from another user to me ─
           if (row.receiver_id === user.id) {
             const senderPartnerId = row.sender_id;
+            const currentReceiverId = receiverIdRef.current;
+            const currentIsOpen = isOpenRef.current;
 
-            // Bump this sender to index 0 of contacts
+            // Bump sender to top of contacts
             setContacts((prev) => {
               const existing = prev.find((c) => c.id === senderPartnerId);
               const rest = prev.filter((c) => c.id !== senderPartnerId);
@@ -248,13 +257,24 @@ export default function GlobalChatWidget() {
               return [contactEntry, ...rest];
             });
 
-            // If active conversation matches this sender:
-            if (receiverId === senderPartnerId) {
-              setMessages((prev) => (prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]));
+            // Add to messages if this is the active conversation
+            if (currentReceiverId === senderPartnerId) {
+              setMessages((prev) => {
+                // Deduplicate by ID AND by (sender + text) to handle double DB rows
+                const isDup = prev.some(
+                  (m) =>
+                    m.id === incoming.id ||
+                    (m.senderId === incoming.senderId &&
+                      m.text === incoming.text &&
+                      m.receiverId === incoming.receiverId)
+                );
+                return isDup ? prev : [...prev, incoming];
+              });
             }
 
-            // If chat is closed OR talking to another contact, show toast notification & play chime
-            if (!isOpen || receiverId !== senderPartnerId) {
+            // Always show notification toast & bump unread count
+            // (unless chat is open AND the active contact is the sender)
+            if (!currentIsOpen || currentReceiverId !== senderPartnerId) {
               setUnreadCount((c) => c + 1);
               playNotificationChime();
               setNotificationToast({
@@ -262,7 +282,7 @@ export default function GlobalChatWidget() {
                 sender: row.sender_name || 'Partner',
                 text: row.text,
               });
-              setTimeout(() => setNotificationToast(null), 6000);
+              setTimeout(() => setNotificationToast(null), 8000);
             }
           }
         }
@@ -272,40 +292,27 @@ export default function GlobalChatWidget() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, receiverId, isOpen, supabase]);
+    // Only depend on user.id — NOT on receiverId or isOpen (use refs instead)
+  }, [user?.id, supabase]);
 
-  // Socket sync fallback
+  // ── Socket: register only, NO message handling via socket ──
+  // Supabase Realtime is the SINGLE source of truth for all messages.
+  // Socket is only used to notify the backend for delivery to offline users.
   useEffect(() => {
     if (!socket || !user) return;
-
     socket.emit('register_user', user.id);
-
-    const handleReceiveMessage = (msg: ChatMessage) => {
-      if (msg.senderId === user.id) return; // ignore my own socket echoes
-      if (msg.receiverId !== user.id) return;
-
-      if (receiverId === msg.senderId) {
-        setMessages((prev) => {
-          const exists = prev.some((m) => m.id === msg.id || (m.senderId === msg.senderId && m.text === msg.text));
-          return exists ? prev : [...prev, msg];
-        });
-      }
-    };
-
-    socket.on('receive_message', handleReceiveMessage);
-
-    return () => {
-      socket.off('receive_message', handleReceiveMessage);
-    };
-  }, [socket, user, receiverId]);
+  }, [socket, user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
+  // ── Send message: insert to DB only (NO socket emit for message content) ──
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || !receiverId) return;
+    if (!newMessage.trim() || !user || !receiverId || sendingLock) return;
+
+    setSendingLock(true);
 
     const messageText = newMessage.trim();
     const senderName = profile?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
@@ -320,38 +327,46 @@ export default function GlobalChatWidget() {
       timestamp: new Date().toISOString(),
     };
 
-    // Optimistically show in UI
+    // Optimistically show in UI immediately
     setMessages((prev) => [...prev, optimisticMsg]);
     setNewMessage('');
 
-    // Insert to Supabase DB (Realtime broadcasts to recipient)
-    const { data: dbRow } = await supabase
-      .from('chat_messages')
-      .insert({
-        sender_id: user.id,
-        receiver_id: receiverId,
-        sender_name: senderName,
-        text: messageText,
-      })
-      .select('id, created_at')
-      .single();
+    try {
+      // Single DB insert — Supabase Realtime handles broadcast to everyone
+      const { data: dbRow } = await supabase
+        .from('chat_messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          sender_name: senderName,
+          text: messageText,
+        })
+        .select('id, created_at')
+        .single();
 
-    if (dbRow?.id) {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, id: dbRow.id, timestamp: dbRow.created_at } : m))
-      );
+      // Replace optimistic temp ID with real DB ID
+      if (dbRow?.id) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? { ...m, id: dbRow.id, timestamp: dbRow.created_at } : m))
+        );
+      }
+
+      // Emit to socket ONLY for real-time delivery to recipient (no DB insert on backend)
+      if (socket) {
+        socket.emit('send_message', {
+          id: dbRow?.id || tempId,
+          senderId: user.id,
+          senderName,
+          receiverId,
+          text: messageText,
+          alreadyPersisted: true,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
     }
 
-    if (socket) {
-      socket.emit('send_message', {
-        id: dbRow?.id || tempId,
-        senderId: user.id,
-        senderName,
-        receiverId,
-        text: messageText,
-        alreadyPersisted: true,
-      });
-    }
+    setSendingLock(false);
   };
 
   if (!user) return null;
@@ -360,7 +375,7 @@ export default function GlobalChatWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Real-Time Incoming Message Toast Notification with 1-Click Chat Switch */}
+      {/* ── Incoming Message Notification Toast ── */}
       {notificationToast && (
         <div
           onClick={() => {
@@ -386,7 +401,7 @@ export default function GlobalChatWidget() {
       )}
 
       {isOpen && (
-        <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-80 sm:w-96 h-[440px] flex flex-col overflow-hidden mb-4 animate-fade-in">
+        <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-80 sm:w-96 h-[440px] flex flex-col overflow-hidden mb-4">
           <div className="bg-gradient-to-r from-primary to-primary-dark text-white p-4 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
@@ -477,7 +492,7 @@ export default function GlobalChatWidget() {
             />
             <button
               type="submit"
-              disabled={!newMessage.trim()}
+              disabled={!newMessage.trim() || sendingLock}
               className="bg-primary hover:bg-primary-dark text-white rounded-xl p-2.5 w-10 h-10 flex items-center justify-center transition disabled:opacity-50 shadow-md shadow-primary/20"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -488,17 +503,17 @@ export default function GlobalChatWidget() {
         </div>
       )}
 
-      {/* Floating Chat Trigger Button with Pulsating Unread Badge */}
+      {/* ── Floating Chat Button with Unread Badge ── */}
       <button
         type="button"
         onClick={() => {
           setIsOpen(!isOpen);
-          setUnreadCount(0);
+          if (!isOpen) setUnreadCount(0);
         }}
         className="relative bg-primary hover:bg-primary-dark text-white rounded-full p-4 shadow-2xl shadow-primary/40 transition-transform hover:scale-105"
       >
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[11px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-bounce">
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[11px] font-extrabold min-w-[22px] h-[22px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
             {unreadCount}
           </span>
         )}
