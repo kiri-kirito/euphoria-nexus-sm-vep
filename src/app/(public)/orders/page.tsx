@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import OrderTrackingMap from '@/components/maps/OrderTrackingMapLazy';
 import { deliveryMapPoints } from '@/utils/deliveryMap';
+import { resolveProductImage } from '@/utils/productImages';
 
 type ComplaintType = 'general' | 'return' | 'refund';
 
@@ -43,9 +45,12 @@ function parseTicketMessages(description: string, resolution: string | null): Ch
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const supabase = createClient();
+  const [mainTab, setMainTab] = useState<'orders' | 'negotiations'>('orders');
   const [orders, setOrders] = useState<any[]>([]);
+  const [negotiations, setNegotiations] = useState<any[]>([]);
   const [complaintsByOrder, setComplaintsByOrder] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
@@ -69,9 +74,9 @@ export default function OrdersPage() {
       return;
     }
 
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       try {
-        const [{ data: orderData, error }, { data: complaints }] = await Promise.all([
+        const [{ data: orderData, error }, { data: complaints }, { data: negsData }] = await Promise.all([
           supabase
             .from('orders')
             .select(`
@@ -85,10 +90,20 @@ export default function OrdersPage() {
             .from('complaints')
             .select('id, order_id, status, complaint_type, refund_amount, created_at, description, resolution')
             .eq('buyer_id', user.id),
+          supabase
+            .from('negotiations')
+            .select(`
+              id, current_price, original_price, final_price, quantity, message, status, created_at,
+              products (id, name, price, images, category),
+              seller:users!seller_id (name, email)
+            `)
+            .eq('buyer_id', user.id)
+            .order('created_at', { ascending: false }),
         ]);
 
         if (error) throw error;
         setOrders(orderData || []);
+        setNegotiations(negsData || []);
 
         const map: Record<string, any> = {};
         (complaints || []).forEach((c) => {
@@ -101,7 +116,7 @@ export default function OrdersPage() {
       setLoading(false);
     };
 
-    fetchOrders();
+    fetchData();
   }, [user, supabase]);
 
   const handleFileComplaint = async (e: React.FormEvent) => {
@@ -193,7 +208,7 @@ export default function OrdersPage() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     const updatedMessages = [...existingMessages, newMsg];
-    const resolutionPayload = JSON.stringify(updatedMessages.slice(1)); // Store conversation array
+    const resolutionPayload = JSON.stringify(updatedMessages.slice(1));
 
     const { error } = await supabase
       .from('complaints')
@@ -219,6 +234,17 @@ export default function OrdersPage() {
     } else {
       alert('Failed to send reply: ' + error.message);
     }
+  };
+
+  const handleAcceptCounterOffer = async (negId: string, finalPrice: number) => {
+    await supabase
+      .from('negotiations')
+      .update({ status: 'accepted', final_price: finalPrice })
+      .eq('id', negId);
+
+    setNegotiations(prev => prev.map(n => n.id === negId ? { ...n, status: 'accepted', final_price: finalPrice } : n));
+    setToast('Counter-offer accepted! You can now proceed to checkout.');
+    setTimeout(() => setToast(null), 3000);
   };
 
   return (
@@ -365,10 +391,32 @@ export default function OrdersPage() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-8">My Orders</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Account Activity</h1>
+          
+          {/* Main Tabs */}
+          <div className="flex bg-slate-200/80 p-1.5 rounded-2xl w-fit">
+            <button
+              onClick={() => setMainTab('orders')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all ${
+                mainTab === 'orders' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📦 My Orders ({orders.length})
+            </button>
+            <button
+              onClick={() => setMainTab('negotiations')}
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all ${
+                mainTab === 'negotiations' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🤝 Price Negotiations ({negotiations.length})
+            </button>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="text-center py-12 text-slate-500 font-medium animate-pulse">Loading your orders...</div>
+          <div className="text-center py-12 text-slate-500 font-medium animate-pulse">Loading data...</div>
         ) : !user ? (
           <div className="bg-white rounded-3xl p-12 max-w-2xl mx-auto shadow-xl border text-center">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">Please Log In</h2>
@@ -376,119 +424,206 @@ export default function OrdersPage() {
               Go Home
             </Link>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 max-w-2xl mx-auto shadow-xl border text-center">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-4">No Orders Yet</h2>
-            <Link href="/explore" className="inline-flex px-8 py-3.5 bg-primary text-white font-bold rounded-xl">
-              Start Shopping
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {orders.map((order) => {
-              const ticket = complaintsByOrder[order.id];
-              const canReturn = order.status === 'delivered' || order.status === 'processing';
-              const mapOpen = expandedMapOrderId === order.id;
-              const mapData = deliveryMapPoints(order);
-              const showMap = order.status !== 'cancelled';
-              return (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col gap-4"
-                >
-                  <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <span className="font-bold text-slate-900 text-lg">
-                          Order #{order.id.substring(0, 8).toUpperCase()}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-100 text-slate-700">
-                          {order.status || 'Pending'}
-                        </span>
-                        {ticket && (
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            ticket.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700'
+        ) : mainTab === 'negotiations' ? (
+          /* NEGOTIATIONS TAB CONTENT */
+          negotiations.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 max-w-2xl mx-auto shadow-xl border text-center">
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">No Active Negotiations</h2>
+              <p className="text-slate-500 text-sm mb-6">You haven't initiated any bulk price negotiations yet.</p>
+              <Link href="/explore" className="inline-flex px-8 py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg">
+                Explore Catalog & Negotiate
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {negotiations.map((neg) => {
+                const product = neg.products;
+                const seller = neg.seller;
+                const image = resolveProductImage(product);
+                const isAccepted = neg.status === 'accepted';
+                const isCountered = neg.status === 'countered';
+                const isRejected = neg.status === 'rejected';
+
+                return (
+                  <div key={neg.id} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+                    <div className="flex gap-4 items-center">
+                      <img src={image} alt="" className="w-20 h-20 rounded-2xl object-cover bg-slate-100 shrink-0" />
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="font-bold text-slate-900 text-base">{product?.name || 'Product'}</h3>
+                          <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
+                            isAccepted ? 'bg-emerald-100 text-emerald-800' : isCountered ? 'bg-blue-100 text-blue-800' : isRejected ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
                           }`}>
-                            {ticket.complaint_type || 'Ticket'}: {ticket.status}
+                            {neg.status}
                           </span>
-                        )}
+                        </div>
+                        <p className="text-xs text-slate-500">Seller: <span className="font-semibold text-slate-700">{seller?.name || 'Verified Vendor'}</span></p>
+                        <p className="text-xs text-slate-500 mt-0.5">Quantity: <span className="font-bold text-slate-800">{neg.quantity} units</span></p>
+                        <p className="text-xs text-slate-400 mt-1">Submitted on {new Date(neg.created_at).toLocaleDateString()}</p>
                       </div>
-                      <p className="text-sm text-slate-500">
-                        Placed on: {new Date(order.created_at).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-slate-600 font-medium">
-                        {order.order_items?.length || 0} item(s) · {order.shipping_address || '—'}
-                      </p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-3">
-                      <span className="text-2xl font-black text-slate-900">
-                        ৳{Number(order.total_amount).toLocaleString()}
-                      </span>
-                      <div className="flex flex-wrap gap-2 justify-end">
-                        {showMap && (
+                    <div className="flex flex-col md:items-end gap-3 w-full md:w-auto">
+                      <div className="flex items-baseline gap-3">
+                        {neg.original_price && (
+                          <span className="text-xs text-slate-400 line-through">৳{Number(neg.original_price).toLocaleString()}</span>
+                        )}
+                        <div className="text-right">
+                          <span className="text-[10px] font-bold text-slate-400 block">
+                            {isCountered ? 'SELLER COUNTER-OFFER' : 'OFFER PRICE'}
+                          </span>
+                          <span className="text-2xl font-black text-emerald-600">
+                            ৳{Number(neg.current_price).toLocaleString()} <span className="text-xs font-normal text-slate-500">/ unit</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 justify-end w-full">
+                        {isCountered && (
                           <button
                             type="button"
-                            onClick={() => setExpandedMapOrderId(mapOpen ? null : order.id)}
-                            className="px-3 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100"
+                            onClick={() => handleAcceptCounterOffer(neg.id, Number(neg.current_price))}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
                           >
-                            {mapOpen ? 'Hide Map' : 'Track Delivery'}
+                            ✓ Accept Counter-Offer
                           </button>
                         )}
-                        {!ticket && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => openComplaintModal(order, 'general')}
-                              className="px-3 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100"
-                            >
-                              Complaint
-                            </button>
-                            {canReturn && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => openComplaintModal(order, 'return')}
-                                  className="px-3 py-2 bg-amber-50 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-100"
-                                >
-                                  Request Return
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openComplaintModal(order, 'refund')}
-                                  className="px-3 py-2 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-100"
-                                >
-                                  Request Refund
-                                </button>
-                              </>
-                            )}
-                          </>
-                        )}
-                        {ticket && (
-                          <button
-                            type="button"
-                            onClick={() => setActiveTicket(ticket)}
-                            className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-teal-600/20 flex items-center gap-1.5"
+                        {(isAccepted || isCountered) && (
+                          <Link
+                            href={`/checkout?negotiation=${neg.id}`}
+                            className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
                           >
-                            <span>💬</span> View Support Chat & Updates
-                          </button>
+                            <span>🛒</span> Proceed to Checkout (৳{Number(neg.current_price * neg.quantity).toLocaleString()})
+                          </Link>
+                        )}
+                        {neg.status === 'open' && (
+                          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-xl">
+                            ⏳ Waiting for Seller Response
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  {mapOpen && showMap && (
-                    <OrderTrackingMap
-                      pickup={mapData.pickup}
-                      delivery={mapData.delivery}
-                      agent={order.status !== 'delivered' ? mapData.agent : undefined}
-                      status={mapData.status}
-                      className="w-full"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          /* ORDERS TAB CONTENT */
+          orders.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 max-w-2xl mx-auto shadow-xl border text-center">
+              <h2 className="text-3xl font-extrabold text-slate-900 mb-4">No Orders Yet</h2>
+              <Link href="/explore" className="inline-flex px-8 py-3.5 bg-primary text-white font-bold rounded-xl">
+                Start Shopping
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {orders.map((order) => {
+                const ticket = complaintsByOrder[order.id];
+                const canReturn = order.status === 'delivered' || order.status === 'processing';
+                const mapOpen = expandedMapOrderId === order.id;
+                const mapData = deliveryMapPoints(order);
+                const showMap = order.status !== 'cancelled';
+                return (
+                  <div
+                    key={order.id}
+                    className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col gap-4"
+                  >
+                    <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <span className="font-bold text-slate-900 text-lg">
+                            Order #{order.id.substring(0, 8).toUpperCase()}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-100 text-slate-700">
+                            {order.status || 'Pending'}
+                          </span>
+                          {ticket && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              ticket.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {ticket.complaint_type || 'Ticket'}: {ticket.status}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          Placed on: {new Date(order.created_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-slate-600 font-medium">
+                          {order.order_items?.length || 0} item(s) · {order.shipping_address || '—'}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-3">
+                        <span className="text-2xl font-black text-slate-900">
+                          ৳{Number(order.total_amount).toLocaleString()}
+                        </span>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          {showMap && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedMapOrderId(mapOpen ? null : order.id)}
+                              className="px-3 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl hover:bg-blue-100"
+                            >
+                              {mapOpen ? 'Hide Map' : 'Track Delivery'}
+                            </button>
+                          )}
+                          {!ticket && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openComplaintModal(order, 'general')}
+                                className="px-3 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100"
+                              >
+                                Complaint
+                              </button>
+                              {canReturn && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openComplaintModal(order, 'return')}
+                                    className="px-3 py-2 bg-amber-50 text-amber-700 text-xs font-bold rounded-xl hover:bg-amber-100"
+                                  >
+                                    Request Return
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openComplaintModal(order, 'refund')}
+                                    className="px-3 py-2 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-100"
+                                  >
+                                    Request Refund
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+                          {ticket && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveTicket(ticket)}
+                              className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-teal-600/20 flex items-center gap-1.5"
+                            >
+                              <span>💬</span> View Support Chat & Updates
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {mapOpen && showMap && (
+                      <OrderTrackingMap
+                        pickup={mapData.pickup}
+                        delivery={mapData.delivery}
+                        agent={order.status !== 'delivered' ? mapData.agent : undefined}
+                        status={mapData.status}
+                        className="w-full"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
       </main>
     </div>

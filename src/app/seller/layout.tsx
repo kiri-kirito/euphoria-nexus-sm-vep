@@ -42,7 +42,6 @@ const NAV_ITEMS = [
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     ),
-    badge: "3",
   },
   {
     href: "/seller/analytics",
@@ -64,13 +63,39 @@ const NAV_ITEMS = [
   },
 ];
 
+import { createClient } from "@/utils/supabase/client";
+import { useAuthStore } from "@/store/useAuthStore";
+
 export default function SellerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { user } = useAuthStore();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [negotiationCount, setNegotiationCount] = useState<number>(0);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markAllRead } = useNotifications();
+
+  useEffect(() => {
+    async function loadNegCount() {
+      const supabase = createClient();
+      let sellerId = user?.id;
+      if (!sellerId) {
+        const { data: sellers } = await supabase.from('users').select('id').eq('role', 'seller').limit(1);
+        sellerId = sellers?.[0]?.id;
+      }
+      if (!sellerId) return;
+
+      const { count } = await supabase
+        .from('negotiations')
+        .select('id', { count: 'exact', head: true })
+        .eq('seller_id', sellerId)
+        .in('status', ['open', 'pending', 'countered']);
+
+      setNegotiationCount(count || 0);
+    }
+    loadNegCount();
+  }, [user?.id]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -114,9 +139,9 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
               >
                 <span className={`${isActive ? "text-primary" : "group-hover:text-primary"} transition-colors`}>{item.icon}</span>
                 <span className="text-sm font-medium flex-1">{item.label}</span>
-                {item.badge && (
-                  <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                    {item.badge}
+                {item.href === '/seller/negotiations' && negotiationCount > 0 && (
+                  <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {negotiationCount}
                   </span>
                 )}
               </Link>
