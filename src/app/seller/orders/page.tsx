@@ -73,9 +73,9 @@ export default function SellerOrdersPage() {
           
           setSummary({
             all: formatted.length,
-            processing: formatted.filter(o => o.status === 'Processing').length,
-            shipped: formatted.filter(o => o.status === 'Shipped').length,
-            delivered: formatted.filter(o => o.status === 'Delivered').length,
+            processing: formatted.filter(o => ['processing', 'pending', 'placed'].includes(String(o.status).toLowerCase())).length,
+            shipped: formatted.filter(o => String(o.status).toLowerCase() === 'shipped').length,
+            delivered: formatted.filter(o => String(o.status).toLowerCase() === 'delivered').length,
           });
         }
       } catch (err) {

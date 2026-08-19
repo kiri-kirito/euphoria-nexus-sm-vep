@@ -4,12 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { resolveProductImage } from "@/utils/productImages";
 
 const STATUS_STYLES: Record<string, string> = {
   Processing: "bg-amber-100 text-amber-700",
+  processing: "bg-amber-100 text-amber-700",
   Shipped: "bg-blue-100 text-blue-700",
+  shipped: "bg-blue-100 text-blue-700",
   Delivered: "bg-emerald-100 text-emerald-700",
+  delivered: "bg-emerald-100 text-emerald-700",
   Cancelled: "bg-red-100 text-red-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
 export default function SellerDashboardPage() {
@@ -17,9 +22,9 @@ export default function SellerDashboardPage() {
   const supabase = createClient();
   
   const [stats, setStats] = useState([
-    { label: "Total Revenue", value: "৳0", change: "+0%", up: true, icon: "💰" },
-    { label: "Total Products", value: "0", change: "Active", up: true, icon: "📦" },
-    { label: "Active Orders", value: "0", change: "Processing", up: false, icon: "🕐" },
+    { label: "Total Revenue", value: "৳0", change: "Lifetime", up: true, icon: "💰" },
+    { label: "Total Products", value: "0", change: "Active catalog", up: true, icon: "📦" },
+    { label: "Active Orders", value: "0", change: "In fulfillment", up: false, icon: "🕐" },
     { label: "Pending Negotiations", value: "0", change: "Awaiting reply", up: null, icon: "💬" },
   ]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -39,52 +44,87 @@ export default function SellerDashboardPage() {
         
         if (!sellerId) return;
 
-        const { count: productCount } = await supabase.from('products').select('*', {count:'exact', head: true}).eq('seller_id', sellerId);
-        const { count: negotiations } = await supabase.from('negotiations').select('*', {count:'exact', head: true}).eq('seller_id', sellerId);
+        // 1. Exact active products count
+        const { count: productCount } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', sellerId);
+
+        // 2. Exact PENDING negotiations count (only active/unresolved negotiations)
+        const { count: pendingNegotiationsCount } = await supabase
+          .from('negotiations')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', sellerId)
+          .in('status', ['open', 'pending', 'countered']);
         
-        const { data: orderData } = await supabase.from('order_items')
-          .select('quantity, unit_price, orders!inner(id, status)')
+        // 3. Orders and Revenue
+        const { data: orderData } = await supabase
+          .from('order_items')
+          .select('product_id, quantity, unit_price, orders!inner(id, status, created_at)')
           .eq('seller_id', sellerId);
           
-        const revenue = orderData?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || 0;
-        const pendingOrders = orderData?.filter(o => (o.orders as any)?.status === 'Processing').length || 0;
+        const revenue = orderData?.reduce((sum, item) => sum + (Number(item.quantity || 1) * Number(item.unit_price || 0)), 0) || 0;
+        
+        const activeOrders = orderData?.filter(o => {
+          const st = String((o.orders as any)?.status || '').toLowerCase();
+          return st !== 'delivered' && st !== 'cancelled' && st !== 'refunded';
+        }).length || 0;
 
         setStats([
-          { label: "Total Revenue", value: `৳${revenue.toLocaleString()}`, change: "+12.5%", up: true, icon: "💰" },
+          { label: "Total Revenue", value: `৳${revenue.toLocaleString()}`, change: "Sales total", up: true, icon: "💰" },
           { label: "Total Products", value: `${productCount || 0}`, change: "Active catalog", up: true, icon: "📦" },
-          { label: "Active Orders", value: `${pendingOrders}`, change: "Processing", up: false, icon: "🕐" },
-          { label: "Pending Negotiations", value: `${negotiations || 0}`, change: "Awaiting reply", up: null, icon: "💬" },
+          { label: "Active Orders", value: `${activeOrders}`, change: "In fulfillment", up: activeOrders > 0, icon: "🕐" },
+          { label: "Pending Negotiations", value: `${pendingNegotiationsCount || 0}`, change: "Awaiting reply", up: null, icon: "💬" },
         ]);
 
-        const { data: recent } = await supabase.from('order_items')
-          .select('*, products(name), orders!inner(id, status, users!inner(name))')
+        // 4. Recent Orders
+        const { data: recent } = await supabase
+          .from('order_items')
+          .select('*, products(name), orders!inner(id, status, created_at, users!inner(name))')
           .eq('seller_id', sellerId)
           .order('id', { ascending: false })
-          .limit(4);
+          .limit(5);
           
         if (recent) {
           setRecentOrders(recent.map(r => ({
-            id: `#ORD-${r.order_id}`,
-            product: r.products?.name || 'Unknown',
-            buyer: r.orders?.users?.name || 'Guest',
+            id: `#ORD-${String(r.order_id).substring(0, 8).toUpperCase()}`,
+            product: r.products?.name || 'Wholesale Product',
+            buyer: r.orders?.users?.name || 'Customer',
             qty: r.quantity,
             total: r.quantity * r.unit_price,
             status: r.orders?.status || 'Processing'
           })));
         }
 
-        const { data: tops } = await supabase.from('products')
+        // 5. Top Products with real sales aggregation
+        const productSalesMap = new Map<string, { qty: number; revenue: number }>();
+        (orderData || []).forEach((item: any) => {
+          if (item.product_id) {
+            const prev = productSalesMap.get(item.product_id) || { qty: 0, revenue: 0 };
+            productSalesMap.set(item.product_id, {
+              qty: prev.qty + (Number(item.quantity) || 1),
+              revenue: prev.revenue + (Number(item.quantity || 1) * Number(item.unit_price || 0)),
+            });
+          }
+        });
+
+        const { data: tops } = await supabase
+          .from('products')
           .select('*')
           .eq('seller_id', sellerId)
-          .limit(3);
+          .limit(4);
           
         if (tops) {
-          setTopProducts(tops.map(t => ({
-            name: t.name,
-            sales: Math.floor(Math.random() * 50) + 10,
-            revenue: t.price * (Math.floor(Math.random() * 50) + 10),
-            img: (t.images && typeof t.images === 'string' ? JSON.parse(t.images) : t.images)?.[0] || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80"
-          })));
+          setTopProducts(tops.map(t => {
+            const salesInfo = productSalesMap.get(t.id) || { qty: 0, revenue: 0 };
+            const img = resolveProductImage(t);
+            return {
+              name: t.name,
+              sales: salesInfo.qty,
+              revenue: salesInfo.revenue || (Number(t.price || 0) * salesInfo.qty),
+              img: img || "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80&h=80&fit=crop&q=80"
+            };
+          }));
         }
 
       } catch (err) {
@@ -95,10 +135,10 @@ export default function SellerDashboardPage() {
     }
     
     fetchDashboard();
-  }, [userId, userLoading]);
+  }, [userId, userLoading, supabase]);
 
   if (loading || userLoading) {
-    return <div className="p-8 text-center text-slate-500">Database connecting... Loading dashboard data.</div>;
+    return <div className="p-8 text-center text-slate-500 font-medium animate-pulse">Loading dashboard overview...</div>;
   }
 
   return (
@@ -128,7 +168,7 @@ export default function SellerDashboardPage() {
               <span className="text-3xl">{stat.icon}</span>
               <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                 stat.up === true ? "bg-emerald-100 text-emerald-700" :
-                stat.up === false ? "bg-red-100 text-red-700" :
+                stat.up === false ? "bg-amber-100 text-amber-700" :
                 "bg-slate-100 text-slate-600"
               }`}>
                 {stat.change}
@@ -171,21 +211,21 @@ export default function SellerDashboardPage() {
         {/* Top Products */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900">Top Products</h3>
+            <h3 className="font-bold text-slate-900">Store Products</h3>
           </div>
           <div className="divide-y divide-slate-100">
             {topProducts.length > 0 ? topProducts.map((product, i) => (
-              <div key={product.name} className="px-6 py-4 flex items-center gap-3">
+              <div key={product.name + i} className="px-6 py-4 flex items-center gap-3">
                 <span className="text-lg font-extrabold text-slate-200 w-5 flex-shrink-0">#{i + 1}</span>
-                <img src={product.img} alt={product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                <img src={product.img} alt={product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-slate-100" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-900 truncate">{product.name}</p>
                   <p className="text-xs text-slate-500">{product.sales} sold</p>
                 </div>
-                <p className="text-xs font-bold text-primary flex-shrink-0">৳{(product.revenue / 1000).toFixed(0)}K</p>
+                <p className="text-xs font-bold text-primary flex-shrink-0">৳{Number(product.revenue || 0).toLocaleString()}</p>
               </div>
             )) : (
-              <div className="p-6 text-center text-slate-500">Add products to see top sellers!</div>
+              <div className="p-6 text-center text-slate-500">Add products to see store catalog!</div>
             )}
           </div>
 
@@ -198,7 +238,7 @@ export default function SellerDashboardPage() {
             </Link>
             <Link href="/seller/orders" className="flex items-center gap-2 text-sm text-slate-700 hover:text-primary transition-colors py-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              View pending orders
+              View orders
             </Link>
             <Link href="/seller/negotiations" className="flex items-center gap-2 text-sm text-slate-700 hover:text-primary transition-colors py-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
