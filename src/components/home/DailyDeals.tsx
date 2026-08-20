@@ -3,11 +3,10 @@ import Link from "next/link";
 import ProductImage from "@/components/products/ProductImage";
 
 export default async function DailyDeals() {
-  const products = await fetchProducts();
-  const deals = [...products]
-    .filter((p: { quantity?: number }) => (p.quantity ?? 0) > 0)
-    .sort((a: { price?: number }, b: { price?: number }) => Number(a.price) - Number(b.price))
-    .slice(0, 4);
+  const products = await fetchProducts(50);
+  const inStock = products.filter((p: { quantity?: number }) => (p.quantity ?? 0) > 0);
+  const shuffled = inStock.sort(() => 0.5 - Math.random());
+  const deals = shuffled.slice(0, 4);
 
   return (
     <section className="py-16 border-t border-slate-100">

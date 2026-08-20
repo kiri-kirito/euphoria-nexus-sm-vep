@@ -43,7 +43,7 @@ function ExploreContent() {
   const urlSeller = searchParams.get('seller') || '';
   const urlTab = searchParams.get('tab') === 'stores' ? 'stores' : 'products';
 
-  const [exploreTab, setExploreTab] = useState<'products' | 'stores'>(urlTab);
+  const [exploreTab, setExploreTab] = useState<'products' | 'stores' | 'deals'>(urlTab as 'products' | 'stores');
   const [selectedCategory, setSelectedCategory] = useState<string>(urlCategory);
   const [searchQuery, setSearchQuery] = useState<string>(urlSearch);
   const [debouncedSearch, setDebouncedSearch] = useState<string>(urlSearch);
@@ -214,11 +214,11 @@ function ExploreContent() {
             </p>
           </div>
 
-          {/* Tab Switcher: Products vs Stores */}
-          <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0">
+          {/* Tab Switcher: Products vs Stores vs Deals */}
+          <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0 overflow-x-auto">
             <button
               onClick={() => setExploreTab('products')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                 exploreTab === 'products' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -226,11 +226,19 @@ function ExploreContent() {
             </button>
             <button
               onClick={() => setExploreTab('stores')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                 exploreTab === 'stores' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >
               🏪 Sellers & Stores
+            </button>
+            <button
+              onClick={() => setExploreTab('deals')}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                exploreTab === 'deals' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              🎁 Bundles & Deals
             </button>
           </div>
         </div>
@@ -332,7 +340,7 @@ function ExploreContent() {
               </div>
             )}
           </div>
-        ) : (
+        ) : exploreTab === 'products' ? (
           /* PRODUCTS TAB VIEW */
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Mobile Filter Toggle Button */}
@@ -587,7 +595,98 @@ function ExploreContent() {
               )}
             </main>
           </div>
-        )}
+        ) : exploreTab === 'deals' ? (
+          /* DEALS & BUNDLES TAB VIEW */
+          <div className="space-y-12">
+            <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 sm:p-12 text-center shadow-xl border border-purple-700 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10 blur-2xl">
+                <div className="w-64 h-64 bg-white rounded-full"></div>
+              </div>
+              <div className="relative z-10">
+                <span className="inline-block bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4 border border-white/30">
+                  🎁 Exclusive Offers
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">Cross-Seller Value Bundles</h2>
+                <p className="text-purple-200 max-w-2xl mx-auto mb-8 text-sm">
+                  Save up to 15% by buying complementary items together. Verified sellers combine their products so you get maximum value with a single delivery.
+                </p>
+                <Link
+                  href="/bundles"
+                  className="inline-block bg-white text-purple-900 hover:bg-slate-100 font-bold px-8 py-4 rounded-xl shadow-lg transition-all hover:scale-105"
+                >
+                  View All Bundle Deals →
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-end mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800">🔥 Daily Flash Deals</h2>
+                  <p className="text-xs text-slate-500 mt-1">Lowest-priced products currently in stock</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setExploreTab('products');
+                    setSortBy('price-asc');
+                  }}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  View all low-price items
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[...products]
+                  .filter((p) => (p.quantity ?? 0) > 0)
+                  .sort((a, b) => Number(a.price) - Number(b.price))
+                  .slice(0, 8)
+                  .map((product) => (
+                    <div
+                      key={product.id}
+                      className="bg-white rounded-3xl border border-red-100 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group relative"
+                    >
+                      <div className="absolute top-3 right-3 z-10 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-md animate-pulse">
+                        HOT DEAL
+                      </div>
+                      <div
+                        className="relative h-48 bg-slate-100 overflow-hidden cursor-pointer"
+                        onClick={() => router.push(`/product/${product.id}`)}
+                      >
+                        <ProductImage
+                          product={product}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="font-bold text-slate-900 text-sm mb-1 line-clamp-1">{product.name}</h3>
+                        <div className="flex items-baseline gap-1 mb-3">
+                          <span className="text-xl font-black text-red-600">৳{(product.price || 0).toLocaleString()}</span>
+                          <span className="text-[10px] text-slate-400">/{product.unit || 'unit'}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            addItem({
+                              id: product.id,
+                              name: product.name,
+                              price: Number(product.price),
+                              quantity: 1,
+                              image: product.image,
+                              sellerId: product.seller_id,
+                            });
+                            showToast(`Added deal to cart!`);
+                          }}
+                          className="mt-auto w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-sm"
+                        >
+                          Grab Deal
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Bulk Deal Negotiate Modal */}

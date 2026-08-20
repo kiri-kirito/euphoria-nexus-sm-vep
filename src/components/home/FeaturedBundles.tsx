@@ -7,7 +7,10 @@ export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
 export default async function FeaturedBundles() {
-  const bundles = (await fetchBundles(3)).slice(0, 3);
+  const allBundles = await fetchBundles(20);
+  // Shuffle and take 3
+  const shuffled = allBundles.sort(() => 0.5 - Math.random());
+  const bundles = shuffled.slice(0, 3);
   if (bundles.length === 0) return null;
 
   return (
