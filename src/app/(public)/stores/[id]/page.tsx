@@ -238,6 +238,7 @@ export default function StorefrontPage() {
                         productName={prod.name}
                         sellerId={prod.seller_id}
                         price={Number(prod.price)}
+                        className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-sm flex items-center justify-center gap-1.5"
                       />
                     </div>
                   </div>
