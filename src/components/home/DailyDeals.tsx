@@ -9,13 +9,13 @@ export default async function DailyDeals() {
   const deals = shuffled.slice(0, 4);
 
   return (
-    <section className="py-16 border-t border-slate-100">
-      <div className="flex justify-between items-end mb-8">
+    <section className="py-8 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800">Daily Flash Deals</h2>
-          <p className="text-slate-500 mt-2">Lowest-priced in-stock picks — updated from live catalog</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">Daily Flash Deals</h2>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">Lowest-priced in-stock picks — updated from live catalog</p>
         </div>
-        <Link href="/products" className="text-primary font-semibold hover:text-primary-dark flex items-center gap-1 transition-colors">
+        <Link href="/explore?tab=deals" className="text-primary font-semibold hover:text-primary-dark flex items-center gap-1 transition-colors text-xs sm:text-sm shrink-0">
           View All Deals
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m9 18 6-6-6-6"></path>

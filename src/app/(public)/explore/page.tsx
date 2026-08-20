@@ -202,23 +202,23 @@ function ExploreContent() {
       )}
 
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
+          <div className="w-full md:max-w-xl">
             <span className="inline-block bg-primary/20 text-primary-light text-xs font-bold px-3 py-1 rounded-full border border-primary/30 mb-3">
               B2B Marketplace & Retail Catalog
             </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Explore Wholesale & Retail Products</h1>
-            <p className="text-slate-400 mt-2 max-w-2xl text-sm sm:text-base">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">Explore Wholesale & Retail Products</h1>
+            <p className="text-slate-400 mt-2 text-xs sm:text-sm md:text-base">
               Discover verified Bangladesh suppliers, visit online seller stores, and negotiate bulk prices directly.
             </p>
           </div>
 
           {/* Tab Switcher: Products vs Stores vs Deals */}
-          <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0 overflow-x-auto">
+          <div className="w-full md:w-auto max-w-full flex items-center gap-1.5 bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 overflow-x-auto">
             <button
               onClick={() => setExploreTab('products')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition whitespace-nowrap flex-1 md:flex-initial text-center justify-center flex items-center ${
                 exploreTab === 'products' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -226,7 +226,7 @@ function ExploreContent() {
             </button>
             <button
               onClick={() => setExploreTab('stores')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition whitespace-nowrap flex-1 md:flex-initial text-center justify-center flex items-center ${
                 exploreTab === 'stores' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -234,7 +234,7 @@ function ExploreContent() {
             </button>
             <button
               onClick={() => setExploreTab('deals')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition whitespace-nowrap flex-1 md:flex-initial text-center justify-center flex items-center ${
                 exploreTab === 'deals' ? 'bg-primary text-white shadow-lg' : 'text-slate-300 hover:text-white'
               }`}
             >

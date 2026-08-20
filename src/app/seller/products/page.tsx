@@ -99,7 +99,7 @@ export default function SellerProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">My Products</h1>
           <p className="text-slate-500 text-sm mt-1">{products.length} products listed in your store</p>
@@ -152,7 +152,7 @@ export default function SellerProductsPage() {
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
         {loading || userLoading ? (
           <div className="p-8 text-center text-slate-500 animate-pulse font-medium">Loading your store catalog...</div>
         ) : (

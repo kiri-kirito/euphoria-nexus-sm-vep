@@ -129,13 +129,13 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
               <img 
                 src="/logo-brand.png" 
                 alt="Euphoria Nexus Logo" 
-                className="h-16 w-auto object-contain"
+                className="h-10 sm:h-14 w-auto object-contain"
               />
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark">
+              <span className="text-base sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-dark whitespace-nowrap">
                 Euphoria Nexus
               </span>
             </Link>

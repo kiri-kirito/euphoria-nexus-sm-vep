@@ -14,21 +14,21 @@ export default async function FeaturedBundles() {
   if (bundles.length === 0) return null;
 
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-end mb-8">
+    <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 mb-2 inline-block">
             🎁 Cross-Seller Collaborative Bundles
           </span>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Featured Value Bundles</h2>
-          <p className="text-slate-500 mt-1">Multi-product bundles combined from verified sellers for maximum savings with single delivery.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Featured Value Bundles</h2>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">Multi-product bundles combined from verified sellers for maximum savings with single delivery.</p>
         </div>
-        <Link href="/bundles" className="hidden sm:block text-primary font-semibold hover:text-primary-dark transition-colors">
+        <Link href="/bundles" className="text-primary font-semibold hover:text-primary-dark transition-colors text-xs sm:text-sm flex items-center gap-1 shrink-0">
           Explore All Deals →
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {bundles.map((bundle) => (
           <div
             key={bundle.id}

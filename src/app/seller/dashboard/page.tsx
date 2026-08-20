@@ -187,7 +187,7 @@ export default function SellerDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
           <p className="text-slate-500 text-sm mt-1">Here&apos;s what&apos;s happening with your store today.</p>
@@ -204,7 +204,7 @@ export default function SellerDashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat) => (
           <div key={stat.label} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">

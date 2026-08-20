@@ -105,7 +105,7 @@ export default function Hero() {
   const currentTextSlide = current % TEXT_SLIDES.length;
 
   return (
-    <section className="relative overflow-hidden rounded-2xl my-6 mx-4 sm:mx-6 lg:mx-8 shadow-2xl h-[520px] lg:h-[600px] bg-[#020617]">
+    <section className="relative overflow-hidden rounded-2xl my-4 sm:my-6 mx-2 sm:mx-6 lg:mx-8 shadow-2xl min-h-[440px] sm:min-h-[500px] lg:h-[600px] bg-[#020617]">
 
       {/* ── Animated Space & Earth Horizon Background (Faster) ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -159,14 +159,14 @@ export default function Hero() {
       <div className="relative z-10 flex flex-col lg:flex-row h-full">
 
         {/* Left — Text Content Section */}
-        <div className="flex-1 flex flex-col justify-center px-6 lg:px-16 py-10 relative">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full mb-8 w-fit shadow-lg shadow-black/30">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
+        <div className="flex-1 flex flex-col justify-center px-4 sm:px-8 lg:px-16 py-8 sm:py-10 relative">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[11px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-8 w-fit shadow-lg shadow-black/30">
+            <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
             500+ Sellers Online
           </div>
 
-          {/* Fixed Height Container for Text Slides */}
-          <div className="relative h-[260px] lg:h-[290px] w-full">
+          {/* Fluid Height Container for Text Slides */}
+          <div className="relative min-h-[220px] sm:h-[260px] lg:h-[290px] w-full pb-10 sm:pb-0">
             {TEXT_SLIDES.map((slide, idx) => (
               <div
                 key={idx}
@@ -176,15 +176,15 @@ export default function Hero() {
                     : "opacity-0 translate-y-4 pointer-events-none"
                 }`}
               >
-                <h1 className="text-4xl md:text-5xl lg:text-[54px] font-extrabold text-white tracking-tight leading-[1.1] mb-5 drop-shadow-md">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[54px] font-extrabold text-white tracking-tight leading-[1.15] sm:leading-[1.1] mb-3 sm:mb-5 drop-shadow-md">
                   {slide.title}
                 </h1>
-                <p className="text-base md:text-lg text-slate-300 mb-8 max-w-lg leading-relaxed font-light drop-shadow">
+                <p className="text-xs sm:text-base md:text-lg text-slate-300 mb-5 sm:mb-8 max-w-lg leading-relaxed font-light drop-shadow line-clamp-3 sm:line-clamp-none">
                   {slide.description}
                 </p>
                 <Link
                   href={slide.actionLink}
-                  className="inline-block px-10 py-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all hover:scale-105 active:scale-95 border border-white/20"
+                  className="inline-block px-6 sm:px-10 py-2.5 sm:py-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm sm:text-lg shadow-[0_0_30px_rgba(37,99,235,0.5)] transition-all hover:scale-105 active:scale-95 border border-white/20"
                 >
                   {slide.actionText}
                 </Link>
