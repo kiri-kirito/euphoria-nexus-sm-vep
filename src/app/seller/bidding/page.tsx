@@ -581,18 +581,7 @@ export default function BlindBiddingPage() {
                           >
                             At Target (৳{req.targetPrice})
                           </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setBidAmounts((prev) => ({
-                                ...prev,
-                                [req.id]: String(Math.round(req.targetPrice * 0.95)),
-                              }))
-                            }
-                            className="text-[10px] font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1 rounded-lg transition"
-                          >
-                            -5% (৳{Math.round(req.targetPrice * 0.95)})
-                          </button>
+
                         </div>
 
                         <div className="flex gap-2">
