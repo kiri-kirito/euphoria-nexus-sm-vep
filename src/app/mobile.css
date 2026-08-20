@@ -1,0 +1,263 @@
+/*
+ * mobile.css — Euphoria Nexus Mobile & Tablet Responsive Fixes
+ * Imported in globals.css. All rules use max-width breakpoints
+ * so desktop design is NOT touched.
+ */
+
+/* --- GLOBAL --- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* --- TYPOGRAPHY SCALE DOWN --- */
+@media (max-width: 767px) {
+  .text-4xl  { font-size: 1.875rem !important; }
+  .text-5xl  { font-size: 2.25rem  !important; }
+  .text-6xl  { font-size: 2.5rem   !important; }
+  .text-3xl  { font-size: 1.5rem   !important; }
+}
+
+/* --- TOUCH TARGETS & INPUT ZOOM PREVENTION --- */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* --- NAVBAR --- */
+@media (max-width: 767px) {
+  nav .logo-brand-text { display: none !important; }
+}
+
+/* Login modal: full width bottom sheet on mobile */
+@media (max-width: 767px) {
+  .modal-backdrop { align-items: flex-end !important; }
+  .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top-left-radius: 1.25rem !important;
+    border-top-right-radius: 1.25rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* Mobile search bar below nav */
+.mobile-search-bar { display: none; }
+@media (max-width: 767px) {
+  .mobile-search-bar {
+    display: flex !important;
+    padding: 8px 16px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+/* --- HOMEPAGE SECTIONS --- */
+@media (max-width: 767px) {
+  /* DailyDeals section padding */
+  section.daily-deals-section { padding-left: 1rem !important; padding-right: 1rem !important; }
+  section.daily-deals-section .section-header { flex-direction: column !important; align-items: flex-start !important; gap: 0.5rem !important; }
+
+  /* Featured Bundles: 1 col on mobile */
+  .featured-bundles-grid { grid-template-columns: 1fr !important; }
+  .featured-bundles-header { flex-direction: column !important; align-items: flex-start !important; gap: 0.75rem !important; }
+  .featured-bundles-explore-link { display: inline-block !important; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  /* Tablet: 2 cols */
+  .featured-bundles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+/* --- EXPLORE PAGE --- */
+@media (max-width: 767px) {
+  .explore-header-inner { flex-direction: column !important; gap: 1rem !important; }
+  .explore-tab-switcher { overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .explore-tab-switcher::-webkit-scrollbar { display: none; }
+}
+
+/* --- PRODUCT DETAIL --- */
+@media (max-width: 767px) {
+  .product-detail-container { flex-direction: column !important; }
+  .product-detail-info { padding: 1.25rem !important; }
+  .product-detail-image { padding: 1rem !important; }
+}
+
+/* --- CART PAGE --- */
+@media (max-width: 767px) {
+  .cart-item-row { flex-direction: column !important; }
+  .cart-item-image { width: 5rem !important; height: 5rem !important; }
+}
+
+/* --- DASHBOARD LAYOUTS — Sidebar as Slide-Over --- */
+
+/* Hamburger button: hidden on desktop, visible on mobile */
+.sidebar-hamburger-btn {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .sidebar-hamburger-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    cursor: pointer;
+    border: none;
+    flex-shrink: 0;
+  }
+
+  /* Sidebar: hidden off-screen by default */
+  .dashboard-sidebar-panel {
+    position: fixed !important;
+    top: 0 !important;
+    left: -280px !important;
+    width: 260px !important;
+    height: 100vh !important;
+    z-index: 200 !important;
+    transition: left 0.28s cubic-bezier(.4,0,.2,1) !important;
+    overflow-y: auto !important;
+  }
+
+  .dashboard-sidebar-panel.is-open {
+    left: 0 !important;
+  }
+
+  /* Overlay backdrop */
+  .sidebar-overlay-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 199;
+    cursor: pointer;
+  }
+  .sidebar-overlay-backdrop.is-open {
+    display: block !important;
+  }
+
+  /* Main content: full width */
+  .dashboard-main-area {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Top bar: include hamburger */
+  .dashboard-topbar-inner {
+    gap: 0.5rem !important;
+  }
+
+  /* Content padding reduced */
+  .dashboard-page-content {
+    padding: 1rem !important;
+  }
+}
+
+/* --- SELLER DASHBOARD CONTENT --- */
+@media (max-width: 767px) {
+  /* Stats grid: 2 cols */
+  .seller-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  .seller-stats-card { padding: 1rem !important; }
+
+  /* Dashboard body: stack */
+  .seller-body-grid { grid-template-columns: 1fr !important; }
+
+  /* Header: stack */
+  .seller-page-header { flex-direction: column !important; align-items: flex-start !important; gap: 0.75rem !important; }
+}
+
+/* --- SELLER PRODUCTS TABLE --- */
+@media (max-width: 1023px) {
+  .products-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .products-table-wrap table { min-width: 680px !important; }
+}
+
+/* --- ADMIN TABLE / PAGES --- */
+@media (max-width: 1023px) {
+  .admin-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .admin-table-wrap table { min-width: 600px !important; }
+  .admin-page-content { padding: 1rem !important; }
+}
+
+/* --- STORE PAGE --- */
+@media (max-width: 767px) {
+  /* Products: 2 col */
+  .store-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  /* Action buttons: stacked */
+  .store-card-actions { flex-direction: column !important; gap: 0.5rem !important; }
+  .store-card-actions button, .store-card-actions a { width: 100% !important; }
+  /* Banner padding */
+  .store-hero-banner { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+}
+
+/* --- BUNDLES PAGE --- */
+@media (max-width: 639px) {
+  .bundles-grid { grid-template-columns: 1fr !important; }
+}
+@media (min-width: 640px) and (max-width: 767px) {
+  .bundles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+/* --- SUPPORT DASHBOARD --- */
+@media (max-width: 767px) {
+  .support-page-content { padding: 1rem !important; }
+  .support-tab-bar { overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; }
+  .support-grid { grid-template-columns: 1fr !important; }
+}
+
+/* --- REGISTER PAGE --- */
+@media (max-width: 767px) {
+  .register-card { padding: 1.5rem !important; }
+}
+
+/* --- TOAST FIX --- */
+@media (max-width: 767px) {
+  .toast-notification {
+    right: 1rem !important;
+    left: 1rem !important;
+    bottom: 1.5rem !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+}
+
+/* --- HERO SECTION --- */
+@media (max-width: 767px) {
+  .hero-container { min-height: unset !important; height: auto !important; }
+  .hero-slide-content { padding: 1.5rem !important; }
+  .hero-title { font-size: 1.75rem !important; line-height: 1.2 !important; }
+  .hero-cta-btn { padding: 0.75rem 1.5rem !important; font-size: 0.9rem !important; }
+}
+
+/* --- ORDERS PAGE --- */
+@media (max-width: 767px) {
+  .order-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 0.5rem !important; }
+}
+
+/* --- ANALYTICS --- */
+@media (max-width: 767px) {
+  .analytics-grid { grid-template-columns: 1fr !important; }
+}
+
+/* --- DELIVERY DASHBOARD --- */
+@media (max-width: 767px) {
+  .delivery-banner-inner { flex-direction: column !important; gap: 0.75rem !important; }
+}
+
+/* --- ADMIN STATS GRID --- */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .admin-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+/* --- GENERAL PADDING UTILITY --- */
+@media (max-width: 767px) {
+  .section-outer { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+}

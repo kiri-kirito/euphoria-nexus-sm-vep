@@ -12,6 +12,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { user } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [adminName, setAdminName] = useState<string>('Super Admin');
   const [adminEmail, setAdminEmail] = useState<string>('admin1@euphoria.com');
@@ -112,7 +113,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     .toUpperCase() || 'AD';
 
   return (
-    <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative">
+    <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative overflow-hidden">
+      {/* Sidebar Overlay (mobile) */}
+      <div
+        className={`sidebar-overlay-backdrop ${sidebarOpen ? 'is-open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl animate-bounce">
@@ -121,7 +128,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       )}
 
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0">
+      <aside className={`dashboard-sidebar-panel w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0 ${sidebarOpen ? 'is-open' : ''}`}>
         {/* Brand Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
@@ -178,13 +185,24 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-900">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-900 dashboard-main-area">
         {/* Top Navbar */}
-        <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-20">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-8 z-20 dashboard-topbar-inner">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Hamburger (mobile only) */}
+            <button
+              className="sidebar-hamburger-btn bg-slate-800 text-white rounded-lg p-2"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
             <div className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-              <span className="text-xs font-medium text-slate-300">Environment: <strong className="text-white">Production (BD)</strong></span>
+              <span className="text-xs font-medium text-slate-300 hidden sm:inline">Environment: <strong className="text-white">Production (BD)</strong></span>
+              <span className="text-xs font-medium text-slate-300 sm:hidden">Prod</span>
             </div>
           </div>
 
@@ -247,7 +265,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </header>
 
         {/* Page Body */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 admin-page-content">
           {children}
         </main>
       </div>

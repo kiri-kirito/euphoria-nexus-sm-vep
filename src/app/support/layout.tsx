@@ -11,6 +11,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isActiveDuty, setIsActiveDuty] = useState(true);
   const [agentName, setAgentName] = useState<string>('Support Agent');
@@ -92,7 +93,13 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
     .toUpperCase() || 'SA';
 
   return (
-    <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative">
+    <div className="flex h-screen bg-slate-900 text-slate-100 font-sans relative overflow-hidden">
+      {/* Sidebar Overlay (mobile) */}
+      <div
+        className={`sidebar-overlay-backdrop ${sidebarOpen ? 'is-open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-teal-600 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl animate-bounce">
           {toast}
@@ -100,7 +107,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0">
+      <aside className={`dashboard-sidebar-panel w-64 bg-slate-950 border-r border-slate-800 flex flex-col flex-shrink-0 ${sidebarOpen ? 'is-open' : ''}`}>
         {/* Brand Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <Link href="/support/dashboard" className="flex items-center gap-3">
@@ -124,6 +131,7 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
               <Link
                 key={link.name}
                 href={link.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-xs font-semibold ${
                   isActive
                     ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20'
@@ -146,12 +154,25 @@ export default function SupportLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-900">
-        <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-8 z-20">
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-900 dashboard-main-area">
+        <header className="h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-8 z-20 dashboard-topbar-inner">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
+            {/* Hamburger (mobile only) */}
+            <button
+              className="sidebar-hamburger-btn bg-slate-800 text-white rounded-lg p-2"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${isActiveDuty ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}`}></span>
-              <span className="text-xs font-bold text-slate-300">Agent Status: <strong className={isActiveDuty ? 'text-emerald-400' : 'text-slate-500'}>{isActiveDuty ? 'Online' : 'Offline'}</strong></span>
+              <span className="text-xs font-bold text-slate-300">Status: <strong className={isActiveDuty ? 'text-emerald-400' : 'text-slate-500'}>{isActiveDuty ? 'Online' : 'Offline'}</strong></span>
             </div>
             <button 
               onClick={toggleDuty}

@@ -88,6 +88,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
   const { user, profile } = useAuthStore();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [negotiationCount, setNegotiationCount] = useState<number>(0);
   const [openRequestsCount, setOpenRequestsCount] = useState<number>(0);
   const [pendingBundlesCount, setPendingBundlesCount] = useState<number>(0);
@@ -182,8 +183,14 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
+      {/* Sidebar Overlay (mobile) */}
+      <div
+        className={`sidebar-overlay-backdrop ${sidebarOpen ? 'is-open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 flex-shrink-0 flex flex-col sticky top-0 h-screen">
+      <aside className={`dashboard-sidebar-panel w-64 bg-slate-900 flex-shrink-0 flex flex-col ${sidebarOpen ? 'is-open' : ''}`}>
         {/* Sidebar Header — bigger logo */}
         <div className="px-5 py-5 border-b border-slate-700/50">
           <Link href="/" className="flex items-center gap-3 mb-4">
@@ -244,12 +251,24 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto dashboard-main-area">
         {/* Top bar */}
-        <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-20">
-          <div>
-            <p className="text-xs text-slate-500">Welcome back,</p>
-            <h2 className="text-slate-900 font-bold text-lg leading-tight">{storeName}</h2>
+        <div className="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-20 dashboard-topbar-inner">
+          <div className="flex items-center gap-3">
+            {/* Hamburger (mobile only) */}
+            <button
+              className="sidebar-hamburger-btn bg-slate-900 text-white rounded-lg p-2"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+            <div>
+              <p className="text-xs text-slate-500">Welcome back,</p>
+              <h2 className="text-slate-900 font-bold text-lg leading-tight">{storeName}</h2>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -360,7 +379,7 @@ export default function SellerLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8 dashboard-page-content">
           {children}
         </div>
       </main>
