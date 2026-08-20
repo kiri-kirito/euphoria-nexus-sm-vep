@@ -56,7 +56,7 @@ function RegisterContent() {
 
     if (signUpError) {
       if (signUpError.message.toLowerCase().includes('rate limit')) {
-        setError('Email rate limit exceeded. Please use the Quick Login test accounts or try again later.');
+        setError('Email rate limit exceeded. Please try again later.');
       } else {
         setError(signUpError.message);
       }

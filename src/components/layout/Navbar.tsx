@@ -60,9 +60,9 @@ export default function Navbar() {
     if (error) {
       const msg = error.message.toLowerCase();
       if (msg.includes('email not confirmed')) {
-        setError('Your email has not been confirmed yet. Please check your email inbox to confirm your account, or sign in using Quick Login.');
+        setError('Your email has not been confirmed yet. Please check your email inbox to confirm your account.');
       } else if (msg.includes('rate limit')) {
-        setError('Supabase email/request limit reached. Please wait a few minutes or use Quick Login.');
+        setError('Supabase email/request limit reached. Please wait a few minutes and try again.');
       } else {
         setError(error.message);
       }
@@ -95,19 +95,6 @@ export default function Navbar() {
     await handleRealLogin(email, password);
   };
 
-  const quickLogin = async (role: string) => {
-    const mockPasswords: Record<string, {email: string, password: string}> = {
-      admin: { email: 'admin1@euphoria.com', password: 'Admin@1234' },
-      seller: { email: 'seller1@euphoria.com', password: 'Seller@1234' },
-      buyer: { email: 'buyer1@euphoria.com', password: 'Buyer@1234' },
-      agent: { email: 'delivery1@euphoria.com', password: 'Delivery@1234' },
-      support: { email: 'support1@euphoria.com', password: 'Support@1234' },
-    };
-    const creds = mockPasswords[role];
-    if (creds) {
-      await handleRealLogin(creds.email, creds.password);
-    }
-  };
 
   const handleLogout = async () => {
     setShowProfileDropdown(false);
@@ -412,32 +399,6 @@ export default function Navbar() {
                 </Link>
               </div>
 
-              <div className="relative flex items-center py-5">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-semibold uppercase tracking-wider">Or</span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-
-              <div>
-                <p className="text-xs text-center font-semibold text-slate-500 mb-3 uppercase tracking-wider">Quick Login (Testing)</p>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button type="button" onClick={() => quickLogin('buyer')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
-                    👤 Buyer
-                  </button>
-                  <button type="button" onClick={() => quickLogin('seller')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
-                    🏪 Seller
-                  </button>
-                  <button type="button" onClick={() => quickLogin('admin')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
-                    🛡️ Admin
-                  </button>
-                  <button type="button" onClick={() => quickLogin('agent')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
-                    🚚 Delivery
-                  </button>
-                  <button type="button" onClick={() => quickLogin('support')} className="py-2 px-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition-colors flex justify-center items-center gap-1">
-                    🎧 Support
-                  </button>
-                </div>
-              </div>
             </form>
           </div>
         </div>
